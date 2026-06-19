@@ -1,62 +1,72 @@
 "use client";
 
+import Link from "next/link";
 import { Product } from "@/types";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Plus } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
   onAddToCart: (product: Product) => void;
+  storeId?: string;
 }
 
-export function ProductCard({ product, onAddToCart }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart, storeId }: ProductCardProps) {
+  const productUrl = storeId ? `#` : "#";
+
   return (
-    <div className="ambient-card group">
+    <div className="ambient-card ambient-card-interactive group">
       {/* Image */}
-      <div className="image-glow aspect-square bg-[var(--bg-secondary)] relative overflow-hidden">
+      <Link
+        href={storeId ? `/${storeId}/product/${product.id}` : "#"}
+        className="block aspect-square bg-[var(--bg-secondary)] relative overflow-hidden"
+      >
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <ShoppingBag className="w-12 h-12 text-[var(--text-muted)]" />
+            <ShoppingBag className="w-10 h-10 text-[var(--text-muted)]" />
           </div>
         )}
 
         {/* Category Badge */}
         {product.category && (
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-2.5 left-2.5">
             <span className="category-tag">{product.category}</span>
           </div>
         )}
-      </div>
+
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      </Link>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
-        <div>
-          <h3 className="font-semibold text-lg truncate">{product.name}</h3>
-          {product.description && (
-            <p className="text-sm text-[var(--text-secondary)] mt-1 line-clamp-2">
-              {product.description}
-            </p>
-          )}
-        </div>
+      <div className="p-3 sm:p-4 space-y-2.5">
+        <Link href={storeId ? `/${storeId}/product/${product.id}` : "#"}>
+          <h3 className="font-semibold text-sm sm:text-base truncate group-hover:text-[var(--glow-purple)] transition-colors">
+            {product.name}
+          </h3>
+        </Link>
 
-        <div className="flex items-center justify-between">
-          <span className="price-display text-xl">
+        <div className="flex items-center justify-between gap-2">
+          <span className="price-display text-base sm:text-lg">
             ₦{product.price.toLocaleString()}
           </span>
 
           <button
-            onClick={() => onAddToCart(product)}
-            className="glow-button !px-4 !py-2.5 !min-h-[44px] !text-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToCart(product);
+            }}
+            className="glow-button !px-3 !py-2 !min-h-[40px] !text-xs !rounded-lg"
             aria-label={`Add ${product.name} to cart`}
           >
-            <ShoppingBag className="w-4 h-4" />
-            Add
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Add</span>
           </button>
         </div>
       </div>

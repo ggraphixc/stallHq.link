@@ -1,74 +1,94 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Product } from "@/types";
 import { ProductCard } from "./ProductCard";
 import { useCart } from "@/hooks/useCart";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { FilterPills } from "@/components/ui/FilterPills";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface ProductGridProps {
   products: Product[];
+  storeId?: string;
 }
 
-export function ProductGrid({ products }: ProductGridProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+export function ProductGrid({ products, storeId }: ProductGridProps) {
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const { addItem } = useCart();
 
-  const categories = Array.from(
-    new Set(products.map((p) => p.category).filter(Boolean))
-  ) as string[];
+  const categories = useMemo(
+    () =>
+      Array.from(
+        new Set(products.map((p) => p.category).filter(Boolean))
+      ) as string[],
+    [products]
+  );
 
-  const filteredProducts = selectedCategory
-    ? products.filter((p) => p.category === selectedCategory)
-    : products;
+  const filteredProducts = useMemo(() => {
+    let result = products;
+
+    if (selectedCategory) {
+      result = result.filter((p) => p.category === selectedCategory);
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          (p.description && p.description.toLowerCase().includes(query))
+      );
+    }
+
+    return result;
+  }, [products, selectedCategory, searchQuery]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Search */}
+      <SearchInput
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search products..."
+      />
+
       {/* Category Filter */}
       {categories.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          <button
-            onClick={() => setSelectedCategory(null)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              selectedCategory === null
-                ? "bg-[var(--glow-purple)] text-white"
-                : "bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]"
-            }`}
-          >
-            All
-          </button>
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                selectedCategory === category
-                  ? "bg-[var(--glow-purple)] text-white"
-                  : "bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+        <FilterPills
+          options={categories}
+          selected={selectedCategory}
+          onChange={setSelectedCategory}
+        />
       )}
 
-      {/* Product Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredProducts.map((product, index) => (
-          <div
+      {/* Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        {filteredProducts.map((product) => (
+          <ProductCard
             key={product.id}
-            className="fade-in"
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <ProductCard product={product} onAddToCart={addItem} />
-          </div>
+            product={product}
+            onAddToCart={addItem}
+            storeId={storeId}
+          />
         ))}
       </div>
 
       {filteredProducts.length === 0 && (
-        <div className="text-center py-12 text-[var(--text-muted)]">
-          <p>No products found</p>
-        </div>
+        <EmptyState
+          icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+            </svg>
+          }
+          title="No products found"
+          description={
+            searchQuery
+              ? `No products matching "${searchQuery}"`
+              : "No products in this category"
+          }
+        />
       )}
     </div>
   );

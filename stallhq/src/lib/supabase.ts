@@ -16,6 +16,17 @@ export async function getStoreBySlug(slug: string) {
   return data;
 }
 
+export async function getStoreByUserId(userId: string) {
+  const { data, error } = await supabase
+    .from("stores")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function getProductsByStoreId(storeId: string) {
   const { data, error } = await supabase
     .from("products")
@@ -31,7 +42,7 @@ export async function getProductsByStoreId(storeId: string) {
 export async function getProductById(id: string) {
   const { data, error } = await supabase
     .from("products")
-    .select("*, stores(*)")
+    .select("*, stores(*), product_variants(*)")
     .eq("id", id)
     .single();
 
@@ -40,10 +51,14 @@ export async function getProductById(id: string) {
 }
 
 export async function createStore(store: {
+  user_id: string;
   slug: string;
   name: string;
   description?: string;
   whatsapp_number: string;
+  category?: string;
+  email?: string;
+  setup_complete?: boolean;
 }) {
   const { data, error } = await supabase
     .from("stores")
@@ -62,6 +77,7 @@ export async function createProduct(product: {
   price: number;
   image_url?: string;
   category?: string;
+  has_variants?: boolean;
 }) {
   const { data, error } = await supabase
     .from("products")
@@ -82,6 +98,7 @@ export async function updateProduct(
     image_url: string;
     category: string;
     in_stock: boolean;
+    has_variants: boolean;
   }>
 ) {
   const { data, error } = await supabase
@@ -95,7 +112,109 @@ export async function updateProduct(
   return data;
 }
 
+export async function createProductVariants(
+  productId: string,
+  variants: Array<{
+    name: string;
+    option_name: string;
+    option_value: string;
+    price?: number;
+    stock?: number;
+    sku?: string;
+  }>
+) {
+  const { data, error } = await supabase
+    .from("product_variants")
+    .insert(variants.map((v) => ({ ...v, product_id: productId })))
+    .select();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteProductVariants(productId: string) {
+  const { error } = await supabase
+    .from("product_variants")
+    .delete()
+    .eq("product_id", productId);
+
+  if (error) throw error;
+}
+
+export async function getProductVariants(productId: string) {
+  const { data, error } = await supabase
+    .from("product_variants")
+    .select("*")
+    .eq("product_id", productId);
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createOrder(order: {
+  store_id: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string;
+  items: Array<{
+    product_id: string;
+    product_name: string;
+    variant_id?: string;
+    variant_name?: string;
+    price: number;
+    quantity: number;
+  }>;
+  total: number;
+  notes?: string;
+}) {
+  const { data, error } = await supabase
+    .from("orders")
+    .insert(order)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getOrdersByStoreId(storeId: string) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("store_id", storeId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateOrderStatus(
+  id: string,
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled"
+) {
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteProduct(id: string) {
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) throw error;
+}
+
+export async function getOrderById(id: string) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*, stores(*)")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data;
 }

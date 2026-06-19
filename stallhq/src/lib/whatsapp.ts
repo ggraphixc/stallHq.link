@@ -24,12 +24,16 @@ function formatOrderMessage(storeName: string, items: CartItem[]): string {
   let total = 0;
 
   items.forEach((item, index) => {
-    const itemTotal = item.product.price * item.quantity;
+    const price = item.variant?.price ?? item.product.price;
+    const itemTotal = price * item.quantity;
     total += itemTotal;
 
     lines.push(`${index + 1}. ${item.product.name}`);
+    if (item.variant) {
+      lines.push(`   ${item.variant.option_name}: ${item.variant.option_value}`);
+    }
     lines.push(
-      `   Qty: ${item.quantity} x ₦${item.product.price.toLocaleString()}`
+      `   Qty: ${item.quantity} x ₦${price.toLocaleString()}`
     );
     lines.push(`   Subtotal: ₦${itemTotal.toLocaleString()}`);
     lines.push("");

@@ -1,16 +1,22 @@
 "use client";
 
 import { Store, Product } from "@/types";
-import { StorePage } from "./StorePage";
+import { StorePage } from "@/components/StorePage";
 
 const DEMO_STORE: Store = {
   id: "demo-store-id",
+  user_id: "demo-user-id",
   slug: "demo-store",
   name: "Shivam's Fashion Hub",
   description: "Premium fashion items for the modern lifestyle",
   whatsapp_number: "+2348000000000",
   logo_url: null,
   banner_url: null,
+  category: "Fashion",
+  email: null,
+  theme: null,
+  store_hours: null,
+  setup_complete: true,
   created_at: new Date().toISOString(),
 };
 
@@ -22,8 +28,10 @@ const DEMO_PRODUCTS: Product[] = [
     description: "Soft, breathable cotton t-shirt available in multiple colors",
     price: 4500,
     image_url: null,
+    images: [],
     category: "Tops",
     in_stock: true,
+    has_variants: false,
     created_at: new Date().toISOString(),
   },
   {
@@ -33,8 +41,10 @@ const DEMO_PRODUCTS: Product[] = [
     description: "Classic slim fit jeans with stretch comfort",
     price: 12000,
     image_url: null,
+    images: [],
     category: "Bottoms",
     in_stock: true,
+    has_variants: false,
     created_at: new Date().toISOString(),
   },
   {
@@ -44,8 +54,10 @@ const DEMO_PRODUCTS: Product[] = [
     description: "Comfortable everyday sneakers for all occasions",
     price: 8500,
     image_url: null,
+    images: [],
     category: "Footwear",
     in_stock: true,
+    has_variants: false,
     created_at: new Date().toISOString(),
   },
   {
@@ -55,8 +67,10 @@ const DEMO_PRODUCTS: Product[] = [
     description: "Genuine leather bag with adjustable strap",
     price: 15000,
     image_url: null,
+    images: [],
     category: "Accessories",
     in_stock: true,
+    has_variants: false,
     created_at: new Date().toISOString(),
   },
   {
@@ -66,8 +80,10 @@ const DEMO_PRODUCTS: Product[] = [
     description: "Cozy oversized hoodie perfect for cooler evenings",
     price: 9500,
     image_url: null,
+    images: [],
     category: "Tops",
     in_stock: true,
+    has_variants: false,
     created_at: new Date().toISOString(),
   },
   {
@@ -77,8 +93,10 @@ const DEMO_PRODUCTS: Product[] = [
     description: "UV400 protection with classic aviator design",
     price: 3500,
     image_url: null,
+    images: [],
     category: "Accessories",
     in_stock: true,
+    has_variants: false,
     created_at: new Date().toISOString(),
   },
 ];

@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Plus, Minus, Trash2, MessageCircle } from "lucide-react";
+import { X, Plus, Minus, Trash2, MessageCircle, Mail } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { generateWhatsAppUrl } from "@/lib/whatsapp";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { Store } from "@/types";
 
 interface CartDrawerProps {
@@ -19,10 +21,49 @@ export function CartDrawer({ store }: CartDrawerProps) {
     total,
     itemCount,
   } = useCart();
+  const { trackWhatsAppClick } = useAnalytics();
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    trackWhatsAppClick(store.id);
+
+    // Create order in database
+    try {
+      const orderItems = items.map((item) => ({
+        product_id: item.product.id,
+        product_name: item.product.name,
+        variant_id: item.variant?.id,
+        variant_name: item.variant
+          ? `${item.variant.option_name}: ${item.variant.option_value}`
+          : undefined,
+        price: item.variant?.price ?? item.product.price,
+        quantity: item.quantity,
+      }));
+
+      await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          store_id: store.id,
+          store_name: store.name,
+          store_email: store.email,
+          customer_name: customerName || undefined,
+          customer_phone: customerPhone || undefined,
+          customer_email: customerEmail || undefined,
+          items: orderItems,
+          total,
+        }),
+      });
+    } catch (error) {
+      console.error("Error creating order:", error);
+    }
+
+    // Open WhatsApp
     const url = generateWhatsAppUrl(store.whatsapp_number, store.name, items);
     window.open(url, "_blank");
+    clearCart();
   };
 
   return (
@@ -92,100 +133,145 @@ export function CartDrawer({ store }: CartDrawerProps) {
                 <p>Your cart is empty</p>
               </div>
             ) : (
-              items.map((item) => (
-                <div
-                  key={item.product.id}
-                  className="flex gap-4 p-3 rounded-lg bg-[var(--bg-card)]"
-                >
-                  {/* Product Image */}
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-[var(--bg-primary)] flex-shrink-0">
-                    {item.product.image_url ? (
-                      <img
-                        src={item.product.image_url}
-                        alt={item.product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)]">
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
+              items.map((item) => {
+                const itemPrice = item.variant?.price ?? item.product.price;
+                const itemKey = item.variant?.id
+                  ? `${item.product.id}-${item.variant.id}`
+                  : item.product.id;
+
+                return (
+                  <div
+                    key={itemKey}
+                    className="flex gap-4 p-3 rounded-lg bg-[var(--bg-card)]"
+                  >
+                    {/* Product Image */}
+                    <div className="w-20 h-20 rounded-lg overflow-hidden bg-[var(--bg-primary)] flex-shrink-0">
+                      {item.product.image_url ? (
+                        <img
+                          src={item.product.image_url}
+                          alt={item.product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)]">
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          >
+                            <rect
+                              x="3"
+                              y="3"
+                              width="18"
+                              height="18"
+                              rx="2"
+                              ry="2"
+                            />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium truncate">
+                        {item.product.name}
+                      </h4>
+                      {item.variant && (
+                        <p className="text-xs text-[var(--glow-purple)]">
+                          {item.variant.option_name}: {item.variant.option_value}
+                        </p>
+                      )}
+                      <p className="text-sm text-[var(--glow-green)]">
+                        ₦{itemPrice.toLocaleString()}
+                      </p>
+
+                      {/* Quantity Controls */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={() =>
+                            updateQuantity(
+                              item.product.id,
+                              item.quantity - 1,
+                              item.variant?.id
+                            )
+                          }
+                          className="w-8 h-8 rounded-md bg-[var(--bg-primary)] flex items-center justify-center hover:bg-[var(--bg-card-hover)] transition-colors"
+                          aria-label="Decrease quantity"
                         >
-                          <rect
-                            x="3"
-                            y="3"
-                            width="18"
-                            height="18"
-                            rx="2"
-                            ry="2"
-                          />
-                          <circle cx="8.5" cy="8.5" r="1.5" />
-                          <polyline points="21 15 16 10 5 21" />
-                        </svg>
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-8 text-center font-medium">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() =>
+                            updateQuantity(
+                              item.product.id,
+                              item.quantity + 1,
+                              item.variant?.id
+                            )
+                          }
+                          className="w-8 h-8 rounded-md bg-[var(--bg-primary)] flex items-center justify-center hover:bg-[var(--bg-card-hover)] transition-colors"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            removeItem(item.product.id, item.variant?.id)
+                          }
+                          className="ml-auto p-2 text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium truncate">
-                      {item.product.name}
-                    </h4>
-                    <p className="text-sm text-[var(--glow-green)]">
-                      ₦{item.product.price.toLocaleString()}
-                    </p>
-
-                    {/* Quantity Controls */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <button
-                        onClick={() =>
-                          updateQuantity(
-                            item.product.id,
-                            item.quantity - 1
-                          )
-                        }
-                        className="w-8 h-8 rounded-md bg-[var(--bg-primary)] flex items-center justify-center hover:bg-[var(--bg-card-hover)] transition-colors"
-                        aria-label="Decrease quantity"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="w-8 text-center font-medium">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          updateQuantity(
-                            item.product.id,
-                            item.quantity + 1
-                          )
-                        }
-                        className="w-8 h-8 rounded-md bg-[var(--bg-primary)] flex items-center justify-center hover:bg-[var(--bg-card-hover)] transition-colors"
-                        aria-label="Increase quantity"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        onClick={() => removeItem(item.product.id)}
-                        className="ml-auto p-2 text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
-                        aria-label="Remove item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
           {/* Footer */}
           {items.length > 0 && (
             <div className="p-4 border-t border-[var(--border-subtle)] space-y-4">
+              {/* Customer Info */}
+              <div className="space-y-2">
+                <p className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">Your Info (optional)</p>
+                <input
+                  type="text"
+                  className="ambient-input text-sm"
+                  placeholder="Your name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                />
+                <input
+                  type="tel"
+                  className="ambient-input text-sm"
+                  placeholder="Phone number"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                />
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                  <input
+                    type="email"
+                    className="ambient-input text-sm !pl-9"
+                    placeholder="Email for order updates"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+
               {/* Total */}
               <div className="flex items-center justify-between text-lg">
                 <span className="text-[var(--text-secondary)]">Total</span>

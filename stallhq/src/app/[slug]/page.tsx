@@ -1,26 +1,77 @@
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import { getStoreBySlug, getProductsByStoreId } from "@/lib/supabase";
-import { StorePage } from "./StorePage";
+import { StorePage } from "@/components/StorePage";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   try {
     const store = await getStoreBySlug(slug);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://stallhq.link";
+    const ogImageUrl = `${baseUrl}/api/og?slug=${slug}`;
+
     return {
-      title: `${store.name} | stallHq`,
-      description: store.description || `Shop from ${store.name} on stallHq`,
+      title: `${store.name} | StallHq`,
+      description: store.description || `Shop from ${store.name} on StallHq. Browse products and order via WhatsApp.`,
+      keywords: [
+        store.name,
+        "stallhq",
+        "digital store",
+        "WhatsApp shopping",
+        store.category,
+        "online store",
+        "Nigeria",
+      ].filter(Boolean),
       openGraph: {
         title: store.name,
         description: store.description || `Shop from ${store.name}`,
-        images: store.banner_url ? [store.banner_url] : [],
+        url: `${baseUrl}/${store.slug}`,
+        siteName: "StallHq",
+        images: [
+          {
+            url: ogImageUrl,
+            width: 1200,
+            height: 630,
+            alt: `${store.name} - StallHq Store`,
+          },
+        ],
+        locale: "en_NG",
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: store.name,
+        description: store.description || `Shop from ${store.name}`,
+        images: [ogImageUrl],
+      },
+      alternates: {
+        canonical: `${baseUrl}/${store.slug}`,
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-video-preview": -1,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+        },
       },
     };
   } catch {
-    return { title: "Store Not Found" };
+    return {
+      title: "Store Not Found | StallHq",
+      description: "This store does not exist or has been removed.",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
   }
 }
 
@@ -31,7 +82,28 @@ export default async function StoreRoute({ params }: PageProps) {
     const store = await getStoreBySlug(slug);
     const products = await getProductsByStoreId(store.id);
 
-    return <StorePage store={store} products={products} />;
+    // Generate structured data for SEO
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Store",
+      name: store.name,
+      description: store.description,
+      url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://stallhq.link"}/${store.slug}`,
+      logo: store.logo_url,
+      image: store.banner_url,
+      category: store.category,
+      sameAs: [],
+    };
+
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+        <StorePage store={store} products={products} />
+      </>
+    );
   } catch {
     notFound();
   }

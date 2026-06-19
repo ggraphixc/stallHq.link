@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateProduct, deleteProduct } from "@/lib/supabase";
+import {
+  updateProduct,
+  deleteProduct,
+  deleteProductVariants,
+  createProductVariants,
+} from "@/lib/supabase";
 
 export async function PATCH(
   request: NextRequest,
@@ -9,7 +14,21 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const product = await updateProduct(id, body);
+    // Extract variants from body (don't pass to updateProduct)
+    const { variants, ...productUpdates } = body;
+
+    const product = await updateProduct(id, productUpdates);
+
+    // Handle variants if provided
+    if (variants !== undefined) {
+      // Delete existing variants
+      await deleteProductVariants(id);
+
+      // Create new variants if any
+      if (variants && variants.length > 0) {
+        await createProductVariants(id, variants);
+      }
+    }
 
     return NextResponse.json(product);
   } catch (error) {
