@@ -93,7 +93,7 @@ export function AnalyticsDashboard({ store }: AnalyticsDashboardProps) {
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value as typeof period)}
-            className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--glow-purple)]"
+            className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--glow-purple)]"
           >
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>

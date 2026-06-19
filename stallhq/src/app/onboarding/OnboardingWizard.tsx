@@ -75,13 +75,13 @@ export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
       </header>
 
       {/* Progress */}
-      <div className="max-w-2xl mx-auto w-full px-6 pt-8 relative z-10">
+      <div className="max-w-2xl mx-auto w-full px-6 pt-10 relative z-10">
         <StepIndicator steps={STEPS} currentStep={currentStep} />
       </div>
 
       {/* Content */}
-      <main className="flex-1 flex items-center justify-center px-6 py-10 relative z-10">
-        <div className="w-full max-w-lg">
+      <main className="flex-1 flex items-center justify-center px-6 py-12 relative z-10">
+        <div className="w-full max-w-lg mx-auto">
           {currentStep === 0 && (
             <StoreDetailsStep
               existingStore={store}

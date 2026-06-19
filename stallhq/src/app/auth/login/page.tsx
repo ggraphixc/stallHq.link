@@ -104,8 +104,8 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Form */}
-      <div className="flex-1 flex items-center justify-center px-6 sm:px-8 py-12 relative">
-        <div className="w-full max-w-md space-y-8">
+      <div className="flex-1 flex items-center justify-center px-6 sm:px-10 py-12 relative">
+        <div className="w-full max-w-md space-y-10 mx-auto">
           {/* Mobile logo */}
           <div className="text-center lg:hidden">
             <Link href="/" className="inline-block">
@@ -119,8 +119,8 @@ export default function LoginPage() {
           </div>
 
           {/* Header */}
-          <div className="text-center lg:text-left space-y-2">
-            <h2 className="text-3xl font-bold">Sign in to your account</h2>
+          <div className="text-center lg:text-left space-y-3">
+            <h2 className="text-2xl sm:text-3xl font-bold">Sign in to your account</h2>
             <p className="text-[var(--text-secondary)]">
               Don&apos;t have an account?{" "}
               <Link
@@ -152,27 +152,28 @@ export default function LoginPage() {
 
           {/* Email + Password Form */}
           <form onSubmit={handleEmailLogin} className="space-y-5">
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-[var(--text-secondary)]">
                   Email address
                 </label>
                 <input
                   type="email"
-                  className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--glow-purple)] focus:ring-1 focus:ring-[var(--glow-purple)]/50 transition-all"
+                  className="ambient-input"
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
+              
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-[var(--text-secondary)]">
                   Password
                 </label>
                 <input
                   type="password"
-                  className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--glow-purple)] focus:ring-1 focus:ring-[var(--glow-purple)]/50 transition-all"
+                  className="ambient-input"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -181,6 +182,7 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <br />
             <button
               type="submit"
               disabled={loading}
@@ -199,7 +201,7 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
+              <br />
           {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -211,7 +213,7 @@ export default function LoginPage() {
               </span>
             </div>
           </div>
-
+              <br />
           {/* Magic Link */}
           <form onSubmit={handleMagicLink}>
             <button

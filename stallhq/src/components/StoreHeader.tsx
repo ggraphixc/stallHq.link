@@ -23,7 +23,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
             href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="glow-button whatsapp-button !px-3 !py-2 !min-h-[40px] !text-xs"
+            className="glow-button whatsapp-button !px-3 !py-2 !min-h-[44px] !text-xs"
           >
             <MessageCircle className="w-4 h-4" />
             <span className="hidden sm:inline">Chat</span>

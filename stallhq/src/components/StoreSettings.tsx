@@ -65,7 +65,7 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
 
       <div className="relative w-full max-w-lg bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)] shadow-2xl slide-up max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)]">
+        <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
           <h2 className="text-lg font-semibold">Store Settings</h2>
           <button
             onClick={onClose}
@@ -76,15 +76,15 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-5">
           {error && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
               {error}
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium mb-2">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[var(--text-secondary)]">
               Store Name
             </label>
             <input
@@ -97,11 +97,14 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Store URL</label>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[var(--text-secondary)]">Store URL</label>
             <div className="flex items-center gap-0">
-              <span className="px-3 py-3 bg-[var(--bg-card)] border border-r-0 border-[var(--border-subtle)] rounded-l-lg text-[var(--text-muted)] text-sm whitespace-nowrap">
+              <span className="px-4 py-3 bg-[var(--bg-card)] border border-r-0 border-[var(--border-subtle)] rounded-l-lg text-[var(--text-muted)] text-sm hidden sm:inline">
                 stallhq.link/
+              </span>
+              <span className="px-4 py-3 bg-[var(--bg-card)] border border-r-0 border-[var(--border-subtle)] rounded-l-lg text-[var(--text-muted)] text-sm sm:hidden">
+                /
               </span>
               <input
                 type="text"
@@ -114,8 +117,8 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[var(--text-secondary)]">
               WhatsApp Number
             </label>
             <input
@@ -128,9 +131,9 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Email for Notifications (optional)
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[var(--text-secondary)]">
+              Email for Notifications <span className="text-[var(--text-muted)]">(optional)</span>
             </label>
             <input
               type="email"
@@ -139,14 +142,14 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <p className="text-xs text-[var(--text-muted)] mt-1">
+            <p className="text-xs text-[var(--text-muted)]">
               Receive email alerts when orders are placed
             </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Description (optional)
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[var(--text-secondary)]">
+              Description <span className="text-[var(--text-muted)]">(optional)</span>
             </label>
             <textarea
               className="ambient-input resize-none"

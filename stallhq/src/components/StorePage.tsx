@@ -67,9 +67,9 @@ export function StorePage({ store, products }: StorePageProps) {
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {/* Store Info */}
-        <div className={`mb-8 ${store.banner_url ? "-mt-16 relative z-10" : ""}`}>
+        <div className={`mb-10 ${store.banner_url ? "-mt-16 relative z-10" : ""}`}>
           <div className="flex items-start gap-4">
             <StoreAvatar
               name={store.name}
@@ -80,11 +80,11 @@ export function StorePage({ store, products }: StorePageProps) {
             <div className="flex-1 min-w-0 pt-1">
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{store.name}</h1>
               {store.description && (
-                <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1 line-clamp-2">
+                <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-2 line-clamp-2">
                   {store.description}
                 </p>
               )}
-              <div className="flex items-center gap-3 mt-3">
+              <div className="flex items-center gap-3 mt-4">
                 <VisitorBadge storeId={store.id} />
                 <StoreHoursBadge storeHours={store.store_hours} />
               </div>
@@ -94,7 +94,7 @@ export function StorePage({ store, products }: StorePageProps) {
 
         {/* Products */}
         <section>
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold">Products</h2>
             <span className="text-xs text-[var(--text-muted)]">{products.length} items</span>
           </div>

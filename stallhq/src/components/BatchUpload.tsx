@@ -130,7 +130,7 @@ export function BatchUpload({ store, onClose, onComplete }: BatchUploadProps) {
 
       <div className="relative w-full max-w-2xl bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)] shadow-2xl slide-up max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)]">
+        <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
           <div className="flex items-center gap-2">
             <Upload className="w-5 h-5 text-[var(--glow-purple)]" />
             <h2 className="text-lg font-semibold">Batch Upload Products</h2>
@@ -143,7 +143,7 @@ export function BatchUpload({ store, onClose, onComplete }: BatchUploadProps) {
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-8">
           {/* Instructions */}
           <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
             <h3 className="font-medium mb-2">CSV Format</h3>
@@ -200,7 +200,7 @@ export function BatchUpload({ store, onClose, onComplete }: BatchUploadProps) {
           {preview.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-medium">Preview ({preview.length} products)</h3>
-              <div className="max-h-48 overflow-y-auto rounded-xl border border-[var(--border-subtle)]">
+              <div className="max-h-48 overflow-y-auto overflow-x-auto rounded-xl border border-[var(--border-subtle)]">
                 <table className="w-full text-sm">
                   <thead className="bg-[var(--bg-card)] sticky top-0">
                     <tr>

@@ -106,9 +106,9 @@ export function StoreHoursManager({ hours, onChange }: StoreHoursManagerProps) {
             return (
               <div
                 key={key}
-                className="flex items-center gap-3 p-2 rounded-lg bg-[var(--bg-card)]"
+                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 rounded-lg bg-[var(--bg-card)]"
               >
-                <label className="flex items-center gap-2 w-24">
+                <label className="flex items-center gap-2 sm:w-24 shrink-0">
                   <input
                     type="checkbox"
                     checked={!dayHours.closed}
@@ -130,20 +130,20 @@ export function StoreHoursManager({ hours, onChange }: StoreHoursManagerProps) {
                       type="time"
                       value={dayHours.open}
                       onChange={(e) => updateDay(day, "open", e.target.value)}
-                      className="ambient-input !py-1 !px-2 text-sm w-32"
+                      className="ambient-input !py-1.5 !px-2 text-sm flex-1 min-w-0"
                     />
-                    <span className="text-[var(--text-muted)]">to</span>
+                    <span className="text-[var(--text-muted)] shrink-0">to</span>
                     <input
                       type="time"
                       value={dayHours.close}
                       onChange={(e) => updateDay(day, "close", e.target.value)}
-                      className="ambient-input !py-1 !px-2 text-sm w-32"
+                      className="ambient-input !py-1.5 !px-2 text-sm flex-1 min-w-0"
                     />
                   </div>
                 )}
 
                 {dayHours.closed && (
-                  <span className="text-sm text-[var(--text-muted)] italic">
+                  <span className="text-sm text-[var(--text-muted)] italic ml-6 sm:ml-0">
                     Closed
                   </span>
                 )}

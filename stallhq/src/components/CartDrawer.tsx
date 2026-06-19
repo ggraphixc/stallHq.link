@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Plus, Minus, Trash2, MessageCircle, Mail } from "lucide-react";
+import { X, Plus, Minus, Trash2, MessageCircle } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { generateWhatsAppUrl } from "@/lib/whatsapp";
 import { useAnalytics } from "@/hooks/useAnalytics";
@@ -99,13 +99,13 @@ export function CartDrawer({ store }: CartDrawerProps) {
         <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
         <Dialog.Content className="fixed right-0 top-0 h-full w-full max-w-md bg-[var(--bg-secondary)] z-50 flex flex-col slide-up">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)]">
+          <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
             <Dialog.Title className="text-lg font-semibold">
               Your Cart ({itemCount})
             </Dialog.Title>
             <Dialog.Close asChild>
               <button
-                className="p-2 rounded-lg hover:bg-[var(--bg-card)] transition-colors"
+                className="w-11 h-11 rounded-lg hover:bg-[var(--bg-card)] transition-colors flex items-center justify-center"
                 aria-label="Close cart"
               >
                 <X className="w-5 h-5" />
@@ -114,7 +114,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
           </div>
 
           {/* Items */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)]">
                 <svg
@@ -201,7 +201,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
                               item.variant?.id
                             )
                           }
-                          className="w-8 h-8 rounded-md bg-[var(--bg-primary)] flex items-center justify-center hover:bg-[var(--bg-card-hover)] transition-colors"
+                          className="w-10 h-10 rounded-lg bg-[var(--bg-primary)] flex items-center justify-center hover:bg-[var(--bg-card-hover)] transition-colors"
                           aria-label="Decrease quantity"
                         >
                           <Minus className="w-4 h-4" />
@@ -217,7 +217,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
                               item.variant?.id
                             )
                           }
-                          className="w-8 h-8 rounded-md bg-[var(--bg-primary)] flex items-center justify-center hover:bg-[var(--bg-card-hover)] transition-colors"
+                          className="w-10 h-10 rounded-lg bg-[var(--bg-primary)] flex items-center justify-center hover:bg-[var(--bg-card-hover)] transition-colors"
                           aria-label="Increase quantity"
                         >
                           <Plus className="w-4 h-4" />
@@ -227,7 +227,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
                           onClick={() =>
                             removeItem(item.product.id, item.variant?.id)
                           }
-                          className="ml-auto p-2 text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+                          className="ml-auto w-10 h-10 flex items-center justify-center text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
                           aria-label="Remove item"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -242,34 +242,31 @@ export function CartDrawer({ store }: CartDrawerProps) {
 
           {/* Footer */}
           {items.length > 0 && (
-            <div className="p-4 border-t border-[var(--border-subtle)] space-y-4">
+            <div className="p-5 border-t border-[var(--border-subtle)] space-y-4">
               {/* Customer Info */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <p className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">Your Info (optional)</p>
                 <input
                   type="text"
-                  className="ambient-input text-sm"
+                  className="ambient-input"
                   placeholder="Your name"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                 />
                 <input
                   type="tel"
-                  className="ambient-input text-sm"
+                  className="ambient-input"
                   placeholder="Phone number"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                 />
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                  <input
-                    type="email"
-                    className="ambient-input text-sm !pl-9"
-                    placeholder="Email for order updates"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                  />
-                </div>
+                <input
+                  type="email"
+                  className="ambient-input"
+                  placeholder="Email for order updates"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                />
               </div>
 
               {/* Total */}

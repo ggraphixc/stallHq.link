@@ -80,12 +80,12 @@ export function ReviewForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="ambient-card p-6 space-y-5">
+    <form onSubmit={handleSubmit} className="ambient-card p-6 space-y-6">
       <h4 className="font-semibold">Write a Review</h4>
 
       {/* Rating Stars */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Rating</label>
+        <label className="text-sm font-medium text-[var(--text-secondary)]">Rating</label>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((value) => (
             <button
@@ -94,7 +94,7 @@ export function ReviewForm({
               onClick={() => setRating(value)}
               onMouseEnter={() => setHoveredRating(value)}
               onMouseLeave={() => setHoveredRating(0)}
-              className="p-1 transition-transform hover:scale-110"
+              className="p-1.5 transition-transform hover:scale-110"
             >
               <Star
                 className={`w-7 h-7 transition-colors ${
@@ -111,7 +111,7 @@ export function ReviewForm({
 
       {/* Name */}
       <div className="space-y-2">
-        <label htmlFor="reviewer-name" className="text-sm font-medium">
+        <label htmlFor="reviewer-name" className="text-sm font-medium text-[var(--text-secondary)]">
           Your Name
         </label>
         <input
@@ -120,14 +120,14 @@ export function ReviewForm({
           value={reviewerName}
           onChange={(e) => setReviewerName(e.target.value)}
           placeholder="Enter your name"
-          className="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--glow-purple)] transition-colors"
+          className="ambient-input"
           maxLength={100}
         />
       </div>
 
       {/* Comment */}
       <div className="space-y-2">
-        <label htmlFor="review-comment" className="text-sm font-medium">
+        <label htmlFor="review-comment" className="text-sm font-medium text-[var(--text-secondary)]">
           Comment <span className="text-[var(--text-muted)]">(optional)</span>
         </label>
         <textarea
@@ -136,7 +136,7 @@ export function ReviewForm({
           onChange={(e) => setComment(e.target.value)}
           placeholder="Share your experience with this product..."
           rows={3}
-          className="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--glow-purple)] transition-colors resize-none"
+          className="ambient-input resize-none"
           maxLength={1000}
         />
         <p className="text-xs text-[var(--text-muted)] text-right">

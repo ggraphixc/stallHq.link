@@ -54,16 +54,16 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
             >
               Login
             </Link>
-            <Link href="/auth/signup" className="glow-button !px-4 !py-2 !text-xs !min-h-[36px]">
+            <Link href="/auth/signup" className="glow-button !px-4 !py-2 !text-xs !min-h-[44px]">
               Create Store
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         {/* Hero */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-12">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-3">
             Discover{" "}
             <span className="text-gradient">Amazing Stores</span>
@@ -74,7 +74,7 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
         </div>
 
         {/* Search & Filters */}
-        <div className="max-w-xl mx-auto mb-8 space-y-4">
+        <div className="max-w-xl mx-auto mb-10 space-y-4">
           <SearchInput
             value={search}
             onChange={setSearch}
@@ -172,10 +172,10 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
         )}
 
         {/* CTA */}
-        <div className="mt-16 text-center">
+        <div className="mt-20 text-center">
           <div className="glass-card max-w-lg mx-auto p-8 sm:p-10">
-            <h2 className="text-xl sm:text-2xl font-bold mb-2">Create Your Own Store</h2>
-            <p className="text-sm text-[var(--text-secondary)] mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold mb-3">Create Your Own Store</h2>
+            <p className="text-sm text-[var(--text-secondary)] mb-8">
               Set up in minutes. Start selling on WhatsApp today.
             </p>
             <Link href="/auth/signup" className="glow-button">
@@ -186,7 +186,7 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--border-subtle)] mt-12">
+      <footer className="border-t border-[var(--border-subtle)] mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 text-center">
           <p className="text-xs text-[var(--text-muted)]">
             © {new Date().getFullYear()} StallHq

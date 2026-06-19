@@ -68,37 +68,34 @@ export function WhatsAppConnectStep({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Header */}
-      <div className="text-center space-y-4">
+      <div className="text-center space-y-5">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--glow-green)]/20 to-[var(--glow-green)]/10 border border-[var(--border-subtle)] flex items-center justify-center mx-auto">
           <MessageCircle className="w-8 h-8 text-[var(--glow-green)]" />
         </div>
         <div>
           <h1 className="text-3xl font-bold">Connect WhatsApp</h1>
-          <p className="text-[var(--text-secondary)] mt-2">
+          <p className="text-[var(--text-secondary)] mt-3">
             Customers will order directly through WhatsApp
           </p>
         </div>
       </div>
 
       {/* Content */}
-      <div className="space-y-5">
+      <div className="space-y-6">
         {/* Number Input */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-[var(--text-secondary)]">
             WhatsApp Number
           </label>
-          <div className="relative">
-            <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
-            <input
-              type="tel"
-              className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl pl-12 pr-4 py-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--glow-purple)] focus:ring-1 focus:ring-[var(--glow-purple)]/50 transition-all"
-              placeholder="+234 800 000 0000"
-              value={whatsappNumber}
-              onChange={(e) => setWhatsappNumber(e.target.value)}
-            />
-          </div>
+          <input
+            type="tel"
+            className="ambient-input"
+            placeholder="+234 800 000 0000"
+            value={whatsappNumber}
+            onChange={(e) => setWhatsappNumber(e.target.value)}
+          />
           <p className="text-xs text-[var(--text-muted)]">
             Include country code. This is where customers will send orders.
           </p>

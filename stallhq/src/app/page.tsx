@@ -4,14 +4,14 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       {/* Hero */}
-      <section className="relative flex flex-col items-center justify-center min-h-[85vh] px-4 text-center">
+      <section className="relative flex flex-col items-center justify-center min-h-[85vh] px-5 sm:px-8 text-center">
         {/* Animated orbs */}
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[var(--glow-purple)] rounded-full opacity-[0.04] blur-[100px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[var(--glow-cyan)] rounded-full opacity-[0.03] blur-[120px] pointer-events-none" />
 
         <div className="relative z-10 max-w-3xl space-y-8 fade-in">
           {/* Brand */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] text-xs text-[var(--text-secondary)]">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--glow-green)] animate-pulse" />
               Free forever. No credit card.
@@ -27,7 +27,7 @@ export default function Home() {
           </div>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/dashboard" className="glow-button text-base px-8 py-3.5">
               Open Dashboard
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -106,9 +106,9 @@ export default function Home() {
               accent: "green" as const,
             },
           ].map((feature) => (
-            <div key={feature.title} className="ambient-card ambient-card-interactive p-6">
+            <div key={feature.title} className="ambient-card ambient-card-interactive p-6 sm:p-7">
               <div className="relative z-10">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: `var(--glow-${feature.accent}-dim)` }}>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5" style={{ background: `var(--glow-${feature.accent}-dim)` }}>
                   {feature.icon}
                 </div>
                 <h3 className="text-base font-semibold mb-1.5">{feature.title}</h3>
@@ -122,8 +122,8 @@ export default function Home() {
       {/* Social Proof */}
       <section className="page-container section-gap">
         <div className="glass-card p-8 sm:p-12 text-center max-w-2xl mx-auto">
-          <p className="text-4xl sm:text-5xl font-extrabold mb-2">100%</p>
-          <p className="text-lg text-[var(--text-secondary)] mb-6">Free forever. No catches.</p>
+          <p className="text-4xl sm:text-5xl font-extrabold mb-3">100%</p>
+          <p className="text-lg text-[var(--text-secondary)] mb-8">Free forever. No catches.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/dashboard" className="glow-button px-8">
               Start Selling Now
@@ -136,7 +136,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="page-container py-8 border-t border-[var(--border-subtle)]">
+      <footer className="page-container py-10 border-t border-[var(--border-subtle)]">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-[var(--text-muted)]">
             Built for WhatsApp vendors across Africa.

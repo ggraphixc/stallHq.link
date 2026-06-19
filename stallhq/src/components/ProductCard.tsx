@@ -71,7 +71,7 @@ export function ProductCard({ product, onAddToCart, storeId }: ProductCardProps)
               e.stopPropagation();
               onAddToCart(product);
             }}
-            className="glow-button !px-3 !py-2 !min-h-[40px] !text-xs !rounded-lg"
+            className="glow-button !px-3 !py-2 !min-h-[44px] !text-xs !rounded-lg"
             aria-label={`Add ${product.name} to cart`}
           >
             <Plus className="w-3.5 h-3.5" />

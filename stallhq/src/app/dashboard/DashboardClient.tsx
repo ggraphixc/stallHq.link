@@ -185,7 +185,7 @@ export function DashboardClient({
                     <button
                       key={label}
                       onClick={onClick}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-colors"
                     >
                       <Icon className="w-4 h-4" />
                       {label}
@@ -198,21 +198,21 @@ export function DashboardClient({
                     href={`/${store.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                     View Store
                   </a>
                   <button
                     onClick={() => { setShowSettings(true); setShowMobileMenu(false); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-colors"
                   >
                     <Settings className="w-4 h-4" />
                     Settings
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--glow-red)] hover:bg-[var(--glow-red-dim)] transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[var(--glow-red)] hover:bg-[var(--glow-red-dim)] transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                     Logout
@@ -224,9 +224,9 @@ export function DashboardClient({
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-10">
           <StatCard
             icon={<Package className="w-4 h-4" />}
             label="Products"
@@ -252,12 +252,12 @@ export function DashboardClient({
 
         {/* Products */}
         <section>
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold">Products</h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowBatchUpload(true)}
-                className="glow-button-secondary !px-3 !py-2 !text-xs !min-h-[36px]"
+                className="glow-button-secondary !px-3 !py-2.5 !text-xs !min-h-[44px]"
               >
                 <Upload className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Batch Upload</span>
@@ -267,7 +267,7 @@ export function DashboardClient({
                   setEditingProduct(null);
                   setShowProductForm(true);
                 }}
-                className="glow-button !px-3 !py-2 !text-xs !min-h-[36px]"
+                className="glow-button !px-3 !py-2.5 !text-xs !min-h-[44px]"
               >
                 + Add Product
               </button>

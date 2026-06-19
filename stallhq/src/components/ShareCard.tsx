@@ -84,7 +84,7 @@ export function ShareCard({ store, onClose }: ShareCardProps) {
 
       <div className="relative w-full max-w-md bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)] shadow-2xl slide-up">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)]">
+        <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
           <h2 className="text-lg font-semibold">Share Your Store</h2>
           <button
             onClick={onClose}
@@ -95,7 +95,7 @@ export function ShareCard({ store, onClose }: ShareCardProps) {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-8">
           {/* Store Preview Card */}
           <div className="bg-gradient-to-br from-purple-500/10 to-cyan-500/10 rounded-xl p-6 border border-[var(--border-subtle)]">
             <div className="flex items-center gap-4 mb-4">

@@ -44,14 +44,14 @@ export function DashboardProductGrid({
               </div>
             )}
 
-            {/* Action buttons */}
-            <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Action buttons - always visible on mobile, hover on desktop */}
+            <div className="absolute top-2 right-2 flex gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(product);
                 }}
-                className="p-2 rounded-lg bg-[var(--bg-card)]/80 backdrop-blur-sm hover:bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                className="w-9 h-9 rounded-lg bg-[var(--bg-card)]/90 backdrop-blur-sm hover:bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center"
                 aria-label={`Edit ${product.name}`}
               >
                 <Pencil className="w-4 h-4" />
@@ -61,7 +61,7 @@ export function DashboardProductGrid({
                   e.stopPropagation();
                   onDelete(product.id);
                 }}
-                className="p-2 rounded-lg bg-[var(--bg-card)]/80 backdrop-blur-sm hover:bg-red-500/20 text-[var(--text-secondary)] hover:text-red-400 transition-colors"
+                className="w-9 h-9 rounded-lg bg-[var(--bg-card)]/90 backdrop-blur-sm hover:bg-red-500/20 text-[var(--text-secondary)] hover:text-red-400 transition-colors flex items-center justify-center"
                 aria-label={`Delete ${product.name}`}
               >
                 <Trash2 className="w-4 h-4" />

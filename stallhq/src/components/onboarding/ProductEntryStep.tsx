@@ -89,22 +89,22 @@ export function ProductEntryStep({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Header */}
-      <div className="text-center space-y-4">
+      <div className="text-center space-y-5">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--glow-green)]/20 to-[var(--glow-cyan)]/20 border border-[var(--border-subtle)] flex items-center justify-center mx-auto">
           <Package className="w-8 h-8 text-[var(--glow-green)]" />
         </div>
         <div>
           <h1 className="text-3xl font-bold">Add Your Products</h1>
-          <p className="text-[var(--text-secondary)] mt-2">
+          <p className="text-[var(--text-secondary)] mt-3">
             Add at least one product to get started
           </p>
         </div>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Error */}
         {error && (
           <div className="p-4 rounded-xl bg-[var(--glow-red)]/10 border border-[var(--glow-red)]/20 text-[var(--glow-red)] text-sm flex items-center gap-3">
@@ -144,7 +144,7 @@ export function ProductEntryStep({
 
               <input
                 type="text"
-                className="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-4 py-3.5 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--glow-purple)] focus:ring-1 focus:ring-[var(--glow-purple)]/50 transition-all"
+                className="ambient-input"
                 placeholder="Product name"
                 value={product.name}
                 onChange={(e) => updateProduct(index, "name", e.target.value)}
@@ -154,7 +154,7 @@ export function ProductEntryStep({
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="number"
-                  className="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-4 py-3.5 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--glow-purple)] focus:ring-1 focus:ring-[var(--glow-purple)]/50 transition-all"
+                  className="ambient-input"
                   placeholder="Price (₦)"
                   value={product.price}
                   onChange={(e) => updateProduct(index, "price", e.target.value)}
@@ -164,7 +164,7 @@ export function ProductEntryStep({
                 />
                 <input
                   type="text"
-                  className="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-4 py-3.5 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--glow-purple)] focus:ring-1 focus:ring-[var(--glow-purple)]/50 transition-all"
+                  className="ambient-input"
                   placeholder="Category"
                   value={product.category}
                   onChange={(e) =>

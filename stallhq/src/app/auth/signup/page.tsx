@@ -96,8 +96,8 @@ export default function SignupPage() {
       </div>
 
       {/* Right side - Form */}
-      <div className="flex-1 flex items-center justify-center px-6 sm:px-8 py-12 relative">
-        <div className="w-full max-w-md space-y-8">
+      <div className="flex-1 flex items-center justify-center px-6 sm:px-10 py-12 relative">
+        <div className="w-full max-w-md space-y-10 mx-auto">
           {/* Mobile logo */}
           <div className="text-center lg:hidden">
             <Link href="/" className="inline-block">
@@ -111,8 +111,8 @@ export default function SignupPage() {
           </div>
 
           {/* Header */}
-          <div className="text-center lg:text-left space-y-2">
-            <h2 className="text-3xl font-bold">Create your account</h2>
+          <div className="text-center lg:text-left space-y-3">
+            <h2 className="text-2xl sm:text-3xl font-bold">Create your account</h2>
             <p className="text-[var(--text-secondary)]">
               Already have an account?{" "}
               <Link
@@ -158,14 +158,14 @@ export default function SignupPage() {
           {/* Signup Form */}
           {!success && (
             <form onSubmit={handleSignup} className="space-y-5">
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-[var(--text-secondary)]">
                     Email address
                   </label>
                   <input
                     type="email"
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--glow-purple)] focus:ring-1 focus:ring-[var(--glow-purple)]/50 transition-all"
+                    className="ambient-input"
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -178,7 +178,7 @@ export default function SignupPage() {
                   </label>
                   <input
                     type="password"
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--glow-purple)] focus:ring-1 focus:ring-[var(--glow-purple)]/50 transition-all"
+                    className="ambient-input"
                     placeholder="Create a password (min 6 characters)"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

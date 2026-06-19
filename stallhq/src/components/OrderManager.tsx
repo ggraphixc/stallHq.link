@@ -163,8 +163,8 @@ export function OrderManager({ storeId }: OrderManagerProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Orders</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h2 className="text-xl sm:text-2xl font-bold">Orders</h2>
         <div className="flex items-center gap-3">
           <span className="text-sm text-[var(--text-muted)]">
             {orders.length} total order{orders.length !== 1 ? "s" : ""}
@@ -172,7 +172,7 @@ export function OrderManager({ storeId }: OrderManagerProps) {
           {orders.length > 0 && (
             <button
               onClick={exportCSV}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] hover:bg-[var(--bg-card)]/80 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] hover:bg-[var(--bg-card)]/80 rounded-lg transition-colors"
             >
               <Download className="w-4 h-4" />
               Export CSV

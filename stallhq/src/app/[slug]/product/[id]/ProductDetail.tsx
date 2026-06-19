@@ -89,7 +89,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
     <div className="min-h-screen bg-[var(--bg-primary)]">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[var(--bg-primary)]/80 backdrop-blur-lg border-b border-[var(--border-subtle)]">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center">
           <Link
             href={`/${product.stores.slug}`}
             className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
@@ -100,7 +100,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Image Gallery */}
           <div className="space-y-3">
@@ -153,7 +153,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                   {product.category}
                 </span>
               )}
-              <h1 className="text-3xl font-extrabold mt-2">{product.name}</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold mt-2">{product.name}</h1>
               {product.description && (
                 <p className="text-[var(--text-secondary)] mt-3 leading-relaxed">
                   {product.description}
@@ -161,7 +161,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
               )}
             </div>
 
-            <div className="price-display text-4xl">
+            <div className="price-display text-3xl sm:text-4xl">
               ₦{displayPrice.toLocaleString()}
             </div>
 
@@ -271,10 +271,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
         </div>
 
         {/* Reviews Section */}
-        <div className="mt-12 space-y-8">
-          <div className="border-t border-[var(--border-subtle)] pt-8">
-            <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="mt-14 space-y-10">
+          <div className="border-t border-[var(--border-subtle)] pt-10">
+            <h2 className="text-xl sm:text-2xl font-bold mb-8">Customer Reviews</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
               <ReviewList
                 productId={product.id}
                 storeId={product.store_id}

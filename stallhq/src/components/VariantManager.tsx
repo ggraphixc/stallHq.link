@@ -155,7 +155,7 @@ export function VariantManager({
                 <button
                   type="button"
                   onClick={() => removeVariant(variant.id)}
-                  className="p-1 rounded hover:bg-[var(--glow-red-dim)] text-[var(--text-muted)] hover:text-[var(--glow-red)]"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[var(--glow-red-dim)] text-[var(--text-muted)] hover:text-[var(--glow-red)]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -229,7 +229,7 @@ export function VariantManager({
                 <button
                   type="button"
                   onClick={() => removeDraft(index)}
-                  className="p-1 rounded hover:bg-[var(--glow-red-dim)] text-[var(--text-muted)] hover:text-[var(--glow-red)]"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[var(--glow-red-dim)] text-[var(--text-muted)] hover:text-[var(--glow-red)]"
                 >
                   <X className="w-4 h-4" />
                 </button>

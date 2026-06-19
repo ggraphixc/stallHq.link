@@ -217,7 +217,7 @@ export function ProductForm({
 
       <div className="relative w-full max-w-lg bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)] shadow-2xl slide-up max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)]">
+        <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
           <h2 className="text-lg font-semibold">
             {product ? "Edit Product" : "Add Product"}
           </h2>
@@ -230,7 +230,7 @@ export function ProductForm({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-5">
           {/* Image Upload */}
           <div>
             <label className="block text-sm font-medium mb-2">
@@ -296,9 +296,9 @@ export function ProductForm({
                   <button
                     type="button"
                     onClick={() => removeAdditionalImage(index)}
-                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                   >
-                    <X className="w-5 h-5 text-white" />
+                    <X className="w-3 h-3 text-white" />
                   </button>
                 </div>
               ))}
@@ -326,8 +326,8 @@ export function ProductForm({
           </div>
 
           {/* Name */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[var(--text-secondary)]">
               Product Name *
             </label>
             <input
@@ -341,8 +341,8 @@ export function ProductForm({
           </div>
 
           {/* Description */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[var(--text-secondary)]">
               Description
             </label>
             <textarea
@@ -356,8 +356,8 @@ export function ProductForm({
 
           {/* Price & Category */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[var(--text-secondary)]">
                 Price (₦) *
               </label>
               <input
@@ -371,8 +371,8 @@ export function ProductForm({
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[var(--text-secondary)]">
                 Category
               </label>
               <input
