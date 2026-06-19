@@ -95,7 +95,7 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       {/* Hero */}
-      <section className="relative flex flex-col items-center justify-center min-h-[90vh] px-5 sm:px-8 text-center overflow-hidden">
+      <section className="relative flex flex-col items-center justify-center min-h-[90vh] px-6 sm:px-10 md:px-16 text-center overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[var(--glow-purple)] rounded-full opacity-[0.04] blur-[140px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[var(--glow-cyan)] rounded-full opacity-[0.03] blur-[160px] pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[var(--glow-green)] rounded-full opacity-[0.02] blur-[200px] pointer-events-none" />
@@ -128,7 +128,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="flex items-center justify-center gap-8 pt-4 text-sm text-[var(--text-muted)]">
+          <div className="flex items-center justify-center gap-6 sm:gap-8 pt-6 text-sm text-[var(--text-muted)]">
             <div className="flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--glow-green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
               <span>Zero hosting</span>
@@ -147,21 +147,21 @@ export default function Home() {
 
       {/* How It Works */}
       <section className="page-container section-gap">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-3">How It Works</h2>
+        <div className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">How It Works</h2>
           <p className="text-[var(--text-secondary)] max-w-md mx-auto">Three steps from idea to live storefront.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {steps.map((step, i) => (
             <div key={step.number} className="relative group">
               {i < steps.length - 1 && (
-                <div className="hidden md:block absolute top-10 left-[calc(50%+40px)] w-[calc(100%-40px)] h-px bg-gradient-to-r from-[var(--border-medium)] to-transparent z-0" />
+                <div className="hidden md:block absolute top-12 left-[calc(50%+40px)] w-[calc(100%-40px)] h-px bg-gradient-to-r from-[var(--border-medium)] to-transparent z-0" />
               )}
-              <div className="relative z-10 ambient-card p-8 text-center group-hover:border-[var(--border-glow)] transition-all duration-400">
-                <div className="text-5xl font-extrabold mb-4 opacity-10 group-hover:opacity-20 transition-opacity" style={{ color: step.color }}>
+              <div className="relative z-10 ambient-card p-8 sm:p-10 text-center group-hover:border-[var(--border-glow)] transition-all duration-400">
+                <div className="text-5xl font-extrabold mb-5 opacity-10 group-hover:opacity-20 transition-opacity" style={{ color: step.color }}>
                   {step.number}
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
+                <h3 className="text-lg font-semibold mb-3">{step.title}</h3>
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{step.description}</p>
               </div>
             </div>
@@ -171,27 +171,27 @@ export default function Home() {
 
       {/* Features */}
       <section className="page-container section-gap">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-3">Everything You Need</h2>
+        <div className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Everything You Need</h2>
           <p className="text-[var(--text-secondary)] max-w-md mx-auto">Built specifically for WhatsApp-based businesses in Africa.</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
           {features.map((feature) => {
             const a = accentMap[feature.accent];
             return (
               <div
                 key={feature.title}
-                className="ambient-card ambient-card-interactive p-6 sm:p-7 group"
-                style={{ "--card-accent": a.bg, "--card-accent-border": a.border } as React.CSSProperties}
+                className="group relative rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)]/40 backdrop-blur-xl p-7 sm:p-8 transition-all duration-400 hover:border-[var(--border-glow)] hover:bg-[var(--bg-card)]/60"
               >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
                 <div className="relative z-10">
                   <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 transition-all duration-300 group-hover:scale-110"
                     style={{ background: a.bg, border: `1px solid ${a.border}` }}
                   >
                     {feature.icon}
                   </div>
-                  <h3 className="text-base font-semibold mb-2">{feature.title}</h3>
+                  <h3 className="text-base font-semibold mb-3">{feature.title}</h3>
                   <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{feature.description}</p>
                 </div>
               </div>
@@ -202,13 +202,13 @@ export default function Home() {
 
       {/* CTA */}
       <section className="page-container section-gap">
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-10 sm:p-16 text-center">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)]/40 backdrop-blur-xl p-12 sm:p-20 text-center">
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--glow-purple)]/5 via-transparent to-[var(--glow-cyan)]/5 pointer-events-none" />
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[var(--glow-purple)] rounded-full opacity-[0.06] blur-[120px] pointer-events-none" />
           <div className="relative z-10 max-w-lg mx-auto space-y-6">
             <p className="text-5xl sm:text-6xl font-extrabold">100%</p>
             <p className="text-lg text-[var(--text-secondary)]">Free forever. No catches. Start selling in 60 seconds.</p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link href="/dashboard" className="glow-button px-8 py-4 text-base">
                 Start Selling Now
               </Link>
@@ -221,12 +221,12 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="page-container py-10 border-t border-[var(--border-subtle)]">
+      <footer className="page-container py-12 border-t border-[var(--border-subtle)]">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-[var(--text-muted)]">
             Built for WhatsApp vendors across Africa.
           </p>
-          <div className="flex items-center gap-5 text-sm text-[var(--text-muted)]">
+          <div className="flex items-center gap-6 text-sm text-[var(--text-muted)]">
             <Link href="/explore" className="hover:text-[var(--text-primary)] transition-colors">Explore</Link>
             <Link href="/dashboard" className="hover:text-[var(--text-primary)] transition-colors">Dashboard</Link>
           </div>

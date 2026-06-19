@@ -3,6 +3,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL = "StallHq <notifications@stallhq.link>";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
 
 interface OrderItem {
   product_name: string;
@@ -26,14 +27,43 @@ function formatCurrency(amount: number): string {
   return `₦${amount.toLocaleString()}`;
 }
 
+function emailWrapper(content: string): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;padding:0;background:#06060b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#06060b;padding:40px 20px;">
+        <tr>
+          <td align="center">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#13131d;border:1px solid rgba(255,255,255,0.06);border-radius:16px;overflow:hidden;">
+              ${content}
+            </table>
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+              <tr>
+                <td style="padding:24px 0;text-align:center;">
+                  <p style="margin:0;font-size:12px;color:#4b5563;">
+                    Built by <a href="${APP_URL}" style="color:#a855f7;text-decoration:none;">StallHq</a> &mdash; Free digital storefronts for WhatsApp vendors
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+}
+
 function buildItemsList(items: OrderItem[]): string {
   return items
     .map((item) => {
       const variant = item.variant_name ? ` (${item.variant_name})` : "";
       return `<tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #2a2a3e;">${item.product_name}${variant}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #2a2a3e;text-align:center;">${item.quantity}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #2a2a3e;text-align:right;">${formatCurrency(item.price * item.quantity)}</td>
+        <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);color:#e0e0e0;font-size:14px;">${item.product_name}${variant}</td>
+        <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:center;color:#94a3b8;font-size:14px;">${item.quantity}</td>
+        <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:right;color:#e0e0e0;font-size:14px;font-weight:600;">${formatCurrency(item.price * item.quantity)}</td>
       </tr>`;
     })
     .join("");
@@ -61,47 +91,85 @@ export async function sendOrderNotification({
   const customer = customerName || "Anonymous";
   const shortId = orderId.slice(0, 8).toUpperCase();
 
-  const html = `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#1a1a2e;color:#e0e0e0;">
-      <div style="background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:24px;text-align:center;">
-        <h1 style="color:#fff;margin:0;font-size:20px;">New Order Received</h1>
-        <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;">${storeName}</p>
-      </div>
+  const html = emailWrapper(`
+      <!-- Header -->
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="font-size:20px;">🛒</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">New Order Received</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
+        </td>
+      </tr>
 
-      <div style="padding:24px;">
-        <div style="background:#16213e;border-radius:8px;padding:16px;margin-bottom:16px;">
-          <p style="margin:0 0 8px;"><strong style="color:#a78bfa;">Order ID:</strong> #${shortId}</p>
-          <p style="margin:0 0 8px;"><strong style="color:#a78bfa;">Customer:</strong> ${customer}</p>
-          ${customerPhone ? `<p style="margin:0;"><strong style="color:#a78bfa;">Phone:</strong> ${customerPhone}</p>` : ""}
-        </div>
-
-        <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-          <thead>
-            <tr style="border-bottom:2px solid #2a2a3e;">
-              <th style="padding:8px 12px;text-align:left;color:#a78bfa;">Item</th>
-              <th style="padding:8px 12px;text-align:center;color:#a78bfa;">Qty</th>
-              <th style="padding:8px 12px;text-align:right;color:#a78bfa;">Price</th>
+      <!-- Order Info -->
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.15);border-radius:12px;">
+            <tr>
+              <td style="padding:16px 20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:4px 0;"><span style="font-size:13px;color:#94a3b8;">Order</span></td>
+                    <td style="padding:4px 0;text-align:right;"><span style="font-size:14px;font-weight:600;color:#a78bfa;">#${shortId}</span></td>
+                  </tr>
+                  <tr>
+                    <td style="padding:4px 0;"><span style="font-size:13px;color:#94a3b8;">Customer</span></td>
+                    <td style="padding:4px 0;text-align:right;"><span style="font-size:14px;color:#f1f5f9;">${customer}</span></td>
+                  </tr>
+                  ${customerPhone ? `<tr>
+                    <td style="padding:4px 0;"><span style="font-size:13px;color:#94a3b8;">Phone</span></td>
+                    <td style="padding:4px 0;text-align:right;"><span style="font-size:14px;color:#f1f5f9;">${customerPhone}</span></td>
+                  </tr>` : ""}
+                </table>
+              </td>
             </tr>
-          </thead>
-          <tbody>
+          </table>
+        </td>
+      </tr>
+
+      <!-- Items -->
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr style="border-bottom:2px solid rgba(255,255,255,0.06);">
+              <td style="padding:8px 16px;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Item</td>
+              <td style="padding:8px 16px;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;text-align:center;">Qty</td>
+              <td style="padding:8px 16px;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;text-align:right;">Price</td>
+            </tr>
             ${buildItemsList(items)}
-          </tbody>
-        </table>
+          </table>
+        </td>
+      </tr>
 
-        <div style="background:#16213e;border-radius:8px;padding:16px;text-align:right;">
-          <span style="font-size:18px;font-weight:bold;color:#22c55e;">${formatCurrency(total)}</span>
-        </div>
+      <!-- Total -->
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:12px;">
+            <tr>
+              <td style="padding:16px 20px;"><span style="font-size:14px;color:#94a3b8;">Total</span></td>
+              <td style="padding:16px 20px;text-align:right;"><span style="font-size:20px;font-weight:700;color:#22c55e;">${formatCurrency(total)}</span></td>
+            </tr>
+          </table>
+        </td>
+      </tr>
 
-        ${notes ? `<div style="margin-top:16px;padding:12px;background:#1e1e3a;border-radius:8px;border-left:3px solid #a78bfa;">
-          <p style="margin:0;color:#9ca3af;font-size:14px;"><strong>Note:</strong> ${notes}</p>
-        </div>` : ""}
-      </div>
+      ${notes ? `<tr>
+        <td style="padding:0 32px 24px;">
+          <div style="padding:14px 18px;background:rgba(168,85,247,0.06);border-left:3px solid #a855f7;border-radius:0 8px 8px 0;">
+            <p style="margin:0;font-size:13px;color:#94a3b8;"><strong style="color:#a78bfa;">Note:</strong> ${notes}</p>
+          </div>
+        </td>
+      </tr>` : ""}
 
-      <div style="padding:16px 24px;text-align:center;color:#6b7280;font-size:12px;border-top:1px solid #2a2a3e;">
-        <p style="margin:0;">Manage this order in your <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="color:#a78bfa;">StallHq Dashboard</a></p>
-      </div>
-    </div>
-  `;
+      <!-- CTA -->
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/dashboard" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View in Dashboard</a>
+        </td>
+      </tr>
+  `);
 
   try {
     await resend.emails.send({
@@ -133,56 +201,70 @@ export async function sendStatusUpdateEmail({
   const shortId = orderId.slice(0, 8).toUpperCase();
   const statusLabel = formatStatus(status);
 
-  const statusColors: Record<string, string> = {
-    pending: "#eab308",
-    confirmed: "#3b82f6",
-    shipped: "#a78bfa",
-    delivered: "#22c55e",
-    cancelled: "#ef4444",
+  const statusConfig: Record<string, { color: string; bg: string; border: string; icon: string; message: string }> = {
+    pending: { color: "#eab308", bg: "rgba(234,179,8,0.08)", border: "rgba(234,179,8,0.15)", icon: "⏳", message: "Your order is being reviewed." },
+    confirmed: { color: "#3b82f6", bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.15)", icon: "✅", message: "Your order has been confirmed!" },
+    shipped: { color: "#a78bfa", bg: "rgba(168,85,247,0.08)", border: "rgba(168,85,247,0.15)", icon: "📦", message: "Your order is on its way!" },
+    delivered: { color: "#22c55e", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.15)", icon: "🎉", message: "Your order has been delivered! Thank you for your purchase." },
+    cancelled: { color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.15)", icon: "❌", message: "Your order has been cancelled. Please contact the store for more details." },
   };
 
-  const statusColor = statusColors[status] || "#6b7280";
+  const cfg = statusConfig[status] || statusConfig.pending;
 
-  const html = `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#1a1a2e;color:#e0e0e0;">
-      <div style="background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:24px;text-align:center;">
-        <h1 style="color:#fff;margin:0;font-size:20px;">Order Status Update</h1>
-        <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;">${storeName}</p>
-      </div>
+  const html = emailWrapper(`
+      <!-- Header -->
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">${cfg.icon}</div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Order ${statusLabel}</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
+        </td>
+      </tr>
 
-      <div style="padding:24px;">
-        <div style="text-align:center;margin-bottom:24px;">
-          <div style="display:inline-block;background:${statusColor}20;border:2px solid ${statusColor};border-radius:8px;padding:12px 24px;">
-            <p style="margin:0;font-size:14px;color:#9ca3af;">Order #${shortId}</p>
-            <p style="margin:4px 0 0;font-size:24px;font-weight:bold;color:${statusColor};">${statusLabel}</p>
+      <!-- Status Badge -->
+      <tr>
+        <td style="padding:0 32px 24px;text-align:center;">
+          <div style="display:inline-block;background:${cfg.bg};border:1px solid ${cfg.border};border-radius:12px;padding:16px 28px;">
+            <p style="margin:0;font-size:13px;color:#94a3b8;">Order #${shortId}</p>
+            <p style="margin:6px 0 0;font-size:22px;font-weight:700;color:${cfg.color};">${statusLabel}</p>
           </div>
-        </div>
+        </td>
+      </tr>
 
-        <div style="background:#16213e;border-radius:8px;padding:16px;margin-bottom:16px;">
-          <p style="margin:0 0 8px;color:#9ca3af;font-size:14px;">Items ordered:</p>
-          ${items
-            .map((item) => {
-              const variant = item.variant_name ? ` (${item.variant_name})` : "";
-              return `<p style="margin:4px 0;">${item.product_name}${variant} × ${item.quantity}</p>`;
-            })
-            .join("")}
-          <p style="margin:12px 0 0;font-size:18px;font-weight:bold;color:#22c55e;">${formatCurrency(total)}</p>
-        </div>
+      <!-- Message -->
+      <tr>
+        <td style="padding:0 32px 24px;text-align:center;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${cfg.message}</p>
+        </td>
+      </tr>
 
-        ${status === "delivered" ? `<div style="text-align:center;padding:16px;background:#22c55e10;border-radius:8px;border:1px solid #22c55e30;">
-          <p style="margin:0;color:#22c55e;">Your order has been delivered! Thank you for your purchase.</p>
-        </div>` : ""}
+      <!-- Items Summary -->
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;">
+            <tr>
+              <td style="padding:16px 20px;">
+                <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Items ordered</p>
+                ${items
+                  .map((item) => {
+                    const variant = item.variant_name ? ` (${item.variant_name})` : "";
+                    return `<p style="margin:4px 0;font-size:14px;color:#e0e0e0;">${item.product_name}${variant} &times; ${item.quantity}</p>`;
+                  })
+                  .join("")}
+                <p style="margin:12px 0 0;font-size:18px;font-weight:700;color:#22c55e;">${formatCurrency(total)}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
 
-        ${status === "cancelled" ? `<div style="text-align:center;padding:16px;background:#ef444410;border-radius:8px;border:1px solid #ef444430;">
-          <p style="margin:0;color:#ef4444;">Your order has been cancelled. Please contact the store for more details.</p>
-        </div>` : ""}
-      </div>
-
-      <div style="padding:16px 24px;text-align:center;color:#6b7280;font-size:12px;border-top:1px solid #2a2a3e;">
-        <p style="margin:0;">Questions? Contact <a href="https://wa.me/${""}" style="color:#a78bfa;">${storeName}</a> on WhatsApp</p>
-      </div>
-    </div>
-  `;
+      <!-- CTA -->
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="https://wa.me/${""}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Contact on WhatsApp</a>
+        </td>
+      </tr>
+  `);
 
   try {
     await resend.emails.send({
