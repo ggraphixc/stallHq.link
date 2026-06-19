@@ -17,19 +17,19 @@ function Particles() {
 
     function resize() {
       canvas!.width = window.innerWidth;
-      canvas!.height = window.innerHeight;
+      canvas!.height = document.documentElement.scrollHeight;
     }
     resize();
     window.addEventListener("resize", resize);
 
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 50; i++) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        size: Math.random() * 2 + 0.5,
-        opacity: Math.random() * 0.4 + 0.1,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2,
+        size: Math.random() * 1.5 + 0.5,
+        opacity: Math.random() * 0.3 + 0.05,
       });
     }
 
@@ -57,13 +57,7 @@ function Particles() {
     };
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0"
-      style={{ opacity: 0.6 }}
-    />
-  );
+  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" style={{ opacity: 0.5 }} />;
 }
 
 const features = [
@@ -81,23 +75,15 @@ const steps = [
   { n: "03", title: "Share & Sell", desc: "Share link. Get orders." },
 ];
 
-const accentMap = {
-  green: { bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.2)", color: "#10b981" },
-  purple: { bg: "rgba(168,85,247,0.12)", border: "rgba(168,85,247,0.2)", color: "#a855f7" },
-  cyan: { bg: "rgba(6,182,212,0.12)", border: "rgba(6,182,212,0.2)", color: "#06b6d4" },
-  amber: { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.2)", color: "#f59e0b" },
-};
-
 export default function Home() {
   return (
     <>
       <Particles />
-      <main className="relative z-10 min-h-screen">
+      <main className="relative z-10">
         {/* Hero */}
         <section className="relative flex flex-col items-center justify-center min-h-[85vh] px-6 text-center">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-[var(--glow-purple)] rounded-full opacity-[0.04] blur-[140px] pointer-events-none" />
-
-          <div className="relative z-10 max-w-2xl space-y-6 fade-in">
+          <div className="relative z-10 max-w-2xl space-y-5 fade-in">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border-subtle)] bg-white/[0.03] backdrop-blur-sm text-xs text-[var(--text-secondary)]">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--glow-green)] animate-pulse" />
               Free forever
@@ -130,46 +116,39 @@ export default function Home() {
         </section>
 
         {/* How It Works */}
-        <section className="px-6 py-16 sm:py-20">
-          <div className="max-w-3xl mx-auto">
-            <p className="text-center text-xs font-medium text-[var(--text-muted)] uppercase tracking-widest mb-8">How It Works</p>
-            <div className="grid grid-cols-3 gap-4">
-              {steps.map((s) => (
-                <div key={s.n} className="text-center space-y-2 p-4">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-white/[0.06]">{s.n}</span>
-                  <h3 className="text-sm font-semibold">{s.title}</h3>
-                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">{s.desc}</p>
-                </div>
-              ))}
-            </div>
+        <section className="relative z-10 max-w-3xl mx-auto px-6 py-20">
+          <p className="text-center text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-[0.2em] mb-10">How It Works</p>
+          <div className="grid grid-cols-3 gap-6">
+            {steps.map((s) => (
+              <div key={s.n} className="text-center space-y-2">
+                <span className="block text-3xl font-extrabold text-white/[0.06]">{s.n}</span>
+                <h3 className="text-sm font-semibold">{s.title}</h3>
+                <p className="text-xs text-[var(--text-muted)] leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
           </div>
         </section>
 
         {/* Features */}
-        <section className="px-6 py-16 sm:py-20">
-          <div className="max-w-3xl mx-auto">
-            <p className="text-center text-xs font-medium text-[var(--text-muted)] uppercase tracking-widest mb-8">Features</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {features.map((f) => {
-                const a = accentMap[f.accent];
-                return (
-                  <div
-                    key={f.title}
-                    className="rounded-xl border border-[var(--border-subtle)] bg-white/[0.02] backdrop-blur-sm p-4 sm:p-5 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300"
-                  >
-                    <div className="text-lg mb-2">{f.icon}</div>
-                    <h3 className="text-sm font-semibold mb-1">{f.title}</h3>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">{f.desc}</p>
-                  </div>
-                );
-              })}
-            </div>
+        <section className="relative z-10 max-w-3xl mx-auto px-6 py-20">
+          <p className="text-center text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-[0.2em] mb-10">Features</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {features.map((f) => (
+              <div
+                key={f.title}
+                className="rounded-xl border border-[var(--border-subtle)] bg-white/[0.02] backdrop-blur-sm p-4 sm:p-5 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300"
+              >
+                <div className="text-base mb-2">{f.icon}</div>
+                <h3 className="text-sm font-semibold mb-1">{f.title}</h3>
+                <p className="text-xs text-[var(--text-muted)] leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
           </div>
         </section>
 
         {/* CTA */}
-        <section className="px-6 py-16 sm:py-20">
-          <div className="max-w-xl mx-auto text-center space-y-4 rounded-2xl border border-[var(--border-subtle)] bg-white/[0.02] backdrop-blur-sm p-8 sm:p-12">
+        <section className="relative z-10 max-w-xl mx-auto px-6 py-20">
+          <div className="text-center space-y-4 rounded-2xl border border-[var(--border-subtle)] bg-white/[0.02] backdrop-blur-sm p-8 sm:p-12">
             <p className="text-3xl sm:text-4xl font-extrabold">100% Free</p>
             <p className="text-sm text-[var(--text-secondary)]">No catches. Start selling in 60 seconds.</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -180,8 +159,8 @@ export default function Home() {
         </section>
 
         {/* Footer */}
-        <footer className="px-6 py-8 border-t border-[var(--border-subtle)]">
-          <div className="max-w-3xl mx-auto flex items-center justify-between text-xs text-[var(--text-muted)]">
+        <footer className="relative z-10 px-6 py-8 border-t border-[var(--border-subtle)]">
+          <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
             <span>StallHq &mdash; Built for WhatsApp vendors across Africa.</span>
             <div className="flex items-center gap-4">
               <Link href="/explore" className="hover:text-[var(--text-primary)] transition-colors">Explore</Link>
