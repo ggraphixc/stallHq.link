@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Product } from "@/types";
+import { useState, useMemo, useEffect } from "react";
+import { Product, ProductWithRating } from "@/types";
 import { ProductCard } from "./ProductCard";
 import { useCart } from "@/hooks/useCart";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -16,6 +16,7 @@ interface ProductGridProps {
 export function ProductGrid({ products, storeId }: ProductGridProps) {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [ratings, setRatings] = useState<Record<string, { count: number; average: number }>>({});
   const { addItem } = useCart();
 
   const categories = useMemo(
@@ -26,8 +27,47 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
     [products]
   );
 
+  // Fetch ratings for all products
+  useEffect(() => {
+    const fetchRatings = async () => {
+      const ratingPromises = products.map(async (product) => {
+        try {
+          const response = await fetch(`/api/reviews?product_id=${product.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            return { id: product.id, ...data.summary };
+          }
+        } catch {
+          // Silent fail
+        }
+        return { id: product.id, count: 0, average: 0 };
+      });
+
+      const results = await Promise.all(ratingPromises);
+      const ratingsMap: Record<string, { count: number; average: number }> = {};
+      results.forEach((r) => {
+        ratingsMap[r.id] = { count: r.count, average: r.average };
+      });
+      setRatings(ratingsMap);
+    };
+
+    if (products.length > 0) {
+      fetchRatings();
+    }
+  }, [products]);
+
+  const productsWithRatings: ProductWithRating[] = useMemo(
+    () =>
+      products.map((p) => ({
+        ...p,
+        review_count: ratings[p.id]?.count || 0,
+        avg_rating: ratings[p.id]?.average || 0,
+      })),
+    [products, ratings]
+  );
+
   const filteredProducts = useMemo(() => {
-    let result = products;
+    let result = productsWithRatings;
 
     if (selectedCategory) {
       result = result.filter((p) => p.category === selectedCategory);
@@ -43,7 +83,7 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
     }
 
     return result;
-  }, [products, selectedCategory, searchQuery]);
+  }, [productsWithRatings, selectedCategory, searchQuery]);
 
   return (
     <div className="space-y-4">

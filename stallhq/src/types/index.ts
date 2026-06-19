@@ -90,3 +90,18 @@ export interface Order {
   created_at: string;
   updated_at: string;
 }
+
+export interface Review {
+  id: string;
+  product_id: string;
+  store_id: string;
+  reviewer_name: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
+export interface ProductWithRating extends Product {
+  review_count?: number;
+  avg_rating?: number;
+}

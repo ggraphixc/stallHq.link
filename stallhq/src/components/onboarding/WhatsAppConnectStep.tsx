@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Store } from "@/types";
-import { MessageCircle, Loader2, ExternalLink } from "lucide-react";
+import { MessageCircle, Loader2, ExternalLink, ArrowRight, Check } from "lucide-react";
 
 interface WhatsAppConnectStepProps {
   store: Store;
@@ -68,77 +68,105 @@ export function WhatsAppConnectStep({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-600/20 border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-4">
-          <MessageCircle className="w-8 h-8 text-green-500" />
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="text-center space-y-4">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--glow-green)]/20 to-[var(--glow-green)]/10 border border-[var(--border-subtle)] flex items-center justify-center mx-auto">
+          <MessageCircle className="w-8 h-8 text-[var(--glow-green)]" />
         </div>
-        <h1 className="text-2xl font-bold mb-2">Connect WhatsApp</h1>
-        <p className="text-[var(--text-secondary)]">
-          Customers will order directly through WhatsApp
-        </p>
+        <div>
+          <h1 className="text-3xl font-bold">Connect WhatsApp</h1>
+          <p className="text-[var(--text-secondary)] mt-2">
+            Customers will order directly through WhatsApp
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">
+      {/* Content */}
+      <div className="space-y-5">
+        {/* Number Input */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-[var(--text-secondary)]">
             WhatsApp Number
           </label>
-          <input
-            type="tel"
-            className="ambient-input"
-            placeholder="+234 800 000 0000"
-            value={whatsappNumber}
-            onChange={(e) => setWhatsappNumber(e.target.value)}
-          />
-          <p className="text-xs text-[var(--text-muted)] mt-1">
+          <div className="relative">
+            <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
+            <input
+              type="tel"
+              className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl pl-12 pr-4 py-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--glow-purple)] focus:ring-1 focus:ring-[var(--glow-purple)]/50 transition-all"
+              placeholder="+234 800 000 0000"
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
+            />
+          </div>
+          <p className="text-xs text-[var(--text-muted)]">
             Include country code. This is where customers will send orders.
           </p>
         </div>
 
         {/* Preview */}
         {whatsappNumber && (
-          <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-            <p className="text-sm text-[var(--text-muted)] mb-2">Preview</p>
+          <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--glow-green)]/30 transition-colors">
+            <p className="text-xs text-[var(--text-muted)] mb-3 uppercase tracking-wider font-medium">Preview</p>
             <a
               href={formatWhatsAppUrl(whatsappNumber)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-green-500 hover:text-green-400 transition-colors"
+              className="flex items-center gap-3 text-[var(--glow-green)] hover:text-[var(--glow-green)]/80 transition-colors group"
             >
-              <MessageCircle className="w-5 h-5" />
-              <span className="font-medium">Chat on WhatsApp</span>
-              <ExternalLink className="w-4 h-4" />
+              <div className="w-11 h-11 rounded-xl bg-[var(--glow-green)]/10 flex items-center justify-center group-hover:bg-[var(--glow-green)]/20 transition-colors">
+                <MessageCircle className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <span className="font-medium block">Chat on WhatsApp</span>
+                <span className="text-xs text-[var(--text-muted)]">Test your WhatsApp link</span>
+              </div>
+              <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
             </a>
           </div>
         )}
 
         {/* How it works */}
-        <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-3">
-          <p className="text-sm font-medium">How it works</p>
-          <ol className="text-sm text-[var(--text-secondary)] space-y-2">
-            <li className="flex items-start gap-2">
-              <span className="text-[var(--glow-purple)] font-bold">1.</span>
-              Customer browses your store and adds items to cart
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[var(--glow-purple)] font-bold">2.</span>
-              They tap &quot;Order via WhatsApp&quot; to send you a pre-filled
-              message
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[var(--glow-purple)] font-bold">3.</span>
-              You receive the order and confirm via WhatsApp
-            </li>
+        <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+          <p className="text-sm font-semibold mb-5">How it works</p>
+          <ol className="space-y-5">
+            {[
+              {
+                step: "1",
+                title: "Customer browses",
+                desc: "They browse your store and add items to cart",
+              },
+              {
+                step: "2",
+                title: "They order",
+                desc: 'They tap "Order via WhatsApp" to send you a pre-filled message',
+              },
+              {
+                step: "3",
+                title: "You confirm",
+                desc: "You receive the order and confirm via WhatsApp",
+              },
+            ].map((item, i) => (
+              <li key={i} className="flex items-start gap-4">
+                <div className="w-8 h-8 rounded-lg bg-[var(--glow-purple)]/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-[var(--glow-purple)]">{item.step}</span>
+                </div>
+                <div>
+                  <p className="font-medium text-sm">{item.title}</p>
+                  <p className="text-sm text-[var(--text-muted)] mt-0.5">{item.desc}</p>
+                </div>
+              </li>
+            ))}
           </ol>
         </div>
 
-        <div className="flex gap-3">
+        {/* Actions */}
+        <div className="flex gap-4 pt-2">
           <button
             type="button"
             onClick={handleSkip}
             disabled={loading}
-            className="flex-1 py-3 rounded-xl border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)] transition-colors disabled:opacity-50"
+            className="flex-1 py-4 rounded-xl border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)] transition-all font-medium disabled:opacity-50"
           >
             Skip for now
           </button>
@@ -146,12 +174,18 @@ export function WhatsAppConnectStep({
             type="button"
             onClick={handleFinish}
             disabled={loading}
-            className="flex-1 glow-button disabled:opacity-50"
+            className="flex-1 glow-button !py-4 group"
           >
             {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Finishing...
+              </span>
             ) : (
-              "Complete Setup"
+              <span className="flex items-center gap-2">
+                <Check className="w-5 h-5" />
+                Complete Setup
+              </span>
             )}
           </button>
         </div>

@@ -218,3 +218,66 @@ export async function getOrderById(id: string) {
   if (error) throw error;
   return data;
 }
+
+export async function getReviewsByProductId(productId: string) {
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*")
+    .eq("product_id", productId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getReviewsByStoreId(storeId: string) {
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*")
+    .eq("store_id", storeId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createReview(review: {
+  product_id: string;
+  store_id: string;
+  reviewer_name: string;
+  rating: number;
+  comment?: string;
+}) {
+  const { data, error } = await supabase
+    .from("reviews")
+    .insert(review)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getProductRating(productId: string) {
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("rating")
+    .eq("product_id", productId);
+
+  if (error) throw error;
+
+  if (!data || data.length === 0) {
+    return { count: 0, average: 0 };
+  }
+
+  const sum = data.reduce((acc, r) => acc + r.rating, 0);
+  return {
+    count: data.length,
+    average: sum / data.length,
+  };
+}
+
+export async function deleteReview(id: string) {
+  const { error } = await supabase.from("reviews").delete().eq("id", id);
+  if (error) throw error;
+}

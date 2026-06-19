@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Product } from "@/types";
+import { Product, ProductWithRating } from "@/types";
 import { ShoppingBag, Plus } from "lucide-react";
+import { RatingDisplay } from "./RatingDisplay";
 
 interface ProductCardProps {
-  product: Product;
+  product: ProductWithRating;
   onAddToCart: (product: Product) => void;
   storeId?: string;
 }
@@ -51,6 +52,14 @@ export function ProductCard({ product, onAddToCart, storeId }: ProductCardProps)
             {product.name}
           </h3>
         </Link>
+
+        {/* Rating */}
+        {product.review_count !== undefined && product.review_count > 0 && (
+          <RatingDisplay
+            rating={product.avg_rating || 0}
+            count={product.review_count}
+          />
+        )}
 
         <div className="flex items-center justify-between gap-2">
           <span className="price-display text-base sm:text-lg">

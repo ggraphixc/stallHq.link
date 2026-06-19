@@ -1,5 +1,6 @@
 -- StallHq Database Schema
 -- Run this in your Supabase SQL Editor
+-- This script is idempotent - safe to run multiple times
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
@@ -88,11 +89,27 @@ create table if not exists analytics (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Reviews table for product ratings and feedback
+create table if not exists reviews (
+  id uuid default uuid_generate_v4() primary key,
+  product_id uuid references products(id) on delete cascade not null,
+  store_id uuid references stores(id) on delete cascade not null,
+  reviewer_name varchar(255) not null,
+  rating integer not null check (rating >= 1 and rating <= 5),
+  comment text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- Indexes for analytics
 create index if not exists idx_analytics_store_id on analytics(store_id);
 create index if not exists idx_analytics_event_type on analytics(event_type);
 create index if not exists idx_analytics_created_at on analytics(created_at);
 create index if not exists idx_analytics_store_event on analytics(store_id, event_type);
+
+-- Indexes for reviews
+create index if not exists idx_reviews_product_id on reviews(product_id);
+create index if not exists idx_reviews_store_id on reviews(store_id);
+create index if not exists idx_reviews_created_at on reviews(created_at);
 
 -- Row Level Security (RLS)
 -- Enable RLS on all tables
@@ -101,6 +118,38 @@ alter table products enable row level security;
 alter table analytics enable row level security;
 alter table product_variants enable row level security;
 alter table orders enable row level security;
+alter table reviews enable row level security;
+
+-- Drop existing policies before recreating
+drop policy if exists "Public can view stores" on stores;
+drop policy if exists "Users can insert stores" on stores;
+drop policy if exists "Users can update their own store" on stores;
+
+drop policy if exists "Public can view in-stock products" on products;
+drop policy if exists "Store owners can insert products" on products;
+drop policy if exists "Store owners can update their products" on products;
+drop policy if exists "Store owners can delete their products" on products;
+
+drop policy if exists "Public can view product variants" on product_variants;
+drop policy if exists "Store owners can manage product variants" on product_variants;
+
+drop policy if exists "Store owners can view their orders" on orders;
+drop policy if exists "Anyone can create orders" on orders;
+drop policy if exists "Store owners can update their orders" on orders;
+
+drop policy if exists "Anyone can insert analytics" on analytics;
+drop policy if exists "Store owners can view own analytics" on analytics;
+
+drop policy if exists "Public can view reviews" on reviews;
+drop policy if exists "Anyone can create reviews" on reviews;
+drop policy if exists "Store owners can delete reviews" on reviews;
+
+drop policy if exists "Public read access for products" on storage.objects;
+drop policy if exists "Public read access for store assets" on storage.objects;
+drop policy if exists "Authenticated upload to products" on storage.objects;
+drop policy if exists "Authenticated upload to store-assets" on storage.objects;
+drop policy if exists "Users can update own uploads" on storage.objects;
+drop policy if exists "Users can delete own uploads" on storage.objects;
 
 -- Public read access for stores (anyone can view a store by slug)
 create policy "Public can view stores"
@@ -242,6 +291,28 @@ create policy "Store owners can view own analytics"
     exists (
       select 1 from stores
       where stores.id = analytics.store_id
+      and stores.user_id = auth.uid()
+    )
+  );
+
+-- Reviews policies
+-- Public can view reviews for any product
+create policy "Public can view reviews"
+  on reviews for select
+  using (true);
+
+-- Anyone can create reviews (anonymous marketplace)
+create policy "Anyone can create reviews"
+  on reviews for insert
+  with check (true);
+
+-- Store owners can delete reviews on their products
+create policy "Store owners can delete reviews"
+  on reviews for delete
+  using (
+    exists (
+      select 1 from stores
+      where stores.id = reviews.store_id
       and stores.user_id = auth.uid()
     )
   );

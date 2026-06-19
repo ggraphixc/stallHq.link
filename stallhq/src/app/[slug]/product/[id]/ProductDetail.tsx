@@ -5,6 +5,8 @@ import { useCart } from "@/hooks/useCart";
 import { ShoppingBag, ArrowLeft, Check, Package } from "lucide-react";
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { ReviewForm } from "@/components/ReviewForm";
+import { ReviewList } from "@/components/ReviewList";
 
 interface ProductDetailProps {
   product: Product & {
@@ -261,10 +263,27 @@ export function ProductDetail({ product }: ProductDetailProps) {
             </button>
 
             {!product.in_stock && (
-              <p className="text-center text-red-400 text-sm">
+              <p className="text-center text-[var(--glow-red)] text-sm">
                 This product is currently out of stock
               </p>
             )}
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-12 space-y-8">
+          <div className="border-t border-[var(--border-subtle)] pt-8">
+            <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <ReviewList
+                productId={product.id}
+                storeId={product.store_id}
+              />
+              <ReviewForm
+                productId={product.id}
+                storeId={product.store_id}
+              />
+            </div>
           </div>
         </div>
       </main>
