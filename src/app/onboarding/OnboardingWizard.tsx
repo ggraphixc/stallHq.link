@@ -47,26 +47,26 @@ export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col relative overflow-hidden">
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
       {/* Animated background orbs */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-[var(--glow-purple)]/6 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-[var(--glow-cyan)]/5 rounded-full blur-3xl animate-float" style={{ animationDelay: "-3s" }} />
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: "25%", left: "33%", width: "24rem", height: "24rem", background: "rgba(168,133,247,0.06)", borderRadius: "50%", filter: "blur(48px)", animation: "float 6s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", bottom: "25%", right: "33%", width: "20rem", height: "20rem", background: "rgba(6,182,212,0.05)", borderRadius: "50%", filter: "blur(48px)", animation: "float 6s ease-in-out infinite", animationDelay: "-3s" }} />
       </div>
 
       {/* Header */}
-      <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/80 backdrop-blur-lg relative z-10">
-        <div className="max-w-2xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--glow-purple)] to-[var(--glow-cyan)] flex items-center justify-center shadow-lg shadow-[var(--glow-purple)]/20 group-hover:shadow-[var(--glow-purple)]/40 transition-shadow">
-              <MessageCircle className="w-5 h-5 text-white" />
+      <header style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(var(--bg-primary),0.8)", backdropFilter: "blur(16px)", position: "relative", zIndex: 10 }}>
+        <div style={{ maxWidth: "42rem", margin: "0 auto", padding: "0 1.5rem", height: "4rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none" }}>
+            <div style={{ width: "2.25rem", height: "2.25rem", borderRadius: "0.75rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 24px rgba(168,133,247,0.2)" }}>
+              <MessageCircle style={{ width: "1.25rem", height: "1.25rem", color: "white" }} />
             </div>
-            <span className="font-bold text-lg text-gradient">StallHq</span>
+            <span style={{ fontWeight: 700, fontSize: "1.125rem" }} className="text-gradient">StallHq</span>
           </Link>
           {currentStep < STEPS.length - 1 && (
             <button
               onClick={handleSkip}
-              className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-4 py-2 rounded-lg hover:bg-[var(--bg-card)]"
+              style={{ fontSize: "0.875rem", color: "var(--text-muted)", padding: "0.5rem 1rem", borderRadius: "0.5rem", border: "none", background: "transparent", cursor: "pointer" }}
             >
               Skip for now
             </button>
@@ -75,13 +75,13 @@ export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
       </header>
 
       {/* Progress */}
-      <div className="max-w-2xl mx-auto w-full px-6 pt-10 relative z-10">
+      <div style={{ maxWidth: "42rem", width: "100%", margin: "0 auto", padding: "2.5rem 1.5rem 0", position: "relative", zIndex: 10 }}>
         <StepIndicator steps={STEPS} currentStep={currentStep} />
       </div>
 
       {/* Content */}
-      <main className="flex-1 flex items-center justify-center px-6 py-12 relative z-10">
-        <div className="w-full max-w-lg mx-auto">
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem 1.5rem", position: "relative", zIndex: 10 }}>
+        <div style={{ width: "100%", maxWidth: "32rem", margin: "0 auto" }}>
           {currentStep === 0 && (
             <StoreDetailsStep
               existingStore={store}
@@ -106,8 +106,8 @@ export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-primary)]/80 backdrop-blur-lg py-5 relative z-10">
-        <p className="text-center text-xs text-[var(--text-muted)]">
+      <footer style={{ borderTop: "1px solid var(--border-subtle)", background: "rgba(var(--bg-primary),0.8)", backdropFilter: "blur(16px)", padding: "1.25rem 0", position: "relative", zIndex: 10 }}>
+        <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--text-muted)" }}>
           Step {currentStep + 1} of {STEPS.length}
         </p>
       </footer>

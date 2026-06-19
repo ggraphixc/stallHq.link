@@ -100,22 +100,22 @@ export function DashboardClient({
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       {/* Header */}
-      <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/80 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
+      <header style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(var(--bg-primary),0.8)", backdropFilter: "blur(16px)", position: "sticky", top: 0, zIndex: 40 }}>
+        <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 1rem", height: "3.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
             <StoreAvatar name={store.name} size="md" />
-            <div className="min-w-0">
-              <h1 className="font-bold text-sm sm:text-base truncate">{store.name}</h1>
-              <p className="text-[10px] sm:text-xs text-[var(--text-muted)] truncate">
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ fontWeight: 700, fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{store.name}</h1>
+              <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 stallhq.link/{store.slug}
               </p>
             </div>
           </div>
 
           {/* Desktop actions */}
-          <div className="hidden sm:flex items-center gap-1.5">
+          <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }} className="hidden sm:flex">
             {[
               { icon: Share2, label: "Share", onClick: () => setShowShareCard(true) },
               { icon: BarChart3, label: "Analytics", onClick: () => setShowAnalytics(true) },
@@ -128,11 +128,11 @@ export function DashboardClient({
                 className="icon-button"
                 title={label}
               >
-                <Icon className="w-4 h-4" />
+                <Icon style={{ width: "1rem", height: "1rem" }} />
               </button>
             ))}
 
-            <div className="w-px h-5 bg-[var(--border-subtle)] mx-1" />
+            <div style={{ width: "1px", height: "1.25rem", background: "var(--border-subtle)", margin: "0 0.25rem" }} />
 
             <a
               href={`/${store.slug}`}
@@ -141,40 +141,40 @@ export function DashboardClient({
               className="icon-button"
               title="View Store"
             >
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink style={{ width: "1rem", height: "1rem" }} />
             </a>
             <button
               onClick={() => setShowSettings(true)}
               className="icon-button"
               title="Settings"
             >
-              <Settings className="w-4 h-4" />
+              <Settings style={{ width: "1rem", height: "1rem" }} />
             </button>
             <button
               onClick={handleLogout}
               className="icon-button"
               title="Logout"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut style={{ width: "1rem", height: "1rem" }} />
             </button>
           </div>
 
           {/* Mobile menu */}
-          <div className="sm:hidden relative">
+          <div style={{ position: "relative" }} className="sm:hidden">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="icon-button"
             >
-              <MoreVertical className="w-5 h-5" />
+              <MoreVertical style={{ width: "1.25rem", height: "1.25rem" }} />
             </button>
 
             {showMobileMenu && (
               <>
                 <div
-                  className="fixed inset-0 z-40"
+                  style={{ position: "fixed", inset: 0, zIndex: 40 }}
                   onClick={() => setShowMobileMenu(false)}
                 />
-                <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl shadow-2xl z-50 py-1.5 scale-in overflow-hidden">
+                <div className="scale-in" style={{ position: "absolute", right: 0, top: "100%", marginTop: "0.5rem", width: "12rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", zIndex: 50, padding: "0.375rem 0", overflow: "hidden" }}>
                   {[
                     { icon: Share2, label: "Share Store", onClick: () => { setShowShareCard(true); setShowMobileMenu(false); } },
                     { icon: BarChart3, label: "Analytics", onClick: () => { setShowAnalytics(true); setShowMobileMenu(false); } },
@@ -185,36 +185,36 @@ export function DashboardClient({
                     <button
                       key={label}
                       onClick={onClick}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-colors"
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon style={{ width: "1rem", height: "1rem" }} />
                       {label}
                     </button>
                   ))}
 
-                  <div className="h-px bg-[var(--border-subtle)] my-1.5" />
+                  <div style={{ height: "1px", background: "var(--border-subtle)", margin: "0.375rem 0" }} />
 
                   <a
                     href={`/${store.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-colors"
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none" }}
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink style={{ width: "1rem", height: "1rem" }} />
                     View Store
                   </a>
                   <button
                     onClick={() => { setShowSettings(true); setShowMobileMenu(false); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-colors"
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
                   >
-                    <Settings className="w-4 h-4" />
+                    <Settings style={{ width: "1rem", height: "1rem" }} />
                     Settings
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[var(--glow-red)] hover:bg-[var(--glow-red-dim)] transition-colors"
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--glow-red)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut style={{ width: "1rem", height: "1rem" }} />
                     Logout
                   </button>
                 </div>
@@ -224,24 +224,24 @@ export function DashboardClient({
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <main style={{ maxWidth: "80rem", margin: "0 auto", padding: "2rem 1rem" }}>
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-10">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem", marginBottom: "2.5rem" }}>
           <StatCard
-            icon={<Package className="w-4 h-4" />}
+            icon={<Package style={{ width: "1rem", height: "1rem" }} />}
             label="Products"
             value={products.length}
             accent="purple"
           />
           <StatCard
-            icon={<LinkIcon className="w-4 h-4" />}
+            icon={<LinkIcon style={{ width: "1rem", height: "1rem" }} />}
             label="Store URL"
             value={
               <a
                 href={`/${store.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-semibold text-[var(--glow-purple)] hover:underline truncate block"
+                style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--glow-purple)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", textDecoration: "none" }}
               >
                 stallhq.link/{store.slug}
               </a>
@@ -252,14 +252,15 @@ export function DashboardClient({
 
         {/* Products */}
         <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold">Products</h2>
-            <div className="flex items-center gap-2">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+            <h2 style={{ fontSize: "1.125rem", fontWeight: 700 }}>Products</h2>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <button
                 onClick={() => setShowBatchUpload(true)}
-                className="glow-button-secondary !px-3 !py-2.5 !text-xs !min-h-[44px]"
+                className="glow-button-secondary"
+                style={{ padding: "0.625rem 0.75rem", fontSize: "0.75rem" }}
               >
-                <Upload className="w-3.5 h-3.5" />
+                <Upload style={{ width: "0.875rem", height: "0.875rem" }} />
                 <span className="hidden sm:inline">Batch Upload</span>
               </button>
               <button
@@ -267,7 +268,8 @@ export function DashboardClient({
                   setEditingProduct(null);
                   setShowProductForm(true);
                 }}
-                className="glow-button !px-3 !py-2.5 !text-xs !min-h-[44px]"
+                className="glow-button"
+                style={{ padding: "0.625rem 0.75rem", fontSize: "0.75rem" }}
               >
                 + Add Product
               </button>

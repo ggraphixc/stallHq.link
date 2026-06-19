@@ -86,36 +86,36 @@ export function ProductDetail({ product }: ProductDetailProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[var(--bg-primary)]/80 backdrop-blur-lg border-b border-[var(--border-subtle)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center">
+      <header style={{ position: "sticky", top: 0, zIndex: 40, background: "rgba(var(--bg-primary),0.8)", backdropFilter: "blur(16px)", borderBottom: "1px solid var(--border-subtle)" }}>
+        <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 1rem", height: "4rem", display: "flex", alignItems: "center" }}>
           <Link
             href={`/${product.stores.slug}`}
-            className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-secondary)", textDecoration: "none" }}
           >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm font-medium">{product.stores.name}</span>
+            <ArrowLeft style={{ width: "1.25rem", height: "1.25rem" }} />
+            <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>{product.stores.name}</span>
           </Link>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <main style={{ maxWidth: "56rem", margin: "0 auto", padding: "2rem 1rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 20rem), 1fr))", gap: "2rem" }}>
           {/* Image Gallery */}
-          <div className="space-y-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {/* Main Image */}
-            <div className="ambient-card overflow-hidden">
-              <div className="image-glow aspect-square bg-[var(--bg-secondary)]">
+            <div className="ambient-card" style={{ overflow: "hidden" }}>
+              <div className="image-glow" style={{ aspectRatio: "1/1", background: "var(--bg-secondary)" }}>
                 {allImages.length > 0 ? (
                   <img
                     src={allImages[selectedImageIndex]}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ShoppingBag className="w-24 h-24 text-[var(--text-muted)]" />
+                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <ShoppingBag style={{ width: "6rem", height: "6rem", color: "var(--text-muted)" }} />
                   </div>
                 )}
               </div>
@@ -123,21 +123,27 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
             {/* Thumbnails */}
             {allImages.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
+              <div style={{ display: "flex", gap: "0.5rem", overflowX: "auto", paddingBottom: "0.5rem" }}>
                 {allImages.map((img, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImageIndex === index
-                        ? "border-[var(--glow-purple)]"
-                        : "border-transparent hover:border-[var(--border-subtle)]"
-                    }`}
+                    style={{
+                      flexShrink: 0,
+                      width: "4rem",
+                      height: "4rem",
+                      borderRadius: "0.5rem",
+                      overflow: "hidden",
+                      border: `2px solid ${selectedImageIndex === index ? "var(--glow-purple)" : "transparent"}`,
+                      background: "transparent",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
                   >
                     <img
                       src={img}
                       alt={`${product.name} ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   </button>
                 ))}
@@ -146,37 +152,37 @@ export function ProductDetail({ product }: ProductDetailProps) {
           </div>
 
           {/* Details */}
-          <div className="space-y-6">
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             <div>
               {product.category && (
-                <span className="category-tag mb-3 inline-block">
+                <span className="category-tag" style={{ marginBottom: "0.75rem", display: "inline-block" }}>
                   {product.category}
                 </span>
               )}
-              <h1 className="text-2xl sm:text-3xl font-extrabold mt-2">{product.name}</h1>
+              <h1 style={{ fontSize: "clamp(1.5rem,4vw,1.875rem)", fontWeight: 800, marginTop: "0.5rem" }}>{product.name}</h1>
               {product.description && (
-                <p className="text-[var(--text-secondary)] mt-3 leading-relaxed">
+                <p style={{ color: "var(--text-secondary)", marginTop: "0.75rem", lineHeight: 1.6 }}>
                   {product.description}
                 </p>
               )}
             </div>
 
-            <div className="price-display text-3xl sm:text-4xl">
+            <div className="price-display" style={{ fontSize: "clamp(1.875rem,4vw,2.25rem)" }}>
               ₦{displayPrice.toLocaleString()}
             </div>
 
             {/* Variant Selection */}
             {Object.entries(variantGroups).map(([groupName, options]) => (
-              <div key={groupName} className="space-y-2">
-                <label className="text-sm font-medium">
+              <div key={groupName} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <label style={{ fontSize: "0.875rem", fontWeight: 500 }}>
                   {groupName}
                   {selectedVariants[groupName] && (
-                    <span className="ml-2 text-[var(--glow-green)]">
+                    <span style={{ marginLeft: "0.5rem", color: "var(--glow-green)" }}>
                       {selectedVariants[groupName]}
                     </span>
                   )}
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                   {options.map((variant) => {
                     const isSelected =
                       selectedVariants[groupName] === variant.option_value;
@@ -192,17 +198,21 @@ export function ProductDetail({ product }: ProductDetailProps) {
                           })
                         }
                         disabled={isOutOfStock}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                          isSelected
-                            ? "bg-[var(--glow-purple)] text-white"
-                            : isOutOfStock
-                            ? "bg-[var(--bg-card)] text-[var(--text-muted)] opacity-50 cursor-not-allowed"
-                            : "bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]/80"
-                        }`}
+                        style={{
+                          padding: "0.5rem 1rem",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                          fontWeight: 500,
+                          background: isSelected ? "var(--glow-purple)" : "var(--bg-card)",
+                          color: isSelected ? "white" : isOutOfStock ? "var(--text-muted)" : "var(--text-secondary)",
+                          opacity: isOutOfStock ? 0.5 : 1,
+                          cursor: isOutOfStock ? "not-allowed" : "pointer",
+                          border: "none",
+                        }}
                       >
                         {variant.option_value}
                         {variant.price !== null && (
-                          <span className="ml-1 text-xs opacity-75">
+                          <span style={{ marginLeft: "0.25rem", fontSize: "0.75rem", opacity: 0.75 }}>
                             (+₦{variant.price.toLocaleString()})
                           </span>
                         )}
@@ -215,8 +225,8 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
             {/* Stock Info */}
             {variants.length > 0 && allVariantsSelected && (
-              <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
-                <Package className="w-4 h-4" />
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--text-muted)" }}>
+                <Package style={{ width: "1rem", height: "1rem" }} />
                 <span>
                   {variants.find((v) =>
                     Object.entries(selectedVariants).every(
@@ -230,8 +240,8 @@ export function ProductDetail({ product }: ProductDetailProps) {
             )}
 
             {variants.length === 0 && (
-              <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
-                <Package className="w-4 h-4" />
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--text-muted)" }}>
+                <Package style={{ width: "1rem", height: "1rem" }} />
                 <span>{product.in_stock ? "In stock" : "Out of stock"}</span>
               </div>
             )}
@@ -243,27 +253,31 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 !product.in_stock ||
                 (variants.length > 0 && !allVariantsSelected)
               }
-              className={`glow-button w-full !py-4 text-lg ${
-                added ? "!bg-[var(--glow-green)]" : ""
-              }`}
+              className="glow-button"
+              style={{
+                width: "100%",
+                padding: "1rem",
+                fontSize: "1.125rem",
+                ...(added ? { background: "var(--glow-green)" } : {}),
+              }}
             >
               {added ? (
                 <>
-                  <Check className="w-5 h-5" />
+                  <Check style={{ width: "1.25rem", height: "1.25rem" }} />
                   Added to Cart
                 </>
               ) : variants.length > 0 && !allVariantsSelected ? (
                 "Select all options"
               ) : (
                 <>
-                  <ShoppingBag className="w-5 h-5" />
+                  <ShoppingBag style={{ width: "1.25rem", height: "1.25rem" }} />
                   Add to Cart
                 </>
               )}
             </button>
 
             {!product.in_stock && (
-              <p className="text-center text-[var(--glow-red)] text-sm">
+              <p style={{ textAlign: "center", color: "var(--glow-red)", fontSize: "0.875rem" }}>
                 This product is currently out of stock
               </p>
             )}
@@ -271,10 +285,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
         </div>
 
         {/* Reviews Section */}
-        <div className="mt-14 space-y-10">
-          <div className="border-t border-[var(--border-subtle)] pt-10">
-            <h2 className="text-xl sm:text-2xl font-bold mb-8">Customer Reviews</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
+        <div style={{ marginTop: "3.5rem" }}>
+          <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "2.5rem" }}>
+            <h2 style={{ fontSize: "clamp(1.25rem,3vw,1.5rem)", fontWeight: 700, marginBottom: "2rem" }}>Customer Reviews</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 24rem), 1fr))", gap: "2rem" }}>
               <ReviewList
                 productId={product.id}
                 storeId={product.store_id}

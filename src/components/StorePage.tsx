@@ -47,44 +47,45 @@ export function StorePage({ store, products }: StorePageProps) {
   }, [store.theme]);
 
   return (
-    <div className="min-h-screen" style={themeStyles}>
+    <div style={{ minHeight: "100vh", ...themeStyles }}>
       <StoreHeader store={store} />
 
       {/* Banner */}
       {store.banner_url && (
-        <div className="relative h-48 sm:h-56 md:h-64 overflow-hidden">
+        <div style={{ position: "relative", height: "14rem", overflow: "hidden" }}>
           <img
             src={store.banner_url}
             alt={`${store.name} banner`}
-            className="w-full h-full object-cover"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
           <div
-            className="absolute inset-0"
             style={{
+              position: "absolute",
+              inset: 0,
               background: "linear-gradient(to top, var(--bg-primary) 0%, transparent 60%)",
             }}
           />
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <main style={{ maxWidth: "80rem", margin: "0 auto", padding: "2rem 1rem" }}>
         {/* Store Info */}
-        <div className={`mb-10 ${store.banner_url ? "-mt-16 relative z-10" : ""}`}>
-          <div className="flex items-start gap-4">
+        <div style={{ marginBottom: "2.5rem", ...(store.banner_url ? { marginTop: "-4rem", position: "relative", zIndex: 10 } : {}) }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
             <StoreAvatar
               name={store.name}
               logoUrl={store.logo_url}
               size="xl"
               rounded="2xl"
             />
-            <div className="flex-1 min-w-0 pt-1">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{store.name}</h1>
+            <div style={{ flex: 1, minWidth: 0, paddingTop: "0.25rem" }}>
+              <h1 style={{ fontSize: "clamp(1.5rem,4vw,1.875rem)", fontWeight: 800, letterSpacing: "-0.025em" }}>{store.name}</h1>
               {store.description && (
-                <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-2 line-clamp-2">
+                <p style={{ fontSize: "clamp(0.875rem,2vw,1rem)", color: "var(--text-secondary)", marginTop: "0.5rem", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
                   {store.description}
                 </p>
               )}
-              <div className="flex items-center gap-3 mt-4">
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "1rem" }}>
                 <VisitorBadge storeId={store.id} />
                 <StoreHoursBadge storeHours={store.store_hours} />
               </div>
@@ -94,9 +95,9 @@ export function StorePage({ store, products }: StorePageProps) {
 
         {/* Products */}
         <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold">Products</h2>
-            <span className="text-xs text-[var(--text-muted)]">{products.length} items</span>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+            <h2 style={{ fontSize: "1.125rem", fontWeight: 700 }}>Products</h2>
+            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{products.length} items</span>
           </div>
           {products.length > 0 ? (
             <ProductGrid products={products} storeId={store.id} />

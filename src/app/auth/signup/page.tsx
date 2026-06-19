@@ -59,7 +59,7 @@ function Particles() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" style={{ opacity: 0.5 }} />;
+  return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0.5 }} />;
 }
 
 export default function SignupPage() {
@@ -96,45 +96,45 @@ export default function SignupPage() {
   return (
     <>
       <Particles />
-      <div className="min-h-screen flex items-center justify-center px-6 relative z-10">
-        <div className="w-full max-w-sm space-y-6">
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 1.5rem", position: "relative", zIndex: 10 }}>
+        <div style={{ width: "100%", maxWidth: "24rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Logo */}
-          <Link href="/" className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--glow-green)] to-[var(--glow-cyan)] flex items-center justify-center">
-              <MessageCircle className="w-4 h-4 text-white" />
+          <Link href="/" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+            <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-green), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <MessageCircle style={{ width: "1rem", height: "1rem", color: "white" }} />
             </div>
-            <span className="text-lg font-bold text-gradient">stallHq</span>
+            <span style={{ fontSize: "1.125rem", fontWeight: 700 }} className="text-gradient">stallHq</span>
           </Link>
 
           {/* Header */}
-          <div className="text-center space-y-1">
-            <h1 className="text-xl font-bold">Create account</h1>
-            <p className="text-xs text-[var(--text-muted)]">
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <h1 style={{ fontSize: "1.25rem", fontWeight: 700 }}>Create account</h1>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
               Already have an account?{" "}
-              <Link href="/auth/login" className="text-[var(--glow-purple)] hover:underline font-medium">Sign in</Link>
+              <Link href="/auth/login" style={{ color: "var(--glow-purple)", textDecoration: "none", fontWeight: 500 }}>Sign in</Link>
             </p>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="p-3 rounded-lg bg-[var(--glow-red)]/10 border border-[var(--glow-red)]/20 text-[var(--glow-red)] text-xs">
+            <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "var(--glow-red)", fontSize: "0.75rem" }}>
               {error}
             </div>
           )}
 
           {/* Success */}
           {success && (
-            <div className="p-6 rounded-xl border border-[var(--border-subtle)] bg-white/[0.02] backdrop-blur-sm text-center space-y-3">
-              <div className="w-10 h-10 rounded-full bg-[var(--glow-green)]/20 flex items-center justify-center mx-auto">
-                <CheckCircle className="w-5 h-5 text-[var(--glow-green)]" />
+            <div style={{ padding: "1.5rem", borderRadius: "0.75rem", border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)", textAlign: "center", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", background: "rgba(16,185,129,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>
+                <CheckCircle style={{ width: "1.25rem", height: "1.25rem", color: "var(--glow-green)" }} />
               </div>
               <div>
-                <h3 className="text-sm font-bold mb-1">Check your email</h3>
-                <p className="text-xs text-[var(--text-muted)]">
-                  Confirmation link sent to <span className="font-medium">{email}</span>
+                <h3 style={{ fontSize: "0.875rem", fontWeight: 700, marginBottom: "0.25rem" }}>Check your email</h3>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                  Confirmation link sent to <span style={{ fontWeight: 500 }}>{email}</span>
                 </p>
               </div>
-              <button onClick={() => window.location.href = "/auth/login"} className="glow-button w-full !py-3 text-sm">
+              <button onClick={() => window.location.href = "/auth/login"} className="glow-button" style={{ width: "100%", padding: "0.75rem", fontSize: "0.875rem" }}>
                 Go to Sign In
               </button>
             </div>
@@ -142,11 +142,12 @@ export default function SignupPage() {
 
           {/* Form */}
           {!success && (
-            <form onSubmit={handleSignup} className="space-y-3">
-              <div className="space-y-3">
+            <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 <input
                   type="email"
-                  className="ambient-input !py-3 !text-sm"
+                  className="ambient-input"
+                  style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -154,7 +155,8 @@ export default function SignupPage() {
                 />
                 <input
                   type="password"
-                  className="ambient-input !py-3 !text-sm"
+                  className="ambient-input"
+                  style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}
                   placeholder="Password (min 6 characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -165,21 +167,22 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="glow-button w-full !py-3 text-sm"
+                className="glow-button"
+                style={{ width: "100%", padding: "0.75rem", fontSize: "0.875rem" }}
               >
                 {loading ? (
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span style={{ width: "1rem", height: "1rem", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} />
                 ) : (
-                  <span className="flex items-center justify-center gap-2">
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
                     Create Account
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight style={{ width: "1rem", height: "1rem" }} />
                   </span>
                 )}
               </button>
             </form>
           )}
 
-          <p className="text-center text-[10px] text-[var(--text-muted)]">
+          <p style={{ textAlign: "center", fontSize: "0.625rem", color: "var(--text-muted)" }}>
             By creating an account, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>

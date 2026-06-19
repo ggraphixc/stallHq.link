@@ -59,7 +59,7 @@ function Particles() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" style={{ opacity: 0.5 }} />;
+  return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0.5 }} />;
 }
 
 export default function LoginPage() {
@@ -111,46 +111,47 @@ export default function LoginPage() {
   return (
     <>
       <Particles />
-      <div className="min-h-screen flex items-center justify-center px-6 relative z-10">
-        <div className="w-full max-w-sm space-y-6">
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 1.5rem", position: "relative", zIndex: 10 }}>
+        <div style={{ width: "100%", maxWidth: "24rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Logo */}
-          <Link href="/" className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--glow-purple)] to-[var(--glow-cyan)] flex items-center justify-center">
-              <MessageCircle className="w-4 h-4 text-white" />
+          <Link href="/" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+            <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <MessageCircle style={{ width: "1rem", height: "1rem", color: "white" }} />
             </div>
-            <span className="text-lg font-bold text-gradient">stallHq</span>
+            <span style={{ fontSize: "1.125rem", fontWeight: 700 }} className="text-gradient">stallHq</span>
           </Link>
 
           {/* Header */}
-          <div className="text-center space-y-1">
-            <h1 className="text-xl font-bold">Sign in</h1>
-            <p className="text-xs text-[var(--text-muted)]">
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <h1 style={{ fontSize: "1.25rem", fontWeight: 700 }}>Sign in</h1>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
               Don&apos;t have an account?{" "}
-              <Link href="/auth/signup" className="text-[var(--glow-purple)] hover:underline font-medium">Create one</Link>
+              <Link href="/auth/signup" style={{ color: "var(--glow-purple)", textDecoration: "none", fontWeight: 500 }}>Create one</Link>
             </p>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="p-3 rounded-lg bg-[var(--glow-red)]/10 border border-[var(--glow-red)]/20 text-[var(--glow-red)] text-xs">
+            <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "var(--glow-red)", fontSize: "0.75rem" }}>
               {error}
             </div>
           )}
 
           {/* Magic Link Success */}
           {magicSent && (
-            <div className="p-3 rounded-lg bg-[var(--glow-green)]/10 border border-[var(--glow-green)]/20 text-[var(--glow-green)] text-xs flex items-center gap-2">
-              <Mail className="w-4 h-4 flex-shrink-0" />
+            <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", color: "var(--glow-green)", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <Mail style={{ width: "1rem", height: "1rem", flexShrink: 0 }} />
               Check your email for the magic link!
             </div>
           )}
 
           {/* Email + Password */}
-          <form onSubmit={handleEmailLogin} className="space-y-3">
-            <div className="space-y-3">
+          <form onSubmit={handleEmailLogin} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <input
                 type="email"
-                className="ambient-input !py-3 !text-sm"
+                className="ambient-input"
+                style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -158,7 +159,8 @@ export default function LoginPage() {
               />
               <input
                 type="password"
-                className="ambient-input !py-3 !text-sm"
+                className="ambient-input"
+                style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -168,24 +170,25 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="glow-button w-full !py-3 text-sm"
+              className="glow-button"
+              style={{ width: "100%", padding: "0.75rem", fontSize: "0.875rem" }}
             >
               {loading ? (
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span style={{ width: "1rem", height: "1rem", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} />
               ) : (
-                <span className="flex items-center justify-center gap-2">
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
                   Sign In
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight style={{ width: "1rem", height: "1rem" }} />
                 </span>
               )}
             </button>
           </form>
 
           {/* Divider */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-[var(--border-subtle)]" />
-            <span className="text-xs text-[var(--text-muted)]">or</span>
-            <div className="flex-1 h-px bg-[var(--border-subtle)]" />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div style={{ flex: 1, height: "1px", background: "var(--border-subtle)" }} />
+            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>or</span>
+            <div style={{ flex: 1, height: "1px", background: "var(--border-subtle)" }} />
           </div>
 
           {/* Magic Link */}
@@ -193,20 +196,20 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={magicLoading}
-              className="w-full py-3 rounded-lg border border-[var(--border-subtle)] bg-white/[0.02] hover:bg-white/[0.04] text-sm font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.02)", color: "var(--text-primary)", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}
             >
               {magicLoading ? (
-                <span className="w-4 h-4 border-2 border-[var(--text-muted)]/30 border-t-[var(--text-muted)] rounded-full animate-spin" />
+                <span style={{ width: "1rem", height: "1rem", border: "2px solid rgba(var(--text-muted),0.3)", borderTopColor: "var(--text-muted)", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} />
               ) : (
                 <>
-                  <Mail className="w-4 h-4" />
+                  <Mail style={{ width: "1rem", height: "1rem" }} />
                   Send Magic Link
                 </>
               )}
             </button>
           </form>
 
-          <p className="text-center text-[10px] text-[var(--text-muted)]">
+          <p style={{ textAlign: "center", fontSize: "0.625rem", color: "var(--text-muted)" }}>
             By signing in, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>

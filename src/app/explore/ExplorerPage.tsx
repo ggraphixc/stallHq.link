@@ -37,44 +37,44 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
   });
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       {/* Header */}
-      <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/80 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--glow-purple)] to-[var(--glow-cyan)] flex items-center justify-center">
-              <span className="text-white font-bold text-sm">S</span>
+      <header style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(var(--bg-primary),0.8)", backdropFilter: "blur(16px)", position: "sticky", top: 0, zIndex: 40 }}>
+        <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 1rem", height: "3.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
+            <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ color: "white", fontWeight: 700, fontSize: "0.875rem" }}>S</span>
             </div>
-            <span className="font-bold text-sm">StallHq</span>
+            <span style={{ fontWeight: 700, fontSize: "0.875rem" }}>StallHq</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <Link
               href="/auth/login"
-              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              style={{ fontSize: "0.75rem", color: "var(--text-secondary)", textDecoration: "none" }}
             >
               Login
             </Link>
-            <Link href="/auth/signup" className="glow-button !px-4 !py-2 !text-xs !min-h-[44px]">
+            <Link href="/auth/signup" className="glow-button" style={{ padding: "0.5rem 1rem", fontSize: "0.75rem" }}>
               Create Store
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+      <main style={{ maxWidth: "80rem", margin: "0 auto", padding: "2.5rem 1rem" }}>
         {/* Hero */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-3">
+        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+          <h1 style={{ fontSize: "clamp(1.875rem,5vw,3rem)", fontWeight: 800, letterSpacing: "-0.025em", marginBottom: "0.75rem" }}>
             Discover{" "}
             <span className="text-gradient">Amazing Stores</span>
           </h1>
-          <p className="text-sm sm:text-base text-[var(--text-secondary)] max-w-xl mx-auto">
+          <p style={{ fontSize: "clamp(0.875rem,2vw,1rem)", color: "var(--text-secondary)", maxWidth: "36rem", margin: "0 auto" }}>
             Browse digital storefronts powered by StallHq
           </p>
         </div>
 
         {/* Search & Filters */}
-        <div className="max-w-xl mx-auto mb-10 space-y-4">
+        <div style={{ maxWidth: "36rem", margin: "0 auto 2.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
           <SearchInput
             value={search}
             onChange={setSearch}
@@ -91,61 +91,61 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
 
         {/* Store Grid */}
         {filteredStores.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 stagger-children">
+          <div className="stagger-children" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: "1.25rem" }}>
             {filteredStores.map((store) => (
               <Link
                 key={store.id}
                 href={`/${store.slug}`}
-                className="ambient-card ambient-card-interactive group"
+                className="ambient-card ambient-card-interactive"
+                style={{ textDecoration: "none", overflow: "hidden" }}
               >
                 {/* Banner */}
-                <div className="h-28 sm:h-32 relative overflow-hidden">
+                <div style={{ height: "7rem", position: "relative", overflow: "hidden" }}>
                   {store.banner_url ? (
                     <img
                       src={store.banner_url}
                       alt={`${store.name} banner`}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }}
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[var(--glow-purple-dim)] to-[var(--glow-cyan-dim)]" />
+                    <div style={{ width: "100%", height: "100%", background: "linear-gradient(to bottom right, var(--glow-purple-dim), var(--glow-cyan-dim))" }} />
                   )}
                   <div
-                    className="absolute inset-0"
-                    style={{ background: "linear-gradient(to top, var(--bg-card), transparent 60%)" }}
+                    style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, var(--bg-card), transparent 60%)" }}
                   />
                 </div>
 
                 {/* Content */}
-                <div className="p-4 -mt-8 relative z-10">
-                  <div className="flex items-end gap-3 mb-3">
+                <div style={{ padding: "1rem", marginTop: "-2rem", position: "relative", zIndex: 10 }}>
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: "0.75rem", marginBottom: "0.75rem" }}>
                     <StoreAvatar
                       name={store.name}
                       logoUrl={store.logo_url}
                       size="lg"
                       rounded="2xl"
                     />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-base truncate group-hover:text-[var(--glow-purple)] transition-colors">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h3 style={{ fontWeight: 700, fontSize: "1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {store.name}
                       </h3>
-                      <p className="text-xs text-[var(--text-muted)]">
+                      <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                         stallhq.link/{store.slug}
                       </p>
                     </div>
                   </div>
 
                   {store.description && (
-                    <p className="text-sm text-[var(--text-secondary)] line-clamp-2 mb-3">
+                    <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", marginBottom: "0.75rem" }}>
                       {store.description}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     {store.category && (
                       <span className="category-tag">{store.category}</span>
                     )}
-                    <span className="text-xs text-[var(--glow-purple)] flex items-center gap-1">
-                      Visit <ArrowRight className="w-3 h-3" />
+                    <span style={{ fontSize: "0.75rem", color: "var(--glow-purple)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                      Visit <ArrowRight style={{ width: "0.75rem", height: "0.75rem" }} />
                     </span>
                   </div>
                 </div>
@@ -154,7 +154,7 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
           </div>
         ) : (
           <EmptyState
-            icon={<StoreIcon className="w-8 h-8" />}
+            icon={<StoreIcon style={{ width: "2rem", height: "2rem" }} />}
             title="No stores found"
             description={
               search || selectedCategory
@@ -172,10 +172,10 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
         )}
 
         {/* CTA */}
-        <div className="mt-20 text-center">
-          <div className="glass-card max-w-lg mx-auto p-8 sm:p-10">
-            <h2 className="text-xl sm:text-2xl font-bold mb-3">Create Your Own Store</h2>
-            <p className="text-sm text-[var(--text-secondary)] mb-8">
+        <div style={{ marginTop: "5rem", textAlign: "center" }}>
+          <div className="glass-card" style={{ maxWidth: "36rem", margin: "0 auto", padding: "2rem" }}>
+            <h2 style={{ fontSize: "clamp(1.25rem,3vw,1.5rem)", fontWeight: 700, marginBottom: "0.75rem" }}>Create Your Own Store</h2>
+            <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: "2rem" }}>
               Set up in minutes. Start selling on WhatsApp today.
             </p>
             <Link href="/auth/signup" className="glow-button">
@@ -186,9 +186,9 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--border-subtle)] mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 text-center">
-          <p className="text-xs text-[var(--text-muted)]">
+      <footer style={{ borderTop: "1px solid var(--border-subtle)", marginTop: "4rem" }}>
+        <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "1.5rem 1rem", textAlign: "center" }}>
+          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
             © {new Date().getFullYear()} StallHq
           </p>
         </div>
