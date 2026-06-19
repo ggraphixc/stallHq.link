@@ -17,7 +17,7 @@ function Particles() {
 
     function resize() {
       canvas!.width = window.innerWidth;
-      canvas!.height = document.documentElement.scrollHeight;
+      canvas!.height = window.innerHeight;
     }
     resize();
     window.addEventListener("resize", resize);
@@ -61,12 +61,12 @@ function Particles() {
 }
 
 const features = [
-  { icon: "$", title: "Zero Cost", desc: "No fees. Ever.", accent: "green" as const },
-  { icon: "📱", title: "Mobile First", desc: "Built for African smartphones.", accent: "purple" as const },
-  { icon: "💬", title: "WhatsApp Orders", desc: "Orders straight to your chat.", accent: "cyan" as const },
-  { icon: "🔗", title: "QR Code Ready", desc: "Print, share, get orders.", accent: "amber" as const },
-  { icon: "📊", title: "Order Tracking", desc: "Pending to delivered.", accent: "purple" as const },
-  { icon: "⚡", title: "Instant Setup", desc: "Live in 60 seconds.", accent: "green" as const },
+  { icon: "$", title: "Zero Cost", desc: "No fees. Ever." },
+  { icon: "📱", title: "Mobile First", desc: "Built for African smartphones." },
+  { icon: "💬", title: "WhatsApp Orders", desc: "Orders straight to your chat." },
+  { icon: "🔗", title: "QR Code Ready", desc: "Print, share, get orders." },
+  { icon: "📊", title: "Order Tracking", desc: "Pending to delivered." },
+  { icon: "⚡", title: "Instant Setup", desc: "Live in 60 seconds." },
 ];
 
 const steps = [
@@ -75,96 +75,97 @@ const steps = [
   { n: "03", title: "Share & Sell", desc: "Share link. Get orders." },
 ];
 
+const sectionStyle: React.CSSProperties = { maxWidth: 720, margin: "0 auto", padding: "5rem 1.5rem" };
+const labelStyle: React.CSSProperties = { textAlign: "center", fontSize: 11, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "2.5rem" };
+
 export default function Home() {
   return (
     <>
       <Particles />
       <main className="relative z-10">
         {/* Hero */}
-        <section className="relative flex flex-col items-center justify-center min-h-[85vh] px-6 text-center">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-[var(--glow-purple)] rounded-full opacity-[0.04] blur-[140px] pointer-events-none" />
-          <div className="relative z-10 max-w-2xl space-y-5 fade-in">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border-subtle)] bg-white/[0.03] backdrop-blur-sm text-xs text-[var(--text-secondary)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--glow-green)] animate-pulse" />
+        <section style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "85vh", padding: "0 1.5rem", textAlign: "center", position: "relative" }}>
+          <div style={{ position: "absolute", top: "25%", left: "50%", transform: "translateX(-50%)", width: 700, height: 400, background: "var(--glow-purple)", borderRadius: "50%", opacity: 0.04, filter: "blur(140px)", pointerEvents: "none" }} />
+          <div style={{ position: "relative", zIndex: 10, maxWidth: 640, display: "flex", flexDirection: "column", gap: "1.25rem" }} className="fade-in">
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: 999, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.03)", fontSize: 12, color: "var(--text-secondary)", alignSelf: "center" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--glow-green)", animation: "pulse 2s infinite" }} />
               Free forever
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
-              Your WhatsApp.
-              <br />
+            <h1 style={{ fontSize: "clamp(2.25rem, 5vw, 3.75rem)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+              Your WhatsApp.<br />
               <span className="text-gradient">Your Store.</span>
             </h1>
-            <p className="text-sm sm:text-base text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
+            <p style={{ fontSize: 14, color: "var(--text-secondary)", maxWidth: 400, margin: "0 auto", lineHeight: 1.6 }}>
               Digital storefront for WhatsApp vendors. Zero cost, instant setup.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-              <Link href="/dashboard" className="glow-button text-sm px-6 py-3">
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", paddingTop: 8, flexWrap: "wrap" }}>
+              <Link href="/dashboard" className="glow-button" style={{ fontSize: 13, padding: "10px 24px" }}>
                 Open Dashboard
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
               </Link>
-              <Link href="/demo-store" className="glow-button-secondary text-sm px-6 py-3">
+              <Link href="/demo-store" className="glow-button-secondary" style={{ fontSize: 13, padding: "10px 24px" }}>
                 View Demo
               </Link>
             </div>
-            <div className="flex items-center justify-center gap-6 pt-2 text-xs text-[var(--text-muted)]">
+            <div style={{ display: "flex", justifyContent: "center", gap: 24, paddingTop: 8, fontSize: 12, color: "var(--text-muted)" }}>
               <span>Zero hosting</span>
-              <span className="w-1 h-1 rounded-full bg-[var(--border-medium)]" />
+              <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--border-medium)", alignSelf: "center" }} />
               <span>60s setup</span>
-              <span className="w-1 h-1 rounded-full bg-[var(--border-medium)]" />
+              <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--border-medium)", alignSelf: "center" }} />
               <span>WhatsApp native</span>
             </div>
           </div>
         </section>
 
         {/* How It Works */}
-        <section className="relative z-10 max-w-3xl mx-auto px-6 py-20">
-          <p className="text-center text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-[0.2em] mb-10">How It Works</p>
-          <div className="grid grid-cols-3 gap-6">
+        <section style={sectionStyle}>
+          <p style={labelStyle}>How It Works</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", textAlign: "center" }}>
             {steps.map((s) => (
-              <div key={s.n} className="text-center space-y-2">
-                <span className="block text-3xl font-extrabold text-white/[0.06]">{s.n}</span>
-                <h3 className="text-sm font-semibold">{s.title}</h3>
-                <p className="text-xs text-[var(--text-muted)] leading-relaxed">{s.desc}</p>
+              <div key={s.n} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: 28, fontWeight: 800, color: "rgba(255,255,255,0.06)" }}>{s.n}</span>
+                <h3 style={{ fontSize: 14, fontWeight: 600 }}>{s.title}</h3>
+                <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>{s.desc}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Features */}
-        <section className="relative z-10 max-w-3xl mx-auto px-6 py-20">
-          <p className="text-center text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-[0.2em] mb-10">Features</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <section style={sectionStyle}>
+          <p style={labelStyle}>Features</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
             {features.map((f) => (
               <div
                 key={f.title}
-                className="rounded-xl border border-[var(--border-subtle)] bg-white/[0.02] backdrop-blur-sm p-4 sm:p-5 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300"
+                style={{ borderRadius: 12, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.02)", padding: "1rem 1.25rem", transition: "all 0.3s" }}
               >
-                <div className="text-base mb-2">{f.icon}</div>
-                <h3 className="text-sm font-semibold mb-1">{f.title}</h3>
-                <p className="text-xs text-[var(--text-muted)] leading-relaxed">{f.desc}</p>
+                <div style={{ fontSize: 18, marginBottom: 8 }}>{f.icon}</div>
+                <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{f.title}</h3>
+                <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>{f.desc}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* CTA */}
-        <section className="relative z-10 max-w-xl mx-auto px-6 py-20">
-          <div className="text-center space-y-4 rounded-2xl border border-[var(--border-subtle)] bg-white/[0.02] backdrop-blur-sm p-8 sm:p-12">
-            <p className="text-3xl sm:text-4xl font-extrabold">100% Free</p>
-            <p className="text-sm text-[var(--text-secondary)]">No catches. Start selling in 60 seconds.</p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-              <Link href="/dashboard" className="glow-button px-6 py-3 text-sm">Start Selling Now</Link>
-              <Link href="/explore" className="glow-button-secondary px-6 py-3 text-sm">Browse Stores</Link>
+        <section style={{ maxWidth: 520, margin: "0 auto", padding: "5rem 1.5rem" }}>
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, borderRadius: 16, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.02)", padding: "3rem 2rem" }}>
+            <p style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 800 }}>100% Free</p>
+            <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>No catches. Start selling in 60 seconds.</p>
+            <div style={{ display: "flex", gap: 12, paddingTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              <Link href="/dashboard" className="glow-button" style={{ fontSize: 13, padding: "10px 24px" }}>Start Selling Now</Link>
+              <Link href="/explore" className="glow-button-secondary" style={{ fontSize: 13, padding: "10px 24px" }}>Browse Stores</Link>
             </div>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="relative z-10 px-6 py-8 border-t border-[var(--border-subtle)]">
-          <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
+        <footer style={{ padding: "2rem 1.5rem", borderTop: "1px solid var(--border-subtle)" }}>
+          <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "var(--text-muted)", flexWrap: "wrap", gap: 12 }}>
             <span>StallHq &mdash; Built for WhatsApp vendors across Africa.</span>
-            <div className="flex items-center gap-4">
-              <Link href="/explore" className="hover:text-[var(--text-primary)] transition-colors">Explore</Link>
-              <Link href="/dashboard" className="hover:text-[var(--text-primary)] transition-colors">Dashboard</Link>
+            <div style={{ display: "flex", gap: 16 }}>
+              <Link href="/explore" style={{ color: "inherit", textDecoration: "none" }}>Explore</Link>
+              <Link href="/dashboard" style={{ color: "inherit", textDecoration: "none" }}>Dashboard</Link>
             </div>
           </div>
         </footer>
