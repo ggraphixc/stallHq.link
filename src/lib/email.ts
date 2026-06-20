@@ -1,5 +1,5 @@
 const BREVO_API_KEY = process.env.BREVO_API_KEY!;
-const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || "zerupth@gmail.com";
+const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || "ggraphixc@gmail.com";
 const BREVO_SENDER_NAME = "StallHq";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
 
