@@ -1,31 +1,48 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-const FROM_EMAIL = "StallHq <notifications@stallhq.link>";
+const BREVO_API_KEY = process.env.BREVO_API_KEY!;
+const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || "zerupth@gmail.com";
+const BREVO_SENDER_NAME = "StallHq";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
 
-interface OrderItem {
-  product_name: string;
-  variant_name?: string;
-  price: number;
-  quantity: number;
+interface BrevoEmail {
+  to: { email: string; name?: string }[];
+  subject: string;
+  htmlContent: string;
+  textContent?: string;
+  tags?: string[];
 }
 
-function formatStatus(status: string): string {
-  const labels: Record<string, string> = {
-    pending: "Pending",
-    confirmed: "Confirmed",
-    shipped: "Shipped",
-    delivered: "Delivered",
-    cancelled: "Cancelled",
-  };
-  return labels[status] || status;
+async function sendBrevoEmail({ to, subject, htmlContent, textContent, tags }: BrevoEmail) {
+  try {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: { email: BREVO_SENDER_EMAIL, name: BREVO_SENDER_NAME },
+        to,
+        subject,
+        htmlContent,
+        textContent,
+        tags,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("Brevo API error:", error);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("Failed to send email via Brevo:", error);
+    return false;
+  }
 }
 
-function formatCurrency(amount: number): string {
-  return `₦${amount.toLocaleString()}`;
-}
+// ─── Email wrapper (dark ambient theme) ──────────────────────────────────────
 
 function emailWrapper(content: string): string {
   return `
@@ -56,6 +73,30 @@ function emailWrapper(content: string): string {
   `;
 }
 
+// ─── Format helpers ──────────────────────────────────────────────────────────
+
+interface OrderItem {
+  product_name: string;
+  variant_name?: string;
+  price: number;
+  quantity: number;
+}
+
+function formatStatus(status: string): string {
+  const labels: Record<string, string> = {
+    pending: "Pending",
+    confirmed: "Confirmed",
+    shipped: "Shipped",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
+  };
+  return labels[status] || status;
+}
+
+function formatCurrency(amount: number): string {
+  return `\u20a6${amount.toLocaleString()}`;
+}
+
 function buildItemsList(items: OrderItem[]): string {
   return items
     .map((item) => {
@@ -68,6 +109,147 @@ function buildItemsList(items: OrderItem[]): string {
     })
     .join("");
 }
+
+// ─── Auth emails ─────────────────────────────────────────────────────────────
+
+export async function sendVerificationEmail({
+  email,
+  code,
+  name,
+}: {
+  email: string;
+  code: string;
+  name?: string;
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;font-weight:700;">&#9993;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Verify your email</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">StallHq</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting},</p>
+          <p style="margin:12px 0 0;font-size:15px;color:#e0e0e0;line-height:1.6;">Use the code below to verify your email address:</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;text-align:center;">
+          <div style="display:inline-block;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);border-radius:12px;padding:20px 40px;">
+            <span style="font-size:32px;font-weight:800;color:#a78bfa;letter-spacing:8px;">${code}</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.5;">This code expires in 15 minutes. If you didn't create an account, you can safely ignore this email.</p>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `Your verification code: ${code}`,
+    htmlContent: html,
+    tags: ["auth", "verification"],
+  });
+}
+
+export async function sendPasswordResetEmail({
+  email,
+  token,
+  name,
+}: {
+  email: string;
+  token: string;
+  name?: string;
+}) {
+  const resetUrl = `${APP_URL}/auth/reset-password?token=${token}`;
+  const greeting = name ? `Hi ${name}` : "Hi there";
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#ef4444);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;font-weight:700;">&#128274;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Reset your password</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">StallHq</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting},</p>
+          <p style="margin:12px 0 0;font-size:15px;color:#e0e0e0;line-height:1.6;">We received a request to reset your password. Click the button below to set a new one:</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;text-align:center;">
+          <a href="${resetUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Reset Password</a>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.5;">This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: "Reset your StallHq password",
+    htmlContent: html,
+    tags: ["auth", "password_reset"],
+  });
+}
+
+export async function sendWelcomeEmail({
+  email,
+  name,
+}: {
+  email: string;
+  name?: string;
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#10024;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Welcome to StallHq!</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">Your email has been verified</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting},</p>
+          <p style="margin:12px 0 0;font-size:15px;color:#e0e0e0;line-height:1.6;">Your account is ready. Create your store, add products, and start selling on WhatsApp in minutes.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/onboarding" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Create Your Store</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: "Welcome to StallHq!",
+    htmlContent: html,
+    tags: ["auth", "welcome"],
+  });
+}
+
+// ─── Order emails ────────────────────────────────────────────────────────────
 
 export async function sendOrderNotification({
   storeEmail,
@@ -92,18 +274,15 @@ export async function sendOrderNotification({
   const shortId = orderId.slice(0, 8).toUpperCase();
 
   const html = emailWrapper(`
-      <!-- Header -->
       <tr>
         <td style="padding:32px 32px 24px;text-align:center;">
           <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
-            <span style="font-size:20px;">🛒</span>
+            <span style="color:white;font-size:20px;">&#128722;</span>
           </div>
           <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">New Order Received</h1>
           <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
         </td>
       </tr>
-
-      <!-- Order Info -->
       <tr>
         <td style="padding:0 32px 24px;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.15);border-radius:12px;">
@@ -128,8 +307,6 @@ export async function sendOrderNotification({
           </table>
         </td>
       </tr>
-
-      <!-- Items -->
       <tr>
         <td style="padding:0 32px 24px;">
           <table width="100%" cellpadding="0" cellspacing="0">
@@ -142,8 +319,6 @@ export async function sendOrderNotification({
           </table>
         </td>
       </tr>
-
-      <!-- Total -->
       <tr>
         <td style="padding:0 32px 24px;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:12px;">
@@ -154,7 +329,6 @@ export async function sendOrderNotification({
           </table>
         </td>
       </tr>
-
       ${notes ? `<tr>
         <td style="padding:0 32px 24px;">
           <div style="padding:14px 18px;background:rgba(168,85,247,0.06);border-left:3px solid #a855f7;border-radius:0 8px 8px 0;">
@@ -162,8 +336,6 @@ export async function sendOrderNotification({
           </div>
         </td>
       </tr>` : ""}
-
-      <!-- CTA -->
       <tr>
         <td style="padding:8px 32px 32px;text-align:center;">
           <a href="${APP_URL}/dashboard" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View in Dashboard</a>
@@ -171,16 +343,12 @@ export async function sendOrderNotification({
       </tr>
   `);
 
-  try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: storeEmail,
-      subject: `New order #${shortId} from ${customer} - ${storeName}`,
-      html,
-    });
-  } catch (error) {
-    console.error("Failed to send order notification:", error);
-  }
+  return sendBrevoEmail({
+    to: [{ email: storeEmail }],
+    subject: `New order #${shortId} from ${customer} - ${storeName}`,
+    htmlContent: html,
+    tags: ["order", "notification"],
+  });
 }
 
 export async function sendStatusUpdateEmail({
@@ -202,17 +370,16 @@ export async function sendStatusUpdateEmail({
   const statusLabel = formatStatus(status);
 
   const statusConfig: Record<string, { color: string; bg: string; border: string; icon: string; message: string }> = {
-    pending: { color: "#eab308", bg: "rgba(234,179,8,0.08)", border: "rgba(234,179,8,0.15)", icon: "⏳", message: "Your order is being reviewed." },
-    confirmed: { color: "#3b82f6", bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.15)", icon: "✅", message: "Your order has been confirmed!" },
-    shipped: { color: "#a78bfa", bg: "rgba(168,85,247,0.08)", border: "rgba(168,85,247,0.15)", icon: "📦", message: "Your order is on its way!" },
-    delivered: { color: "#22c55e", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.15)", icon: "🎉", message: "Your order has been delivered! Thank you for your purchase." },
-    cancelled: { color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.15)", icon: "❌", message: "Your order has been cancelled. Please contact the store for more details." },
+    pending: { color: "#eab308", bg: "rgba(234,179,8,0.08)", border: "rgba(234,179,8,0.15)", icon: "&#9203;", message: "Your order is being reviewed." },
+    confirmed: { color: "#3b82f6", bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.15)", icon: "&#9989;", message: "Your order has been confirmed!" },
+    shipped: { color: "#a78bfa", bg: "rgba(168,85,247,0.08)", border: "rgba(168,85,247,0.15)", icon: "&#128230;", message: "Your order is on its way!" },
+    delivered: { color: "#22c55e", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.15)", icon: "&#127881;", message: "Your order has been delivered! Thank you for your purchase." },
+    cancelled: { color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.15)", icon: "&#10060;", message: "Your order has been cancelled. Please contact the store for more details." },
   };
 
   const cfg = statusConfig[status] || statusConfig.pending;
 
   const html = emailWrapper(`
-      <!-- Header -->
       <tr>
         <td style="padding:32px 32px 24px;text-align:center;">
           <div style="font-size:40px;margin-bottom:12px;">${cfg.icon}</div>
@@ -220,8 +387,6 @@ export async function sendStatusUpdateEmail({
           <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
         </td>
       </tr>
-
-      <!-- Status Badge -->
       <tr>
         <td style="padding:0 32px 24px;text-align:center;">
           <div style="display:inline-block;background:${cfg.bg};border:1px solid ${cfg.border};border-radius:12px;padding:16px 28px;">
@@ -230,15 +395,11 @@ export async function sendStatusUpdateEmail({
           </div>
         </td>
       </tr>
-
-      <!-- Message -->
       <tr>
         <td style="padding:0 32px 24px;text-align:center;">
           <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${cfg.message}</p>
         </td>
       </tr>
-
-      <!-- Items Summary -->
       <tr>
         <td style="padding:0 32px 24px;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;">
@@ -257,23 +418,17 @@ export async function sendStatusUpdateEmail({
           </table>
         </td>
       </tr>
-
-      <!-- CTA -->
       <tr>
         <td style="padding:8px 32px 32px;text-align:center;">
-          <a href="https://wa.me/${""}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Contact on WhatsApp</a>
+          <a href="https://wa.me/" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Contact on WhatsApp</a>
         </td>
       </tr>
   `);
 
-  try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: customerEmail,
-      subject: `Order #${shortId} ${statusLabel} - ${storeName}`,
-      html,
-    });
-  } catch (error) {
-    console.error("Failed to send status update email:", error);
-  }
+  return sendBrevoEmail({
+    to: [{ email: customerEmail }],
+    subject: `Order #${shortId} ${statusLabel} - ${storeName}`,
+    htmlContent: html,
+    tags: ["order", "status_update"],
+  });
 }

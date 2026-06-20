@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
-import { Mail, ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle } from "lucide-react";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -62,40 +61,35 @@ function Particles() {
   return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0.5 }} />;
 }
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-    if (error) {
-      if (error.message.includes("Email not confirmed")) {
-        // Resend verification code and redirect
-        await fetch("/api/auth/send-verification", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, type: "signup" }),
-        });
-        window.location.href = `/auth/verify-email?email=${encodeURIComponent(email)}`;
-        return;
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Something went wrong");
+      } else {
+        setSent(true);
       }
-      setError(error.message);
-      setLoading(false);
-    } else {
-      window.location.href = "/dashboard";
+    } catch {
+      setError("Network error. Please try again.");
     }
+    setLoading(false);
   };
 
   return (
@@ -103,8 +97,14 @@ export default function LoginPage() {
       <Particles />
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 1.5rem", position: "relative", zIndex: 10 }}>
         <div style={{ width: "100%", maxWidth: "24rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          {/* Back to login */}
+          <Link href="/auth/login" style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-muted)", fontSize: "0.875rem", textDecoration: "none", marginBottom: "0.5rem" }}>
+            <ArrowLeft style={{ width: "1rem", height: "1rem" }} />
+            Back to sign in
+          </Link>
+
           {/* Logo */}
-          <Link href="/" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
             <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <MessageCircle style={{ width: "1rem", height: "1rem", color: "white" }} />
             </div>
@@ -113,10 +113,9 @@ export default function LoginPage() {
 
           {/* Header */}
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-            <h1 style={{ fontSize: "1.25rem", fontWeight: 700 }}>Sign in</h1>
+            <h1 style={{ fontSize: "1.25rem", fontWeight: 700 }}>Reset your password</h1>
             <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-              Don&apos;t have an account?{" "}
-              <Link href="/auth/signup" style={{ color: "var(--glow-purple)", textDecoration: "none", fontWeight: 500 }}>Create one</Link>
+              Enter your email and we&apos;ll send you a reset link
             </p>
           </div>
 
@@ -127,64 +126,53 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Email + Password */}
-          <form onSubmit={handleEmailLogin} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          {/* Success */}
+          {sent && (
+            <div style={{ padding: "1.5rem", borderRadius: "0.75rem", border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)", textAlign: "center", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", background: "rgba(16,185,129,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>
+                <Send style={{ width: "1.25rem", height: "1.25rem", color: "var(--glow-green)" }} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: "0.875rem", fontWeight: 700, marginBottom: "0.25rem" }}>Check your email</h3>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                  We sent a password reset link to <span style={{ fontWeight: 500 }}>{email}</span>
+                </p>
+              </div>
+              <button onClick={() => window.location.href = "/auth/login"} className="glow-button" style={{ width: "100%", padding: "0.75rem", fontSize: "0.875rem" }}>
+                Back to Sign In
+              </button>
+            </div>
+          )}
+
+          {/* Form */}
+          {!sent && (
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <input
                 type="email"
                 className="ambient-input"
                 style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}
-                placeholder="Email"
+                placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <div style={{ position: "relative" }}>
-                <input
-                  type="password"
-                  className="ambient-input"
-                  style={{ padding: "0.75rem 1rem", fontSize: "0.875rem", width: "100%" }}
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <Link
-                  href="/auth/forgot-password"
-                  style={{
-                    position: "absolute",
-                    right: "0.75rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    fontSize: "0.6875rem",
-                    color: "var(--glow-purple)",
-                    textDecoration: "none",
-                  }}
-                >
-                  Forgot?
-                </Link>
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="glow-button"
-              style={{ width: "100%", padding: "0.75rem", fontSize: "0.875rem" }}
-            >
-              {loading ? (
-                <span style={{ width: "1rem", height: "1rem", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} />
-              ) : (
-                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
-                  Sign In
-                  <ArrowRight style={{ width: "1rem", height: "1rem" }} />
-                </span>
-              )}
-            </button>
-          </form>
-
-          <p style={{ textAlign: "center", fontSize: "0.625rem", color: "var(--text-muted)" }}>
-            By signing in, you agree to our Terms of Service and Privacy Policy
-          </p>
+              <button
+                type="submit"
+                disabled={loading}
+                className="glow-button"
+                style={{ width: "100%", padding: "0.75rem", fontSize: "0.875rem" }}
+              >
+                {loading ? (
+                  <span style={{ width: "1rem", height: "1rem", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} />
+                ) : (
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
+                    Send Reset Link
+                    <Send style={{ width: "1rem", height: "1rem" }} />
+                  </span>
+                )}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </>

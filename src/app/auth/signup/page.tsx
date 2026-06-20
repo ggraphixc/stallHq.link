@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
-import { ArrowRight, CheckCircle, MessageCircle } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -63,11 +63,11 @@ function Particles() {
 }
 
 export default function SignupPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -79,18 +79,35 @@ export default function SignupPage() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signUp({
+    // 1. Create user in Supabase
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        data: { name },
+      },
     });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess(true);
+    if (signUpError) {
+      setError(signUpError.message);
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    // 2. Send custom verification code via Brevo
+    const res = await fetch("/api/auth/send-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, type: "signup" }),
+    });
+
+    if (!res.ok) {
+      // Even if email fails, user is created — redirect to verify page
+      // They can resend from there
+    }
+
+    // 3. Redirect to verify-email page
+    window.location.href = `/auth/verify-email?email=${encodeURIComponent(email)}`;
   };
 
   return (
@@ -122,65 +139,54 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* Success */}
-          {success && (
-            <div style={{ padding: "1.5rem", borderRadius: "0.75rem", border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)", textAlign: "center", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", background: "rgba(16,185,129,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>
-                <CheckCircle style={{ width: "1.25rem", height: "1.25rem", color: "var(--glow-green)" }} />
-              </div>
-              <div>
-                <h3 style={{ fontSize: "0.875rem", fontWeight: 700, marginBottom: "0.25rem" }}>Check your email</h3>
-                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                  Confirmation link sent to <span style={{ fontWeight: 500 }}>{email}</span>
-                </p>
-              </div>
-              <button onClick={() => window.location.href = "/auth/login"} className="glow-button" style={{ width: "100%", padding: "0.75rem", fontSize: "0.875rem" }}>
-                Go to Sign In
-              </button>
-            </div>
-          )}
-
           {/* Form */}
-          {!success && (
-            <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <input
-                  type="email"
-                  className="ambient-input"
-                  style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-                <input
-                  type="password"
-                  className="ambient-input"
-                  style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}
-                  placeholder="Password (min 6 characters)"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="glow-button"
-                style={{ width: "100%", padding: "0.75rem", fontSize: "0.875rem" }}
-              >
-                {loading ? (
-                  <span style={{ width: "1rem", height: "1rem", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} />
-                ) : (
-                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
-                    Create Account
-                    <ArrowRight style={{ width: "1rem", height: "1rem" }} />
-                  </span>
-                )}
-              </button>
-            </form>
-          )}
+          <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <input
+                type="text"
+                className="ambient-input"
+                style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}
+                placeholder="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+              <input
+                type="email"
+                className="ambient-input"
+                style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                className="ambient-input"
+                style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}
+                placeholder="Password (min 6 characters)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="glow-button"
+              style={{ width: "100%", padding: "0.75rem", fontSize: "0.875rem" }}
+            >
+              {loading ? (
+                <span style={{ width: "1rem", height: "1rem", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} />
+              ) : (
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
+                  Create Account
+                  <ArrowRight style={{ width: "1rem", height: "1rem" }} />
+                </span>
+              )}
+            </button>
+          </form>
 
           <p style={{ textAlign: "center", fontSize: "0.625rem", color: "var(--text-muted)" }}>
             By creating an account, you agree to our Terms of Service and Privacy Policy
