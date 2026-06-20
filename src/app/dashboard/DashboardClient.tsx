@@ -14,7 +14,7 @@ import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { StatCard } from "@/components/ui/StatCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 import {
   Settings,
   LogOut,
@@ -50,10 +50,7 @@ export function DashboardClient({
   const [showOrders, setShowOrders] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = createClient();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
