@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import { ArrowRight, MessageCircle } from "lucide-react";
 
@@ -69,42 +68,31 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    // 1. Create user in Supabase
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name },
-      },
+    // 1. Create user via server-side API (admin API — no Supabase email)
+    const signupRes = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, name }),
     });
 
-    if (signUpError) {
-      setError(signUpError.message);
+    if (!signupRes.ok) {
+      const data = await signupRes.json();
+      setError(data.error || "Failed to create account");
       setLoading(false);
       return;
     }
 
     // 2. Send custom verification code via Brevo
-    const res = await fetch("/api/auth/send-verification", {
+    await fetch("/api/auth/send-verification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, type: "signup" }),
     });
-
-    if (!res.ok) {
-      // Even if email fails, user is created — redirect to verify page
-      // They can resend from there
-    }
 
     // 3. Redirect to verify-email page
     window.location.href = `/auth/verify-email?email=${encodeURIComponent(email)}`;
