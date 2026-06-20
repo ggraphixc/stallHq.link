@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { Mail, ArrowRight, MessageCircle } from "lucide-react";
 
@@ -68,18 +67,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const supabase = createClient();
-
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-    if (error) {
-      if (error.message.includes("Email not confirmed")) {
-        // Resend verification code and redirect
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (data.error === "email_not_confirmed") {
         await fetch("/api/auth/send-verification", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -88,11 +90,13 @@ export default function LoginPage() {
         window.location.href = `/auth/verify-email?email=${encodeURIComponent(email)}`;
         return;
       }
-      setError(error.message);
+      setError(data.error || "Login failed");
       setLoading(false);
-    } else {
-      window.location.href = "/dashboard";
+      return;
     }
+
+    // Full page reload to /dashboard so middleware picks up the cookies
+    window.location.href = "/dashboard";
   };
 
   return (
