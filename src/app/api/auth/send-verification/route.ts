@@ -59,9 +59,10 @@ export async function POST(request: Request) {
 
     // Send the email
     const name = user.user_metadata?.name || user.user_metadata?.full_name;
-    await sendVerificationEmail({ email, code, name });
+    const emailSent = await sendVerificationEmail({ email, code, name });
+    console.log("[send-verification] Email sent:", emailSent);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, emailSent });
   } catch (error) {
     console.error("Send verification error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
