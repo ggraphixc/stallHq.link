@@ -52,7 +52,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           {/* WhatsApp Chat — icon only */}
           <a
-            href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}`}
+            href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
             target="_blank"
             rel="noopener noreferrer"
             style={{ ...iconBtn, background: "linear-gradient(135deg, #25d366, #128c7e)" }}

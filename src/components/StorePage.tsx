@@ -256,7 +256,7 @@ export function StorePage({ store, products }: StorePageProps) {
 
               {/* WhatsApp CTA */}
               <a
-                href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}`}
+                href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="glow-button whatsapp-button"
@@ -465,7 +465,7 @@ export function StorePage({ store, products }: StorePageProps) {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 <a
-                  href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}`}
+                  href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
