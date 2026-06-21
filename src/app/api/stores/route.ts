@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createStore, getStoreByUserId } from "@/lib/supabase";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/api";
 import { apiRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
 export async function GET(request: Request) {
@@ -10,9 +10,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = await createClient();
 
     const {
       data: { user },
@@ -40,9 +38,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = await createClient();
 
     const {
       data: { user },
@@ -96,9 +92,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = await createClient();
 
     const {
       data: { user },

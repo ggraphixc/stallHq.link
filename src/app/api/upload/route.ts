@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/api";
 
 export async function POST(request: NextRequest) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = await createClient();
 
-    // Check authentication
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -24,7 +21,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
@@ -33,7 +29,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json(
         { error: "File too large. Maximum size is 5MB" },
@@ -41,15 +36,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique filename
     const fileExt = file.name.split(".").pop();
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
-    // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     const fileBuffer = new Uint8Array(arrayBuffer);
 
-    // Upload to Supabase Storage
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(fileName, fileBuffer, {
@@ -65,7 +57,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get public URL
     const { data: urlData } = supabase.storage
       .from(bucket)
       .getPublicUrl(data.path);

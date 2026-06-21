@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createAuthClient } from "@/lib/supabase/api";
 
 // Track an analytics event
 export async function POST(request: NextRequest) {
@@ -49,10 +50,11 @@ export async function GET(request: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const authSupabase = await createAuthClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await authSupabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
