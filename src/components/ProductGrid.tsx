@@ -11,20 +11,9 @@ import { EmptyState } from "@/components/ui/EmptyState";
 interface ProductGridProps {
   products: Product[];
   storeId?: string;
-  isOwner?: boolean;
-  onEdit?: (product: Product) => void;
-  onToggleStock?: (productId: string, currentInStock: boolean) => void;
-  togglingId?: string | null;
 }
 
-export function ProductGrid({
-  products,
-  storeId,
-  isOwner,
-  onEdit,
-  onToggleStock,
-  togglingId,
-}: ProductGridProps) {
+export function ProductGrid({ products, storeId }: ProductGridProps) {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [ratings, setRatings] = useState<Record<string, { count: number; average: number }>>({});
@@ -121,10 +110,6 @@ export function ProductGrid({
             product={product}
             onAddToCart={addItem}
             storeId={storeId}
-            isOwner={isOwner}
-            onEdit={onEdit}
-            onToggleStock={onToggleStock}
-            togglingId={togglingId}
           />
         ))}
       </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { Store, Product } from "@/types";
 import { StoreHeader } from "@/components/StoreHeader";
 import { ProductGrid } from "@/components/ProductGrid";
@@ -120,13 +119,10 @@ const sectionLabel: React.CSSProperties = {
 /* ── Main Component ─────────────────────────────── */
 
 export function StorePage({ store, products }: StorePageProps) {
-  const router = useRouter();
   const { trackVisit } = useAnalytics();
   const supabase = createClient();
 
   const [isOwner, setIsOwner] = useState(false);
-  const [localProducts, setLocalProducts] = useState<Product[]>(products);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"products" | "about">("products");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
 
@@ -145,44 +141,18 @@ export function StorePage({ store, products }: StorePageProps) {
     checkOwner();
   }, [store.user_id, supabase]);
 
-  const handleToggleStock = async (productId: string, currentInStock: boolean) => {
-    setTogglingId(productId);
-    try {
-      const res = await fetch(`/api/products/${productId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ in_stock: !currentInStock }),
-      });
-      if (res.ok) {
-        setLocalProducts((prev) =>
-          prev.map((p) =>
-            p.id === productId ? { ...p, in_stock: !currentInStock } : p
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Error toggling stock:", error);
-    } finally {
-      setTogglingId(null);
-    }
-  };
-
-  const handleEdit = (product: Product) => {
-    router.push(`/dashboard/products/${product.id}`);
-  };
-
   // Categories
   const categories = useMemo(
-    () => Array.from(new Set(localProducts.map((p) => p.category).filter(Boolean))) as string[],
-    [localProducts]
+    () => Array.from(new Set(products.map((p) => p.category).filter(Boolean))) as string[],
+    [products]
   );
 
   const filteredProducts = useMemo(() => {
-    if (!selectedCategory) return localProducts;
-    return localProducts.filter((p) => p.category === selectedCategory);
-  }, [localProducts, selectedCategory]);
+    if (!selectedCategory) return products;
+    return products.filter((p) => p.category === selectedCategory);
+  }, [products, selectedCategory]);
 
-  const inStockCount = localProducts.filter((p) => p.in_stock).length;
+  const inStockCount = products.filter((p) => p.in_stock).length;
 
   const themeStyles = useMemo(() => {
     if (!store.theme) return {};
@@ -313,7 +283,7 @@ export function StorePage({ store, products }: StorePageProps) {
         {/* Tabs */}
         <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1.5rem", borderBottom: "1px solid var(--border-subtle)", paddingBottom: "0" }}>
           {[
-            { key: "products" as const, label: "Products", icon: Package, count: localProducts.length },
+            { key: "products" as const, label: "Products", icon: Package, count: products.length },
             { key: "about" as const, label: "About", icon: StoreIcon },
           ].map(({ key, label, icon: Icon, count }) => (
             <button
@@ -374,7 +344,7 @@ export function StorePage({ store, products }: StorePageProps) {
                     transition: "all 0.2s",
                   }}
                 >
-                  All ({localProducts.length})
+                  All ({products.length})
                 </button>
                 {categories.map((cat) => (
                   <button
@@ -403,7 +373,7 @@ export function StorePage({ store, products }: StorePageProps) {
             {/* Product count */}
             <div style={{ ...sectionLabel, display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
               <span>{filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}</span>
-              {inStockCount < localProducts.length && (
+              {inStockCount < products.length && (
                 <span style={{ color: "var(--text-muted)", fontWeight: 400, textTransform: "none", letterSpacing: "normal", fontSize: "0.6875rem" }}>
                   {inStockCount} active
                 </span>
@@ -415,10 +385,6 @@ export function StorePage({ store, products }: StorePageProps) {
               <ProductGrid
                 products={filteredProducts}
                 storeId={store.id}
-                isOwner={isOwner}
-                onEdit={handleEdit}
-                onToggleStock={handleToggleStock}
-                togglingId={togglingId}
               />
             ) : (
               <div style={{ ...glassCard, padding: "3rem 1.5rem", textAlign: "center" }}>

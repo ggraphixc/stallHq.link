@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Store, StoreHours } from "@/types";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Camera } from "lucide-react";
 import { StoreHoursManager } from "./StoreHoursManager";
 
 interface StoreSettingsProps {
@@ -39,6 +39,33 @@ const hintStyle: React.CSSProperties = {
   marginTop: "0.25rem",
 };
 
+const uploadBox: React.CSSProperties = {
+  position: "relative",
+  width: "100%",
+  borderRadius: "0.75rem",
+  border: "1px dashed var(--border-subtle)",
+  background: "var(--bg-primary)",
+  cursor: "pointer",
+  overflow: "hidden",
+  transition: "border-color 0.2s",
+};
+
+async function compressImage(file: File, maxWidth = 1200, quality = 0.8): Promise<Blob> {
+  if (file.size < 200_000) return file;
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let w = img.width, h = img.height;
+      if (w > maxWidth) { h = (h * maxWidth) / w; w = maxWidth; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      canvas.toBlob((blob) => resolve(blob || file), "image/jpeg", quality);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -48,6 +75,30 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
   const [email, setEmail] = useState(store.email || "");
   const [description, setDescription] = useState(store.description || "");
   const [storeHours, setStoreHours] = useState<StoreHours | null>(store.store_hours || null);
+  const [logoUrl, setLogoUrl] = useState(store.logo_url || "");
+  const [bannerUrl, setBannerUrl] = useState(store.banner_url || "");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+
+  const handleImageUpload = async (file: File, type: "logo" | "banner") => {
+    const setUpload = type === "logo" ? setUploadingLogo : setUploadingBanner;
+    const setUrl = type === "logo" ? setLogoUrl : setBannerUrl;
+    setUpload(true);
+    try {
+      const blob = await compressImage(file, type === "banner" ? 1600 : 400, 0.85);
+      const formData = new FormData();
+      formData.append("file", blob, file.name);
+      formData.append("folder", `stores/${store.id}/${type}`);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      setUrl(data.url);
+    } catch {
+      setError(`Failed to upload ${type}`);
+    } finally {
+      setUpload(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,11 +109,10 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name, slug,
-          whatsapp_number: whatsappNumber,
-          email: email || undefined,
-          description: description || undefined,
+          name, slug, whatsapp_number: whatsappNumber,
+          email: email || undefined, description: description || undefined,
           store_hours: storeHours,
+          logo_url: logoUrl || null, banner_url: bannerUrl || null,
         }),
       });
       const data = await res.json();
@@ -95,6 +145,44 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
               {error}
             </div>
           )}
+
+          {/* Logo Upload */}
+          <div>
+            <label style={labelStyle}>Store Logo</label>
+            <label style={{ ...uploadBox, height: "6rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, "logo"); }} />
+              {uploadingLogo ? (
+                <Loader2 size={20} style={{ color: "var(--text-muted)", animation: "spin 1s linear infinite" }} />
+              ) : logoUrl ? (
+                <img src={logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0, borderRadius: "0.75rem" }} />
+              ) : (
+                <div style={{ textAlign: "center", color: "var(--text-muted)" }}>
+                  <Camera size={20} style={{ margin: "0 auto 0.25rem" }} />
+                  <p style={{ fontSize: "0.75rem" }}>Upload logo</p>
+                </div>
+              )}
+            </label>
+            <p style={hintStyle}>Square recommended. Shown on store card.</p>
+          </div>
+
+          {/* Banner Upload */}
+          <div>
+            <label style={labelStyle}>Store Banner</label>
+            <label style={{ ...uploadBox, height: "8rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, "banner"); }} />
+              {uploadingBanner ? (
+                <Loader2 size={20} style={{ color: "var(--text-muted)", animation: "spin 1s linear infinite" }} />
+              ) : bannerUrl ? (
+                <img src={bannerUrl} alt="Banner" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0, borderRadius: "0.75rem" }} />
+              ) : (
+                <div style={{ textAlign: "center", color: "var(--text-muted)" }}>
+                  <Camera size={20} style={{ margin: "0 auto 0.25rem" }} />
+                  <p style={{ fontSize: "0.75rem" }}>Upload banner</p>
+                </div>
+              )}
+            </label>
+            <p style={hintStyle}>Wide image shown at top of your store page.</p>
+          </div>
 
           <div>
             <label style={labelStyle}>Store Name</label>

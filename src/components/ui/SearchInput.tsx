@@ -10,11 +10,24 @@ interface SearchInputProps {
 
 export function SearchInput({ value, onChange, placeholder = "Search..." }: SearchInputProps) {
   return (
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+    <div style={{ position: "relative" }}>
+      <Search
+        size={16}
+        style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }}
+      />
       <input
         type="text"
-        className="ambient-input pl-10 pr-9"
+        style={{
+          width: "100%",
+          padding: "0.625rem 2.25rem 0.625rem 2.5rem",
+          fontSize: "0.8125rem",
+          background: "var(--bg-primary)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "0.5rem",
+          color: "var(--text-primary)",
+          outline: "none",
+          transition: "border-color 0.2s",
+        }}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -22,10 +35,17 @@ export function SearchInput({ value, onChange, placeholder = "Search..." }: Sear
       {value && (
         <button
           onClick={() => onChange("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+          style={{
+            position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)",
+            background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer",
+            padding: "0.125rem", display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "color 0.15s",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+          onMouseOut={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
           aria-label="Clear search"
         >
-          <X className="w-4 h-4" />
+          <X size={16} />
         </button>
       )}
     </div>

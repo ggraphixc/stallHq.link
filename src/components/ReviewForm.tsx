@@ -9,11 +9,19 @@ interface ReviewFormProps {
   onReviewSubmitted?: () => void;
 }
 
-export function ReviewForm({
-  productId,
-  storeId,
-  onReviewSubmitted,
-}: ReviewFormProps) {
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "0.625rem 0.75rem",
+  fontSize: "0.8125rem",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border-subtle)",
+  borderRadius: "0.5rem",
+  color: "var(--text-primary)",
+  outline: "none",
+  resize: "none",
+};
+
+export function ReviewForm({ productId, storeId, onReviewSubmitted }: ReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [reviewerName, setReviewerName] = useState("");
@@ -26,36 +34,24 @@ export function ReviewForm({
     e.preventDefault();
     setError("");
 
-    if (!reviewerName.trim()) {
-      setError("Please enter your name");
-      return;
-    }
-
-    if (rating === 0) {
-      setError("Please select a rating");
-      return;
-    }
+    if (!reviewerName.trim()) { setError("Please enter your name"); return; }
+    if (rating === 0) { setError("Please select a rating"); return; }
 
     setSubmitting(true);
-
     try {
       const response = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          product_id: productId,
-          store_id: storeId,
-          reviewer_name: reviewerName.trim(),
-          rating,
+          product_id: productId, store_id: storeId,
+          reviewer_name: reviewerName.trim(), rating,
           comment: comment.trim() || undefined,
         }),
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "Failed to submit review");
       }
-
       setSubmitted(true);
       onReviewSubmitted?.();
     } catch (err) {
@@ -67,26 +63,24 @@ export function ReviewForm({
 
   if (submitted) {
     return (
-      <div className="ambient-card p-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-[var(--glow-green)]/20 flex items-center justify-center mx-auto mb-3">
-          <Star className="w-6 h-6 text-[var(--glow-green)]" fill="currentColor" />
+      <div style={{ ...glassCard, padding: "1.5rem", textAlign: "center" }}>
+        <div style={{ width: "3rem", height: "3rem", borderRadius: "50%", background: "rgba(16,185,129,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 0.75rem" }}>
+          <Star size={24} style={{ color: "var(--glow-green)" }} fill="currentColor" />
         </div>
-        <h4 className="font-semibold mb-1">Thanks for your review!</h4>
-        <p className="text-sm text-[var(--text-muted)]">
-          Your feedback helps other customers.
-        </p>
+        <h4 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: "0.25rem" }}>Thanks for your review!</h4>
+        <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Your feedback helps other customers.</p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="ambient-card p-6 space-y-6">
-      <h4 className="font-semibold">Write a Review</h4>
+    <form onSubmit={handleSubmit} style={{ ...glassCard, padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      <h4 style={{ fontSize: "0.9375rem", fontWeight: 600 }}>Write a Review</h4>
 
       {/* Rating Stars */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-[var(--text-secondary)]">Rating</label>
-        <div className="flex gap-1">
+      <div>
+        <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.5rem" }}>Rating</label>
+        <div style={{ display: "flex", gap: "0.125rem" }}>
           {[1, 2, 3, 4, 5].map((value) => (
             <button
               key={value}
@@ -94,14 +88,13 @@ export function ReviewForm({
               onClick={() => setRating(value)}
               onMouseEnter={() => setHoveredRating(value)}
               onMouseLeave={() => setHoveredRating(0)}
-              className="p-1.5 transition-transform hover:scale-110"
+              style={{ padding: "0.25rem", background: "none", border: "none", cursor: "pointer", transform: "scale(1)", transition: "transform 0.15s" }}
+              onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+              onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
               <Star
-                className={`w-7 h-7 transition-colors ${
-                  value <= (hoveredRating || rating)
-                    ? "text-[var(--glow-amber)]"
-                    : "text-[var(--text-muted)]"
-                }`}
+                size={28}
+                style={{ color: value <= (hoveredRating || rating) ? "var(--glow-amber)" : "var(--text-muted)", transition: "color 0.15s" }}
                 fill={value <= (hoveredRating || rating) ? "currentColor" : "none"}
               />
             </button>
@@ -110,57 +103,50 @@ export function ReviewForm({
       </div>
 
       {/* Name */}
-      <div className="space-y-2">
-        <label htmlFor="reviewer-name" className="text-sm font-medium text-[var(--text-secondary)]">
-          Your Name
-        </label>
+      <div>
+        <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.375rem" }}>Your Name</label>
         <input
-          id="reviewer-name"
           type="text"
+          style={inputStyle}
           value={reviewerName}
           onChange={(e) => setReviewerName(e.target.value)}
           placeholder="Enter your name"
-          className="ambient-input"
           maxLength={100}
         />
       </div>
 
       {/* Comment */}
-      <div className="space-y-2">
-        <label htmlFor="review-comment" className="text-sm font-medium text-[var(--text-secondary)]">
-          Comment <span className="text-[var(--text-muted)]">(optional)</span>
+      <div>
+        <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.375rem" }}>
+          Comment <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(optional)</span>
         </label>
         <textarea
-          id="review-comment"
+          style={{ ...inputStyle, minHeight: "5rem" }}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Share your experience with this product..."
           rows={3}
-          className="ambient-input resize-none"
           maxLength={1000}
         />
-        <p className="text-xs text-[var(--text-muted)] text-right">
-          {comment.length}/1000
-        </p>
+        <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", textAlign: "right", marginTop: "0.25rem" }}>{comment.length}/1000</p>
       </div>
 
-      {error && (
-        <p className="text-sm text-[var(--glow-red)]">{error}</p>
-      )}
+      {error && <p style={{ fontSize: "0.8125rem", color: "var(--glow-red)" }}>{error}</p>}
 
       <button
         type="submit"
         disabled={submitting || rating === 0 || !reviewerName.trim()}
-        className="glow-button w-full !py-3"
+        className="glow-button"
+        style={{ width: "100%", padding: "0.75rem", fontSize: "0.8125rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}
       >
         {submitting ? (
-          <span className="flex items-center gap-2">
-            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          <>
+            <span style={{ width: "1rem", height: "1rem", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
             Submitting...
-          </span>
+          </>
         ) : (
           <>
-            <Send className="w-4 h-4" />
+            <Send size={16} />
             Submit Review
           </>
         )}
@@ -168,3 +154,9 @@ export function ReviewForm({
     </form>
   );
 }
+
+const glassCard: React.CSSProperties = {
+  background: "rgba(255,255,255,0.02)",
+  border: "1px solid var(--border-subtle)",
+  borderRadius: "0.75rem",
+};

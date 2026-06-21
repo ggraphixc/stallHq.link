@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const bucket = (formData.get("bucket") as string) || "products";
+    const folder = (formData.get("folder") as string) || "";
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -37,7 +38,9 @@ export async function POST(request: NextRequest) {
     }
 
     const fileExt = file.name.split(".").pop();
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+    const fileName = folder
+      ? `${folder}/${Date.now()}.${fileExt}`
+      : `${user.id}/${Date.now()}.${fileExt}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const fileBuffer = new Uint8Array(arrayBuffer);

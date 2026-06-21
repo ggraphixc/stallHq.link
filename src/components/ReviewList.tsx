@@ -11,15 +11,12 @@ interface ReviewListProps {
 
 function StarRating({ rating }: { rating: number }) {
   return (
-    <div className="flex gap-0.5">
+    <div style={{ display: "flex", gap: "0.0625rem" }}>
       {[1, 2, 3, 4, 5].map((value) => (
         <Star
           key={value}
-          className={`w-4 h-4 ${
-            value <= rating
-              ? "text-[var(--glow-amber)]"
-              : "text-[var(--text-muted)]"
-          }`}
+          size={16}
+          style={{ color: value <= rating ? "var(--glow-amber)" : "var(--text-muted)" }}
           fill={value <= rating ? "currentColor" : "none"}
         />
       ))}
@@ -27,60 +24,47 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function ReviewCard({
-  review,
-  onDelete,
-}: {
-  review: Review;
-  onDelete?: (id: string) => void;
-}) {
+function ReviewCard({ review, onDelete }: { review: Review; onDelete?: (id: string) => void }) {
   const [deleting, setDeleting] = useState(false);
 
   const handleDelete = async () => {
     if (!confirm("Delete this review?")) return;
-
     setDeleting(true);
     try {
       await fetch(`/api/reviews?id=${review.id}`, { method: "DELETE" });
       onDelete?.(review.id);
-    } catch {
-      // Silent fail
-    } finally {
+    } catch { /* Silent */ } finally {
       setDeleting(false);
     }
   };
 
   return (
-    <div className="ambient-card p-4 space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
+    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", padding: "1rem" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <StarRating rating={review.rating} />
-            <span className="font-medium text-sm">{review.reviewer_name}</span>
+            <span style={{ fontSize: "0.8125rem", fontWeight: 600 }}>{review.reviewer_name}</span>
           </div>
-          <p className="text-xs text-[var(--text-muted)]">
-            {new Date(review.created_at).toLocaleDateString("en-NG", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            })}
+          <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+            {new Date(review.created_at).toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric" })}
           </p>
         </div>
         {onDelete && (
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="icon-button !p-1.5 text-[var(--text-muted)] hover:text-[var(--glow-red)]"
+            style={{ padding: "0.375rem", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", borderRadius: "0.375rem", transition: "color 0.15s" }}
+            onMouseOver={(e) => (e.currentTarget.style.color = "var(--glow-red)")}
+            onMouseOut={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
             title="Delete review"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 size={16} />
           </button>
         )}
       </div>
       {review.comment && (
-        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-          {review.comment}
-        </p>
+        <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: "0.75rem" }}>{review.comment}</p>
       )}
     </div>
   );
@@ -99,66 +83,52 @@ export function ReviewList({ productId, storeId }: ReviewListProps) {
         setReviews(data.reviews);
         setSummary(data.summary);
       }
-    } catch {
-      // Silent fail
-    } finally {
+    } catch { /* Silent */ } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchReviews();
-  }, [productId]);
+  useEffect(() => { fetchReviews(); }, [productId]);
 
   const handleReviewDeleted = (id: string) => {
     setReviews((prev) => prev.filter((r) => r.id !== id));
-    // Recalculate summary
     const remaining = reviews.filter((r) => r.id !== id);
     const count = remaining.length;
-    const average =
-      count > 0
-        ? remaining.reduce((sum, r) => sum + r.rating, 0) / count
-        : 0;
+    const average = count > 0 ? remaining.reduce((sum, r) => sum + r.rating, 0) / count : 0;
     setSummary({ count, average: Math.round(average * 10) / 10 });
   };
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="h-8 w-48 bg-[var(--bg-card)] rounded animate-pulse" />
-        <div className="h-24 bg-[var(--bg-card)] rounded animate-pulse" />
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div style={{ height: "2rem", width: "12rem", background: "var(--bg-card)", borderRadius: "0.5rem", opacity: 0.5 }} />
+        <div style={{ height: "6rem", background: "var(--bg-card)", borderRadius: "0.5rem", opacity: 0.5 }} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Rating Summary */}
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       {summary.count > 0 && (
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <StarRating rating={Math.round(summary.average)} />
-            <span className="text-lg font-bold">{summary.average}</span>
+            <span style={{ fontSize: "1.125rem", fontWeight: 700 }}>{summary.average}</span>
           </div>
-          <span className="text-sm text-[var(--text-muted)]">
+          <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
             {summary.count} {summary.count === 1 ? "review" : "reviews"}
           </span>
         </div>
       )}
 
-      {/* Review List */}
       {reviews.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)] text-center py-4">
+        <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", textAlign: "center", padding: "1rem 0" }}>
           No reviews yet. Be the first to review this product!
         </p>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {reviews.map((review) => (
-            <ReviewCard
-              key={review.id}
-              review={review}
-              onDelete={handleReviewDeleted}
-            />
+            <ReviewCard key={review.id} review={review} onDelete={handleReviewDeleted} />
           ))}
         </div>
       )}
