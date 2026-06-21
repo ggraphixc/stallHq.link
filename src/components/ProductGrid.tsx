@@ -38,7 +38,6 @@ export function ProductGrid({
     [products]
   );
 
-  // Fetch ratings for all products
   useEffect(() => {
     const fetchRatings = async () => {
       const ratingPromises = products.map(async (product) => {
@@ -97,7 +96,7 @@ export function ProductGrid({
   }, [productsWithRatings, selectedCategory, searchQuery]);
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       {/* Search */}
       <SearchInput
         value={searchQuery}
@@ -115,7 +114,7 @@ export function ProductGrid({
       )}
 
       {/* Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem" }}>
         {filteredProducts.map((product) => (
           <ProductCard
             key={product.id}

@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/api";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
+
+function getServiceClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -19,7 +27,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    // Verify user owns this product's store
+    // Verify user owns this product's store (auth client for reading)
     const { data: product } = await authSupabase
       .from("products")
       .select("id, store_id, stores(user_id)")
@@ -35,10 +43,13 @@ export async function PATCH(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
+    // Use service role for mutations (bypasses RLS)
+    const serviceSupabase = getServiceClient();
+
     // Extract variants from body
     const { variants, ...productUpdates } = body;
 
-    const { data: updatedProduct, error: updateError } = await authSupabase
+    const { data: updatedProduct, error: updateError } = await serviceSupabase
       .from("products")
       .update(productUpdates)
       .eq("id", id)
@@ -49,13 +60,13 @@ export async function PATCH(
 
     // Handle variants if provided
     if (variants !== undefined) {
-      await authSupabase
+      await serviceSupabase
         .from("product_variants")
         .delete()
         .eq("product_id", id);
 
       if (variants && variants.length > 0) {
-        const { error: variantError } = await authSupabase
+        const { error: variantError } = await serviceSupabase
           .from("product_variants")
           .insert(variants.map((v: { name: string; option_name: string; option_value: string; price?: number; stock?: number; sku?: string }) => ({
             ...v,
@@ -109,13 +120,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
+    // Use service role for mutations
+    const serviceSupabase = getServiceClient();
+
     // Delete variants first, then product
-    await authSupabase
+    await serviceSupabase
       .from("product_variants")
       .delete()
       .eq("product_id", id);
 
-    const { error: deleteError } = await authSupabase
+    const { error: deleteError } = await serviceSupabase
       .from("products")
       .delete()
       .eq("id", id);

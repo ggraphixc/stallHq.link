@@ -11,22 +11,47 @@ interface StoreHeaderProps {
 
 export function StoreHeader({ store }: StoreHeaderProps) {
   return (
-    <header className="sticky top-0 z-40 bg-[var(--bg-primary)]/80 backdrop-blur-xl border-b border-[var(--border-subtle)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-3 min-w-0">
+    <header style={{
+      position: "sticky",
+      top: 0,
+      zIndex: 40,
+      background: "rgba(6,6,11,0.85)",
+      backdropFilter: "blur(16px)",
+      borderBottom: "1px solid var(--border-subtle)",
+    }}>
+      <div style={{
+        maxWidth: "80rem",
+        margin: "0 auto",
+        padding: "0 1rem",
+        height: "3.5rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
           <StoreAvatar name={store.name} logoUrl={store.logo_url} size="md" />
-          <h1 className="font-bold text-sm sm:text-base truncate">{store.name}</h1>
+          <h1 style={{ fontWeight: 700, fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {store.name}
+          </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <a
             href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="glow-button whatsapp-button !px-3 !py-2 !min-h-[44px] !text-xs"
+            className="glow-button whatsapp-button"
+            style={{
+              padding: "0.5rem 0.75rem",
+              fontSize: "0.75rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.375rem",
+              minHeight: "2.25rem",
+            }}
           >
-            <MessageCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Chat</span>
+            <MessageCircle size={16} />
+            <span>Chat</span>
           </a>
           <CartDrawer store={store} />
         </div>
