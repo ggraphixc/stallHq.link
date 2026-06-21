@@ -135,7 +135,7 @@ export function ProductEntryStep({ store, onProductsAdded, onSkip }: ProductEntr
                 required
               />
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.5rem" }}>
                 <div>
                   <label style={labelStyle}>Price (₦)</label>
                   <input

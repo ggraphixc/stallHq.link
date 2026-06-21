@@ -178,7 +178,7 @@ export function StoreDetailsStep({ existingStore, onStoreCreated }: StoreDetails
         </div>
 
         {/* Two columns: Category + Description */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.75rem" }}>
           <div>
             <label style={labelStyle}>Category</label>
             <select

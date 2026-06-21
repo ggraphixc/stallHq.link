@@ -490,7 +490,7 @@ export function EditProductClient({
                     type="button"
                     onClick={() => setAdditionalImages(additionalImages.filter((_, i) => i !== index))}
                     className="sm:!opacity-0 sm:!group-hover:opacity-100"
-                    style={{ position: "absolute", top: "0.25rem", right: "0.25rem", width: "1.25rem", height: "1.25rem", borderRadius: "50%", background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", border: "none", color: "white", cursor: "pointer" }}
+                    style={{ position: "absolute", top: "0.25rem", right: "0.25rem", width: "1.75rem", height: "1.75rem", borderRadius: "50%", background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", border: "none", color: "white", cursor: "pointer" }}
                   >
                     <X size={10} />
                   </button>
@@ -522,7 +522,7 @@ export function EditProductClient({
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="ambient-input" style={{ ...inputStyle, resize: "none" }} rows={3} />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.75rem" }}>
               <div>
                 <label style={labelStyle}>Price (₦)</label>
                 <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="ambient-input" style={inputStyle} min="0" step="0.01" required />
@@ -577,7 +577,7 @@ export function EditProductClient({
                           <span style={{ flex: 1, fontSize: "0.8125rem" }}>{v.option_value}</span>
                           {v.price !== null && <span style={{ fontSize: "0.6875rem", color: "var(--glow-green)" }}>₦{v.price.toLocaleString()}</span>}
                           <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Stock: {v.stock}</span>
-                          <button type="button" onClick={() => removeVariant(v.id)} style={{ width: "1.5rem", height: "1.5rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.25rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
+                          <button type="button" onClick={() => removeVariant(v.id)} style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer", flexShrink: 0 }}>
                             <X size={12} />
                           </button>
                         </div>
@@ -590,7 +590,7 @@ export function EditProductClient({
                 <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                   <h4 style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Add Variants</h4>
                   {drafts.map((draft, i) => (
-                    <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "0.375rem" }}>
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.375rem" }}>
                       <select value={draft.optionName} onChange={(e) => updateDraft(i, "optionName", e.target.value)} className="ambient-input" style={{ ...inputStyle, fontSize: "0.75rem", padding: "0.5rem" }}>
                         {COMMON_OPTIONS.map((o) => <option key={o.name} value={o.name}>{o.name}</option>)}
                         <option value="custom">Custom</option>
@@ -603,7 +603,7 @@ export function EditProductClient({
                       <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
                         <input type="number" value={draft.stock} onChange={(e) => updateDraft(i, "stock", e.target.value)} placeholder="Stock" className="ambient-input" style={{ ...inputStyle, fontSize: "0.75rem", padding: "0.5rem", flex: 1 }} />
                         {drafts.length > 1 && (
-                          <button type="button" onClick={() => removeDraft(i)} style={{ width: "1.5rem", height: "1.5rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.25rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
+                          <button type="button" onClick={() => removeDraft(i)} style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer", flexShrink: 0 }}>
                             <X size={12} />
                           </button>
                         )}

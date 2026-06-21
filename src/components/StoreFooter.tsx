@@ -17,6 +17,8 @@ export function StoreFooter({ store }: StoreFooterProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: "0.5rem",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
           <span>Powered by</span>

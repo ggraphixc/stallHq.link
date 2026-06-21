@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Product, ProductWithRating } from "@/types";
 import { ProductCard } from "./ProductCard";
 import { useCart } from "@/hooks/useCart";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { FilterPills } from "@/components/ui/FilterPills";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -18,6 +19,7 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [ratings, setRatings] = useState<Record<string, { count: number; average: number }>>({});
   const { addItem } = useCart();
+  const isDesktop = useMediaQuery("(min-width: 640px)");
 
   const categories = useMemo(
     () =>
@@ -103,7 +105,7 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
       )}
 
       {/* Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "repeat(2, 1fr)" : "1fr", gap: "0.75rem" }}>
         {filteredProducts.map((product) => (
           <ProductCard
             key={product.id}

@@ -228,8 +228,8 @@ export function ProductsClient({
             <button
               onClick={() => router.push("/dashboard")}
               style={{
-                width: "2rem",
-                height: "2rem",
+                width: "2.75rem",
+                height: "2.75rem",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -446,8 +446,8 @@ export function ProductsClient({
                     disabled={togglingId === product.id}
                     title={product.in_stock ? "Deactivate" : "Activate"}
                     style={{
-                      width: "2.25rem",
-                      height: "2.25rem",
+                      width: "2.75rem",
+                      height: "2.75rem",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -473,8 +473,8 @@ export function ProductsClient({
                     onClick={() => router.push(`/dashboard/products/${product.id}`)}
                     title="Edit"
                     style={{
-                      width: "2.25rem",
-                      height: "2.25rem",
+                      width: "2.75rem",
+                      height: "2.75rem",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -495,8 +495,8 @@ export function ProductsClient({
                     disabled={deletingId === product.id}
                     title="Delete"
                     style={{
-                      width: "2.25rem",
-                      height: "2.25rem",
+                      width: "2.75rem",
+                      height: "2.75rem",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",

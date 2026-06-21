@@ -222,8 +222,8 @@ export function CartDrawer({ store }: CartDrawerProps) {
                         <button
                           onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variant?.id)}
                           style={{
-                            width: "1.75rem",
-                            height: "1.75rem",
+                            width: "2.75rem",
+                            height: "2.75rem",
                             borderRadius: "0.375rem",
                             background: "var(--bg-primary)",
                             border: "1px solid var(--border-subtle)",
@@ -243,8 +243,8 @@ export function CartDrawer({ store }: CartDrawerProps) {
                         <button
                           onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variant?.id)}
                           style={{
-                            width: "1.75rem",
-                            height: "1.75rem",
+                            width: "2.75rem",
+                            height: "2.75rem",
                             borderRadius: "0.375rem",
                             background: "var(--bg-primary)",
                             border: "1px solid var(--border-subtle)",
@@ -263,8 +263,8 @@ export function CartDrawer({ store }: CartDrawerProps) {
                           onClick={() => removeItem(item.product.id, item.variant?.id)}
                           style={{
                             marginLeft: "auto",
-                            width: "1.75rem",
-                            height: "1.75rem",
+                            width: "2.75rem",
+                            height: "2.75rem",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",

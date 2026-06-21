@@ -13,8 +13,8 @@ interface ProductCardProps {
 }
 
 const navBtn: React.CSSProperties = {
-  width: "2.25rem",
-  height: "2.25rem",
+  width: "2.75rem",
+  height: "2.75rem",
   borderRadius: "50%",
   background: "rgba(0,0,0,0.6)",
   backdropFilter: "blur(8px)",

@@ -53,8 +53,8 @@ const labelStyle: React.CSSProperties = {
 };
 
 const iconBtn: React.CSSProperties = {
-  width: "2.25rem",
-  height: "2.25rem",
+  width: "2.75rem",
+  height: "2.75rem",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -325,7 +325,7 @@ export function DashboardClient({
                       <button
                         key={label}
                         onClick={onClick}
-                        style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
+                        style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", minHeight: "44px" }}
                       >
                         <Icon size={16} />
                         {label}
@@ -338,21 +338,21 @@ export function DashboardClient({
                       href={`/${store.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none" }}
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none", minHeight: "44px" }}
                     >
                       <ExternalLink size={16} />
                       View Store
                     </a>
                     <button
                       onClick={() => { setShowSettings(true); setShowMobileMenu(false); }}
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", minHeight: "44px" }}
                     >
                       <Settings size={16} />
                       Settings
                     </button>
                     <button
                       onClick={handleLogout}
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--glow-red)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", fontSize: "0.875rem", color: "var(--glow-red)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", minHeight: "44px" }}
                     >
                       <LogOut size={16} />
                       Logout

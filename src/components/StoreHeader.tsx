@@ -10,8 +10,8 @@ interface StoreHeaderProps {
 }
 
 const iconBtn: React.CSSProperties = {
-  width: "2.25rem",
-  height: "2.25rem",
+  width: "2.75rem",
+  height: "2.75rem",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

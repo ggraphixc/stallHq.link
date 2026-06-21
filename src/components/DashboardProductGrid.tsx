@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Product } from "@/types";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Pencil, ShoppingBag, ToggleLeft, ToggleRight, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DashboardProductGridProps {
@@ -108,8 +109,9 @@ export function DashboardProductGrid({
   onToggleStock,
   togglingId,
 }: DashboardProductGridProps) {
+  const isDesktop = useMediaQuery("(min-width: 640px)");
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem" }}>
+    <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "repeat(2, 1fr)" : "1fr", gap: "0.75rem" }}>
       {products.map((product, index) => (
         <div
           key={product.id}

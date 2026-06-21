@@ -125,7 +125,7 @@ export function VariantManager({ variants, onChange, basePrice }: VariantManager
                 <button
                   type="button"
                   onClick={() => removeVariant(variant.id)}
-                  style={{ width: "1.75rem", height: "1.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer", transition: "color 0.2s" }}
+                  style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer", transition: "color 0.2s", flexShrink: 0 }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--glow-red)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)"; }}
                 >
@@ -142,7 +142,7 @@ export function VariantManager({ variants, onChange, basePrice }: VariantManager
         <h4 style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Add Variants</h4>
 
         {drafts.map((draft, index) => (
-          <div key={index} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "0.5rem", alignItems: "start" }} className="!grid-cols-2 sm:!grid-cols-4">
+          <div key={index} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", alignItems: "start" }}>
             <select
               value={draft.optionName}
               onChange={(e) => updateDraft(index, "optionName", e.target.value)}
@@ -200,7 +200,7 @@ export function VariantManager({ variants, onChange, basePrice }: VariantManager
                 <button
                   type="button"
                   onClick={() => removeDraft(index)}
-                  style={{ width: "1.75rem", height: "1.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}
+                  style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer", flexShrink: 0 }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--glow-red)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)"; }}
                 >

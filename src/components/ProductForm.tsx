@@ -258,7 +258,7 @@ export function ProductForm({
                     type="button"
                     onClick={() => removeAdditionalImage(index)}
                     className="sm:!opacity-0 sm:!group-hover:opacity-100"
-                    style={{ position: "absolute", top: "0.25rem", right: "0.25rem", width: "1.25rem", height: "1.25rem", borderRadius: "50%", background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", border: "none", color: "white", cursor: "pointer", transition: "opacity 0.2s" }}
+                    style={{ position: "absolute", top: "0.25rem", right: "0.25rem", width: "1.75rem", height: "1.75rem", borderRadius: "50%", background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", border: "none", color: "white", cursor: "pointer", transition: "opacity 0.2s" }}
                   >
                     <X size={10} />
                   </button>
@@ -295,7 +295,7 @@ export function ProductForm({
           </div>
 
           {/* Price & Category */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.75rem" }}>
             <div>
               <label style={labelStyle}>Price (₦)</label>
               <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="ambient-input" style={inputStyle} placeholder="0" min="0" step="0.01" required />

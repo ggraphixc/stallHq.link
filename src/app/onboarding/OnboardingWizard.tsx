@@ -117,7 +117,7 @@ export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
             <span style={{ fontWeight: 700, fontSize: "1rem" }} className="text-gradient">StallHq</span>
           </Link>
           {currentStep < STEPS.length - 1 && (
-            <button onClick={handleSkip} style={{ fontSize: "0.75rem", color: "var(--text-muted)", padding: "0.375rem 0.75rem", borderRadius: "0.375rem", border: "1px solid var(--border-subtle)", background: "transparent", cursor: "pointer" }}>
+            <button onClick={handleSkip} style={{ fontSize: "0.75rem", color: "var(--text-muted)", padding: "0.625rem 1rem", borderRadius: "0.375rem", border: "1px solid var(--border-subtle)", background: "transparent", cursor: "pointer", minHeight: "44px", display: "flex", alignItems: "center" }}>
               Skip
             </button>
           )}

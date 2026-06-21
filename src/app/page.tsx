@@ -106,7 +106,7 @@ export default function Home() {
                 View Demo
               </Link>
             </div>
-            <div style={{ display: "flex", justifyContent: "center", gap: 24, paddingTop: 8, fontSize: 12, color: "var(--text-muted)" }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 24, paddingTop: 8, fontSize: 12, color: "var(--text-muted)", flexWrap: "wrap" }}>
               <span>Zero hosting</span>
               <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--border-medium)", alignSelf: "center" }} />
               <span>60s setup</span>
@@ -119,7 +119,7 @@ export default function Home() {
         {/* How It Works */}
         <section style={sectionStyle}>
           <p style={labelStyle}>How It Works</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", textAlign: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", gap: "1.5rem", textAlign: "center" }}>
             {steps.map((s) => (
               <div key={s.n} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                 <span style={{ fontSize: 28, fontWeight: 800, color: "rgba(255,255,255,0.06)" }}>{s.n}</span>

@@ -222,7 +222,7 @@ function VerifyEmailForm() {
           {/* Code inputs */}
           {!success && (
             <>
-              <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem" }}>
+              <div style={{ display: "flex", justifyContent: "center", gap: "clamp(0.25rem, 2vw, 0.5rem)" }}>
                 {code.map((digit, i) => (
                   <input
                     key={i}
@@ -236,7 +236,7 @@ function VerifyEmailForm() {
                     onPaste={handlePaste}
                     disabled={loading}
                     style={{
-                      width: "3rem",
+                      width: "clamp(2.25rem, 10vw, 3rem)",
                       height: "3.5rem",
                       textAlign: "center",
                       fontSize: "1.25rem",
@@ -272,7 +272,8 @@ function VerifyEmailForm() {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "0.375rem",
-                    padding: "0.5rem",
+                    padding: "0.625rem",
+                    minHeight: "44px",
                   }}
                 >
                   <RefreshCw style={{ width: "0.75rem", height: "0.75rem" }} />
