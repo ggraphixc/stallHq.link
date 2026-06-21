@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrdersByStoreId, createOrder, supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/api";
 import { sendOrderNotification } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
   try {
+    const authSupabase = await createClient();
+
+    const {
+      data: { user },
+    } = await authSupabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const storeId = searchParams.get("store_id");
 
@@ -14,7 +25,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const orders = await getOrdersByStoreId(storeId);
+    // Verify user owns this store
+    const { data: store } = await authSupabase
+      .from("stores")
+      .select("id")
+      .eq("id", storeId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!store) {
+      return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    }
+
+    const { data: orders, error } = await authSupabase
+      .from("orders")
+      .select("*")
+      .eq("store_id", storeId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
     return NextResponse.json(orders);
   } catch (error) {
     console.error("Error fetching orders:", error);
@@ -29,15 +59,22 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const order = await createOrder({
-      store_id: body.store_id,
-      customer_name: body.customer_name,
-      customer_phone: body.customer_phone,
-      customer_email: body.customer_email,
-      items: body.items,
-      total: body.total,
-      notes: body.notes,
-    });
+    // Orders are placed by anonymous customers — use plain client (permissive RLS)
+    const { data: order, error: insertError } = await supabase
+      .from("orders")
+      .insert({
+        store_id: body.store_id,
+        customer_name: body.customer_name,
+        customer_phone: body.customer_phone,
+        customer_email: body.customer_email,
+        items: body.items,
+        total: body.total,
+        notes: body.notes,
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
 
     // Send vendor notification email (non-blocking)
     if (body.store_email) {

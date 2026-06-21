@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/api";
 import { apiRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
 export async function GET(request: NextRequest) {
@@ -116,6 +117,16 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const authSupabase = await createClient();
+
+    const {
+      data: { user },
+    } = await authSupabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -123,7 +134,23 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "id required" }, { status: 400 });
     }
 
-    const { error } = await supabase.from("reviews").delete().eq("id", id);
+    // Verify user owns the store this review belongs to
+    const { data: review } = await authSupabase
+      .from("reviews")
+      .select("id, stores(user_id)")
+      .eq("id", id)
+      .single();
+
+    if (!review) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const storeData = Array.isArray(review.stores) ? review.stores[0] : review.stores;
+    if (!storeData || storeData.user_id !== user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const { error } = await authSupabase.from("reviews").delete().eq("id", id);
 
     if (error) throw error;
 

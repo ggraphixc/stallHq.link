@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateOrderStatus, getOrderById } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/api";
 import { sendStatusUpdateEmail } from "@/lib/email";
 
 export async function PATCH(
@@ -7,6 +7,16 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authSupabase = await createClient();
+
+    const {
+      data: { user },
+    } = await authSupabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -17,22 +27,45 @@ export async function PATCH(
       );
     }
 
-    const order = await updateOrderStatus(id, body.status);
+    // Verify user owns this order's store
+    const { data: order } = await authSupabase
+      .from("orders")
+      .select("id, stores(user_id)")
+      .eq("id", id)
+      .single();
+
+    if (!order) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const storeData = Array.isArray(order.stores) ? order.stores[0] : order.stores;
+    if (!storeData || storeData.user_id !== user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const { data: updatedOrder, error: updateError } = await authSupabase
+      .from("orders")
+      .update({ status: body.status, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("*, stores(name)")
+      .single();
+
+    if (updateError) throw updateError;
 
     // Send customer status update email (non-blocking)
-    if (order.customer_email && order.stores) {
-      const store = order.stores as { name: string };
+    if (updatedOrder.customer_email && updatedOrder.stores) {
+      const store = updatedOrder.stores as { name: string };
       sendStatusUpdateEmail({
-        customerEmail: order.customer_email,
+        customerEmail: updatedOrder.customer_email,
         storeName: store.name,
-        orderId: order.id,
+        orderId: updatedOrder.id,
         status: body.status,
-        items: order.items,
-        total: order.total,
+        items: updatedOrder.items,
+        total: updatedOrder.total,
       }).catch(() => {});
     }
 
-    return NextResponse.json(order);
+    return NextResponse.json(updatedOrder);
   } catch (error) {
     console.error("Error updating order:", error);
     return NextResponse.json(
