@@ -24,6 +24,23 @@ interface UploadResult {
   errors: string[];
 }
 
+const glassCard: React.CSSProperties = {
+  background: "rgba(255,255,255,0.02)",
+  border: "1px solid var(--border-subtle)",
+  borderRadius: "0.75rem",
+  backdropFilter: "blur(12px)",
+};
+
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: "0.6875rem",
+  fontWeight: 600,
+  color: "var(--text-secondary)",
+  letterSpacing: "0.03em",
+  textTransform: "uppercase",
+  marginBottom: "0.5rem",
+};
+
 export function BatchUpload({ store, onClose, onComplete }: BatchUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ParsedProduct[]>([]);
@@ -34,16 +51,13 @@ export function BatchUpload({ store, onClose, onComplete }: BatchUploadProps) {
   const parseCSV = (text: string): ParsedProduct[] => {
     const lines = text.split("\n").filter((line) => line.trim());
     if (lines.length < 2) return [];
-
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
     const nameIdx = headers.findIndex((h) => h === "name");
     const priceIdx = headers.findIndex((h) => h === "price");
     const categoryIdx = headers.findIndex((h) => h === "category");
     const descIdx = headers.findIndex((h) => h === "description");
     const imageIdx = headers.findIndex((h) => h === "image_url" || h === "image");
-
     if (nameIdx === -1 || priceIdx === -1) return [];
-
     return lines.slice(1).map((line) => {
       const values = line.split(",").map((v) => v.trim());
       return {
@@ -59,32 +73,22 @@ export function BatchUpload({ store, onClose, onComplete }: BatchUploadProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
-
-    if (!selectedFile.name.endsWith(".csv")) {
-      alert("Please upload a CSV file");
-      return;
-    }
-
+    if (!selectedFile.name.endsWith(".csv")) { alert("Please upload a CSV file"); return; }
     setFile(selectedFile);
     setResult(null);
-
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      const parsed = parseCSV(text);
-      setPreview(parsed);
+      setPreview(parseCSV(text));
     };
     reader.readAsText(selectedFile);
   };
 
   const handleUpload = async () => {
     if (!file || preview.length === 0) return;
-
     setLoading(true);
-    let success = 0;
-    let failed = 0;
+    let success = 0, failed = 0;
     const errors: string[] = [];
-
     for (const product of preview) {
       try {
         const res = await fetch("/api/products", {
@@ -99,64 +103,48 @@ export function BatchUpload({ store, onClose, onComplete }: BatchUploadProps) {
             image_url: product.image_url || undefined,
           }),
         });
-
-        if (res.ok) {
-          success++;
-        } else {
-          const data = await res.json();
-          failed++;
-          errors.push(`${product.name}: ${data.error || "Failed"}`);
-        }
+        if (res.ok) success++;
+        else { const data = await res.json(); failed++; errors.push(`${product.name}: ${data.error || "Failed"}`); }
       } catch {
         failed++;
         errors.push(`${product.name}: Network error`);
       }
     }
-
     setResult({ success, failed, errors });
     setLoading(false);
-
-    if (success > 0) {
-      onComplete();
-    }
+    if (success > 0) onComplete();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={onClose} />
 
-      <div className="relative w-full max-w-2xl bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)] shadow-2xl slide-up max-h-[90vh] overflow-y-auto">
+      <div className="slide-up" style={{ position: "relative", width: "100%", maxWidth: "42rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", maxHeight: "90vh", overflowY: "auto" }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
-          <div className="flex items-center gap-2">
-            <Upload className="w-5 h-5 text-[var(--glow-purple)]" />
-            <h2 className="text-lg font-semibold">Batch Upload Products</h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Upload size={18} style={{ color: "var(--glow-purple)" }} />
+            <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Batch Upload Products</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-[var(--bg-card)] transition-colors"
-          >
-            <X className="w-5 h-5" />
+          <button onClick={onClose} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
+            <X size={18} />
           </button>
         </div>
 
-        <div className="p-6 space-y-8">
+        <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Instructions */}
-          <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-            <h3 className="font-medium mb-2">CSV Format</h3>
-            <p className="text-sm text-[var(--text-secondary)] mb-2">
+          <div style={{ ...glassCard, padding: "1rem" }}>
+            <h3 style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.5rem" }}>CSV Format</h3>
+            <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginBottom: "0.5rem" }}>
               Your CSV file should have the following columns:
             </p>
-            <code className="block p-2 rounded bg-[var(--bg-primary)] text-sm text-[var(--glow-green)]">
+            <code style={{ display: "block", padding: "0.5rem", borderRadius: "0.375rem", background: "var(--bg-primary)", fontSize: "0.8125rem", color: "var(--glow-green)" }}>
               name, price, category, description, image_url
             </code>
-            <p className="text-xs text-[var(--text-muted)] mt-2">
+            <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.5rem" }}>
               * name and price are required. Example:
             </p>
-            <code className="block p-2 rounded bg-[var(--bg-primary)] text-xs text-[var(--text-muted)] mt-1">
+            <code style={{ display: "block", padding: "0.5rem", borderRadius: "0.375rem", background: "var(--bg-primary)", fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
               Premium T-Shirt, 4500, Tops, Soft cotton tee, https://example.com/img.jpg
             </code>
           </div>
@@ -164,63 +152,61 @@ export function BatchUpload({ store, onClose, onComplete }: BatchUploadProps) {
           {/* File Upload */}
           <div
             onClick={() => fileInputRef.current?.click()}
-            className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-              file
-                ? "border-[var(--glow-green)] bg-[var(--glow-green)]/5"
-                : "border-[var(--border-subtle)] hover:border-[var(--glow-purple)]"
-            }`}
+            style={{
+              border: `2px dashed ${file ? "var(--glow-green)" : "var(--border-subtle)"}`,
+              borderRadius: "0.75rem",
+              padding: "2rem",
+              textAlign: "center",
+              cursor: "pointer",
+              transition: "border-color 0.2s",
+              background: file ? "rgba(16,185,129,0.04)" : "transparent",
+            }}
+            onMouseEnter={(e) => { if (!file) (e.currentTarget as HTMLDivElement).style.borderColor = "var(--glow-purple)"; }}
+            onMouseLeave={(e) => { if (!file) (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border-subtle)"; }}
           >
             {file ? (
-              <div className="flex items-center justify-center gap-3">
-                <FileText className="w-8 h-8 text-[var(--glow-green)]" />
-                <div className="text-left">
-                  <p className="font-medium">{file.name}</p>
-                  <p className="text-sm text-[var(--text-muted)]">
-                    {preview.length} products found
-                  </p>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem" }}>
+                <FileText size={28} style={{ color: "var(--glow-green)" }} />
+                <div style={{ textAlign: "left" }}>
+                  <p style={{ fontWeight: 600, fontSize: "0.875rem" }}>{file.name}</p>
+                  <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>{preview.length} products found</p>
                 </div>
               </div>
             ) : (
-              <div className="text-[var(--text-muted)]">
-                <Upload className="w-8 h-8 mx-auto mb-2" />
-                <p className="font-medium">Click to upload CSV</p>
-                <p className="text-sm">or drag and drop</p>
+              <div style={{ color: "var(--text-muted)" }}>
+                <Upload size={28} style={{ margin: "0 auto 0.5rem" }} />
+                <p style={{ fontWeight: 500, fontSize: "0.875rem" }}>Click to upload CSV</p>
+                <p style={{ fontSize: "0.8125rem" }}>or drag and drop</p>
               </div>
             )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              onChange={handleFileChange}
-              className="hidden"
-            />
+            <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} style={{ display: "none" }} />
           </div>
 
           {/* Preview */}
           {preview.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="font-medium">Preview ({preview.length} products)</h3>
-              <div className="max-h-48 overflow-y-auto overflow-x-auto rounded-xl border border-[var(--border-subtle)]">
-                <table className="w-full text-sm">
-                  <thead className="bg-[var(--bg-card)] sticky top-0">
-                    <tr>
-                      <th className="text-left p-2">Name</th>
-                      <th className="text-left p-2">Price</th>
-                      <th className="text-left p-2">Category</th>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <h3 style={{ fontSize: "0.875rem", fontWeight: 600 }}>Preview ({preview.length} products)</h3>
+              <div style={{ maxHeight: "12rem", overflowY: "auto", overflowX: "auto", borderRadius: "0.75rem", border: "1px solid var(--border-subtle)" }}>
+                <table style={{ width: "100%", fontSize: "0.8125rem", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ background: "var(--bg-card)", position: "sticky", top: 0 }}>
+                      {["Name", "Price", "Category"].map((h) => (
+                        <th key={h} style={{ textAlign: "left", padding: "0.5rem", fontWeight: 500, color: "var(--text-muted)", fontSize: "0.75rem" }}>{h}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
                     {preview.slice(0, 10).map((product, i) => (
-                      <tr key={i} className="border-t border-[var(--border-subtle)]">
-                        <td className="p-2">{product.name}</td>
-                        <td className="p-2">₦{parseFloat(product.price).toLocaleString()}</td>
-                        <td className="p-2 text-[var(--text-muted)]">{product.category || "—"}</td>
+                      <tr key={i} style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                        <td style={{ padding: "0.5rem" }}>{product.name}</td>
+                        <td style={{ padding: "0.5rem" }}>₦{parseFloat(product.price).toLocaleString()}</td>
+                        <td style={{ padding: "0.5rem", color: "var(--text-muted)" }}>{product.category || "—"}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {preview.length > 10 && (
-                  <p className="text-center p-2 text-sm text-[var(--text-muted)]">
+                  <p style={{ textAlign: "center", padding: "0.5rem", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
                     ...and {preview.length - 10} more
                   </p>
                 )}
@@ -230,40 +216,34 @@ export function BatchUpload({ store, onClose, onComplete }: BatchUploadProps) {
 
           {/* Result */}
           {result && (
-            <div className={`p-4 rounded-xl border ${
-              result.failed === 0
-                ? "bg-[var(--glow-green)]/10 border-[var(--glow-green)]/20"
-                : "bg-yellow-500/10 border-yellow-500/20"
-            }`}>
-              <div className="flex items-center gap-2 mb-2">
-                {result.failed === 0 ? (
-                  <CheckCircle className="w-5 h-5 text-[var(--glow-green)]" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-yellow-500" />
-                )}
-                <span className="font-medium">
-                  {result.success} products uploaded
-                  {result.failed > 0 && `, ${result.failed} failed`}
+            <div style={{
+              padding: "1rem",
+              borderRadius: "0.75rem",
+              border: `1px solid ${result.failed === 0 ? "rgba(16,185,129,0.2)" : "rgba(250,204,21,0.2)"}`,
+              background: result.failed === 0 ? "rgba(16,185,129,0.08)" : "rgba(250,204,21,0.08)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                {result.failed === 0 ? <CheckCircle size={18} style={{ color: "var(--glow-green)" }} /> : <AlertCircle size={18} style={{ color: "#facc15" }} />}
+                <span style={{ fontWeight: 500, fontSize: "0.875rem" }}>
+                  {result.success} products uploaded{result.failed > 0 && `, ${result.failed} failed`}
                 </span>
               </div>
               {result.errors.length > 0 && (
-                <div className="mt-2 text-sm text-[var(--text-secondary)]">
-                  {result.errors.slice(0, 5).map((error, i) => (
-                    <p key={i}>{error}</p>
-                  ))}
-                  {result.errors.length > 5 && (
-                    <p>...and {result.errors.length - 5} more errors</p>
-                  )}
+                <div style={{ marginTop: "0.5rem", fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
+                  {result.errors.slice(0, 5).map((error, i) => <p key={i}>{error}</p>)}
+                  {result.errors.length > 5 && <p>...and {result.errors.length - 5} more errors</p>}
                 </div>
               )}
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div style={{ display: "flex", gap: "0.75rem" }}>
             <button
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)] transition-colors"
+              style={{ flex: 1, padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid var(--border-subtle)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer", fontSize: "0.8125rem", transition: "all 0.2s" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--text-muted)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-subtle)"; }}
             >
               {result ? "Close" : "Cancel"}
             </button>
@@ -271,13 +251,15 @@ export function BatchUpload({ store, onClose, onComplete }: BatchUploadProps) {
               <button
                 onClick={handleUpload}
                 disabled={loading || preview.length === 0}
-                className="flex-1 glow-button disabled:opacity-50"
+                className="glow-button"
+                style={{ flex: 1, padding: "0.75rem", fontSize: "0.8125rem", opacity: loading || preview.length === 0 ? 0.5 : 1, cursor: loading || preview.length === 0 ? "not-allowed" : "pointer" }}
               >
                 {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  `Upload ${preview.length} Products`
-                )}
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
+                    <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+                    Uploading...
+                  </span>
+                ) : `Upload ${preview.length} Products`}
               </button>
             )}
           </div>

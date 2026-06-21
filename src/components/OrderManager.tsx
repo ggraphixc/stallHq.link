@@ -2,53 +2,45 @@
 
 import { useState, useEffect } from "react";
 import { Order } from "@/types";
-import {
-  Package,
-  Clock,
-  CheckCircle,
-  Truck,
-  XCircle,
-  ChevronDown,
-  Loader2,
-  Download,
-} from "lucide-react";
+import { Package, Clock, CheckCircle, Truck, XCircle, ChevronDown, Loader2, Download } from "lucide-react";
 
 interface OrderManagerProps {
   storeId: string;
 }
 
 const STATUS_CONFIG = {
-  pending: {
-    label: "Pending",
-    icon: Clock,
-    color: "text-yellow-400",
-    bg: "bg-yellow-400/10",
-  },
-  confirmed: {
-    label: "Confirmed",
-    icon: CheckCircle,
-    color: "text-blue-400",
-    bg: "bg-blue-400/10",
-  },
-  shipped: {
-    label: "Shipped",
-    icon: Truck,
-    color: "text-purple-400",
-    bg: "bg-purple-400/10",
-  },
-  delivered: {
-    label: "Delivered",
-    icon: Package,
-    color: "text-green-400",
-    bg: "bg-green-400/10",
-  },
-  cancelled: {
-    label: "Cancelled",
-    icon: XCircle,
-    color: "text-red-400",
-    bg: "bg-red-400/10",
-  },
+  pending: { label: "Pending", icon: Clock, color: "var(--glow-yellow, #facc15)", bg: "rgba(250,204,21,0.1)" },
+  confirmed: { label: "Confirmed", icon: CheckCircle, color: "var(--glow-blue, #60a5fa)", bg: "rgba(96,165,250,0.1)" },
+  shipped: { label: "Shipped", icon: Truck, color: "var(--glow-purple)", bg: "rgba(168,133,247,0.1)" },
+  delivered: { label: "Delivered", icon: Package, color: "var(--glow-green)", bg: "rgba(16,185,129,0.1)" },
+  cancelled: { label: "Cancelled", icon: XCircle, color: "var(--glow-red)", bg: "rgba(239,68,68,0.1)" },
 } as const;
+
+const glassCard: React.CSSProperties = {
+  background: "rgba(255,255,255,0.02)",
+  border: "1px solid var(--border-subtle)",
+  borderRadius: "0.75rem",
+  backdropFilter: "blur(12px)",
+};
+
+const inputStyle: React.CSSProperties = {
+  padding: "0.375rem 1.75rem 0.375rem 0.625rem",
+  fontSize: "0.75rem",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border-subtle)",
+  borderRadius: "0.5rem",
+  color: "var(--text-primary)",
+  outline: "none",
+  appearance: "none" as const,
+  cursor: "pointer",
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: "0.6875rem",
+  fontWeight: 600,
+  letterSpacing: "0.03em",
+  textTransform: "uppercase",
+};
 
 export function OrderManager({ storeId }: OrderManagerProps) {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -56,17 +48,12 @@ export function OrderManager({ storeId }: OrderManagerProps) {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
 
-  useEffect(() => {
-    fetchOrders();
-  }, [storeId]);
+  useEffect(() => { fetchOrders(); }, [storeId]);
 
   const fetchOrders = async () => {
     try {
       const response = await fetch(`/api/orders?store_id=${storeId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(data);
-      }
+      if (response.ok) setOrders(await response.json());
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -74,10 +61,7 @@ export function OrderManager({ storeId }: OrderManagerProps) {
     }
   };
 
-  const updateStatus = async (
-    orderId: string,
-    status: Order["status"]
-  ) => {
+  const updateStatus = async (orderId: string, status: Order["status"]) => {
     setUpdatingId(orderId);
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
@@ -85,12 +69,7 @@ export function OrderManager({ storeId }: OrderManagerProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-
-      if (response.ok) {
-        setOrders(
-          orders.map((o) => (o.id === orderId ? { ...o, status } : o))
-        );
-      }
+      if (response.ok) setOrders(orders.map((o) => (o.id === orderId ? { ...o, status } : o)));
     } catch (error) {
       console.error("Error updating order:", error);
     } finally {
@@ -98,52 +77,26 @@ export function OrderManager({ storeId }: OrderManagerProps) {
     }
   };
 
-  const filteredOrders =
-    filter === "all" ? orders : orders.filter((o) => o.status === filter);
+  const filteredOrders = filter === "all" ? orders : orders.filter((o) => o.status === filter);
 
   const statusCounts = orders.reduce(
-    (acc, order) => {
-      acc[order.status] = (acc[order.status] || 0) + 1;
-      return acc;
-    },
+    (acc, order) => { acc[order.status] = (acc[order.status] || 0) + 1; return acc; },
     {} as Record<string, number>
   );
 
   const exportCSV = () => {
-    const headers = [
-      "Order ID",
-      "Date",
-      "Customer",
-      "Phone",
-      "Items",
-      "Total",
-      "Status",
-      "Notes",
-    ];
-
+    const headers = ["Order ID", "Date", "Customer", "Phone", "Items", "Total", "Status", "Notes"];
     const rows = filteredOrders.map((order) => [
       order.id.slice(0, 8),
       new Date(order.created_at).toLocaleDateString("en-NG"),
       order.customer_name || "",
       order.customer_phone || "",
-      order.items
-        .map(
-          (item) =>
-            `${item.quantity}x ${item.product_name}${item.variant_name ? ` (${item.variant_name})` : ""}`
-        )
-        .join("; "),
+      order.items.map((item) => `${item.quantity}x ${item.product_name}${item.variant_name ? ` (${item.variant_name})` : ""}`).join("; "),
       order.total.toString(),
       order.status,
       order.notes || "",
     ]);
-
-    const csvContent = [
-      headers.join(","),
-      ...rows.map((row) =>
-        row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(",")
-      ),
-    ].join("\n");
-
+    const csvContent = [headers.join(","), ...rows.map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -155,41 +108,51 @@ export function OrderManager({ storeId }: OrderManagerProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--glow-purple)]" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem 0" }}>
+        <Loader2 size={28} style={{ color: "var(--glow-purple)", animation: "spin 1s linear infinite" }} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h2 className="text-xl sm:text-2xl font-bold">Orders</h2>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-[var(--text-muted)]">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+        <div>
+          <h2 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.125rem" }}>Orders</h2>
+          <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", ...labelStyle }}>
             {orders.length} total order{orders.length !== 1 ? "s" : ""}
-          </span>
-          {orders.length > 0 && (
-            <button
-              onClick={exportCSV}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] hover:bg-[var(--bg-card)]/80 rounded-lg transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Export CSV
-            </button>
-          )}
+          </p>
         </div>
+        {orders.length > 0 && (
+          <button
+            onClick={exportCSV}
+            style={{ display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 0.75rem", fontSize: "0.75rem", fontWeight: 500, color: "var(--text-secondary)", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "0.5rem", cursor: "pointer", transition: "all 0.2s" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--text-muted)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-subtle)"; }}
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
+        )}
       </div>
 
-      {/* Status Filter Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      {/* Filter Tabs */}
+      <div style={{ display: "flex", gap: "0.375rem", overflowX: "auto", paddingBottom: "0.25rem" }}>
         <button
           onClick={() => setFilter("all")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-            filter === "all"
-              ? "bg-[var(--glow-purple)] text-white"
-              : "bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]/80"
-          }`}
+          style={{
+            padding: "0.5rem 0.875rem",
+            borderRadius: "0.5rem",
+            fontSize: "0.75rem",
+            fontWeight: 500,
+            whiteSpace: "nowrap" as const,
+            transition: "all 0.2s",
+            border: "none",
+            cursor: "pointer",
+            background: filter === "all" ? "var(--glow-purple)" : "var(--bg-card)",
+            color: filter === "all" ? "white" : "var(--text-secondary)",
+          }}
         >
           All ({orders.length})
         </button>
@@ -197,11 +160,18 @@ export function OrderManager({ storeId }: OrderManagerProps) {
           <button
             key={key}
             onClick={() => setFilter(key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === key
-                ? `${config.bg} ${config.color}`
-                : "bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]/80"
-            }`}
+            style={{
+              padding: "0.5rem 0.875rem",
+              borderRadius: "0.5rem",
+              fontSize: "0.75rem",
+              fontWeight: 500,
+              whiteSpace: "nowrap" as const,
+              transition: "all 0.2s",
+              border: "none",
+              cursor: "pointer",
+              background: filter === key ? config.bg : "var(--bg-card)",
+              color: filter === key ? config.color : "var(--text-secondary)",
+            }}
           >
             {config.label} ({statusCounts[key] || 0})
           </button>
@@ -210,104 +180,72 @@ export function OrderManager({ storeId }: OrderManagerProps) {
 
       {/* Orders List */}
       {filteredOrders.length === 0 ? (
-        <div className="text-center py-12 ambient-card">
-          <Package className="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)]" />
-          <p className="text-[var(--text-muted)]">
-            {filter === "all"
-              ? "No orders yet"
-              : `No ${filter} orders`}
+        <div style={{ ...glassCard, padding: "3rem 1.5rem", textAlign: "center" }}>
+          <Package size={32} style={{ color: "var(--text-muted)", margin: "0 auto 0.75rem" }} />
+          <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+            {filter === "all" ? "No orders yet" : `No ${filter} orders`}
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {filteredOrders.map((order) => {
             const config = STATUS_CONFIG[order.status];
             const StatusIcon = config.icon;
-
             return (
-              <div
-                key={order.id}
-                className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <StatusIcon className={`w-5 h-5 ${config.color}`} />
-                      <span className={`text-sm font-medium ${config.color}`}>
-                        {config.label}
-                      </span>
-                      <span className="text-xs text-[var(--text-muted)]">
+              <div key={order.id} style={{ ...glassCard, padding: "1rem" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                      <StatusIcon size={16} style={{ color: config.color }} />
+                      <span style={{ fontSize: "0.75rem", fontWeight: 500, color: config.color }}>{config.label}</span>
+                      <span style={{ fontSize: "0.625rem", color: "var(--text-muted)" }}>
                         #{order.id.slice(0, 8)}
                       </span>
                     </div>
 
-                    {order.customer_name && (
-                      <p className="text-sm font-medium">
-                        {order.customer_name}
-                      </p>
-                    )}
-                    {order.customer_phone && (
-                      <p className="text-xs text-[var(--text-muted)]">
-                        {order.customer_phone}
-                      </p>
-                    )}
+                    {order.customer_name && <p style={{ fontSize: "0.8125rem", fontWeight: 500 }}>{order.customer_name}</p>}
+                    {order.customer_phone && <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>{order.customer_phone}</p>}
 
-                    <div className="mt-2 space-y-1">
+                    <div style={{ marginTop: "0.5rem", display: "flex", flexDirection: "column", gap: "0.125rem" }}>
                       {order.items.map((item, i) => (
-                        <p key={i} className="text-sm text-[var(--text-secondary)]">
+                        <p key={i} style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
                           {item.quantity}x {item.product_name}
-                          {item.variant_name && (
-                            <span className="text-[var(--glow-purple)]">
-                              {" "}
-                              ({item.variant_name})
-                            </span>
-                          )}
-                          {" - "}
-                          <span className="text-[var(--glow-green)]">
-                            ₦{(item.price * item.quantity).toLocaleString()}
-                          </span>
+                          {item.variant_name && <span style={{ color: "var(--glow-purple)" }}> ({item.variant_name})</span>}
+                          {" — "}
+                          <span style={{ color: "var(--glow-green)" }}>₦{(item.price * item.quantity).toLocaleString()}</span>
                         </p>
                       ))}
                     </div>
 
-                    <p className="mt-2 text-lg font-bold text-[var(--glow-green)]">
+                    <p style={{ marginTop: "0.5rem", fontSize: "1rem", fontWeight: 700, color: "var(--glow-green)" }}>
                       ₦{order.total.toLocaleString()}
                     </p>
 
                     {order.notes && (
-                      <p className="mt-2 text-xs text-[var(--text-muted)] italic">
+                      <p style={{ marginTop: "0.5rem", fontSize: "0.6875rem", color: "var(--text-muted)", fontStyle: "italic" }}>
                         Note: {order.notes}
                       </p>
                     )}
 
-                    <p className="mt-2 text-xs text-[var(--text-muted)]">
-                      {new Date(order.created_at).toLocaleDateString("en-NG", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    <p style={{ marginTop: "0.5rem", fontSize: "0.625rem", color: "var(--text-muted)" }}>
+                      {new Date(order.created_at).toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
 
                   {/* Status Update */}
-                  <div className="relative">
+                  <div style={{ position: "relative", flexShrink: 0 }}>
                     <select
                       value={order.status}
-                      onChange={(e) =>
-                        updateStatus(order.id, e.target.value as Order["status"])
-                      }
+                      onChange={(e) => updateStatus(order.id, e.target.value as Order["status"])}
                       disabled={updatingId === order.id}
-                      className="ambient-input !py-2 !px-3 text-sm pr-8 appearance-none cursor-pointer"
+                      className="ambient-input"
+                      style={inputStyle}
                     >
                       {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                        <option key={key} value={key}>
-                          {config.label}
-                        </option>
+                        <option key={key} value={key}>{config.label}</option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--text-muted)]" />
+                    <ChevronDown size={14} style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
                   </div>
                 </div>
               </div>

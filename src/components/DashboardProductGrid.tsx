@@ -15,64 +15,136 @@ export function DashboardProductGrid({
   onDelete,
 }: DashboardProductGridProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem" }} className="md:!grid-cols-3 lg:!grid-cols-4">
       {products.map((product, index) => (
         <div
           key={product.id}
-          className="ambient-card group fade-in"
-          style={{ animationDelay: `${index * 50}ms` }}
+          className="fade-in ambient-card"
+          style={{
+            animationDelay: `${index * 50}ms`,
+            borderRadius: "0.75rem",
+            overflow: "hidden",
+            border: "1px solid var(--border-subtle)",
+            background: "var(--bg-card)",
+            transition: "border-color 0.2s",
+          }}
         >
           {/* Image */}
-          <div className="image-glow aspect-square bg-[var(--bg-secondary)] relative overflow-hidden">
+          <div
+            style={{
+              position: "relative",
+              aspectRatio: "1",
+              background: "var(--bg-secondary)",
+              overflow: "hidden",
+            }}
+          >
             {product.image_url ? (
               <img
                 src={product.image_url}
                 alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  transition: "transform 0.5s",
+                }}
                 loading="lazy"
+                onMouseEnter={(e) => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1.08)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"; }}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <ShoppingBag className="w-12 h-12 text-[var(--text-muted)]" />
+              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <ShoppingBag size={32} style={{ color: "var(--text-muted)" }} />
               </div>
             )}
 
-            {/* Category Badge */}
+            {/* Category badge */}
             {product.category && (
-              <div className="absolute top-3 left-3">
-                <span className="category-tag">{product.category}</span>
-              </div>
+              <span
+                className="category-tag"
+                style={{
+                  position: "absolute",
+                  top: "0.625rem",
+                  left: "0.625rem",
+                }}
+              >
+                {product.category}
+              </span>
             )}
 
-            {/* Action buttons - always visible on mobile, hover on desktop */}
-            <div className="absolute top-2 right-2 flex gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            {/* Action buttons */}
+            <div
+              className="group"
+              style={{
+                position: "absolute",
+                top: "0.5rem",
+                right: "0.5rem",
+                display: "flex",
+                gap: "0.375rem",
+              }}
+            >
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(product);
+                onClick={(e) => { e.stopPropagation(); onEdit(product); }}
+                className="sm:!opacity-0 sm:!group-hover:opacity-100"
+                style={{
+                  width: "2rem",
+                  height: "2rem",
+                  borderRadius: "0.5rem",
+                  background: "rgba(0,0,0,0.6)",
+                  backdropFilter: "blur(8px)",
+                  border: "none",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.2s",
                 }}
-                className="w-9 h-9 rounded-lg bg-[var(--bg-card)]/90 backdrop-blur-sm hover:bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center"
                 aria-label={`Edit ${product.name}`}
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil size={14} />
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(product.id);
+                onClick={(e) => { e.stopPropagation(); onDelete(product.id); }}
+                className="sm:!opacity-0 sm:!group-hover:opacity-100"
+                style={{
+                  width: "2rem",
+                  height: "2rem",
+                  borderRadius: "0.5rem",
+                  background: "rgba(0,0,0,0.6)",
+                  backdropFilter: "blur(8px)",
+                  border: "none",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.2s",
                 }}
-                className="w-9 h-9 rounded-lg bg-[var(--bg-card)]/90 backdrop-blur-sm hover:bg-red-500/20 text-[var(--text-secondary)] hover:text-red-400 transition-colors flex items-center justify-center"
                 aria-label={`Delete ${product.name}`}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--glow-red)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)"; }}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 size={14} />
               </button>
             </div>
           </div>
 
           {/* Content */}
-          <div className="p-4 space-y-2">
-            <h3 className="font-semibold truncate">{product.name}</h3>
-            <p className="price-display text-lg">
+          <div style={{ padding: "0.75rem" }}>
+            <h3
+              style={{
+                fontSize: "0.8125rem",
+                fontWeight: 600,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                marginBottom: "0.25rem",
+              }}
+            >
+              {product.name}
+            </h3>
+            <p className="price-display" style={{ fontSize: "0.9375rem", fontWeight: 700 }}>
               ₦{product.price.toLocaleString()}
             </p>
           </div>

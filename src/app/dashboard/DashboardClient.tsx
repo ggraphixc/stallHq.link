@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Store, Product } from "@/types";
 import { DashboardProductGrid } from "@/components/DashboardProductGrid";
 import { ProductForm } from "@/components/ProductForm";
@@ -11,9 +11,6 @@ import { BatchUpload } from "@/components/BatchUpload";
 import { ThemeSettings } from "@/components/ThemeSettings";
 import { OrderManager } from "@/components/OrderManager";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
-import { StatCard } from "@/components/ui/StatCard";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Modal } from "@/components/ui/Modal";
 import { createClient } from "@/lib/supabase/client";
 import {
   Settings,
@@ -27,12 +24,122 @@ import {
   ShoppingCart,
   Link as LinkIcon,
   MoreVertical,
+  X,
 } from "lucide-react";
 
 interface DashboardClientProps {
   store: Store;
   products: Product[];
 }
+
+/* ── Shared styles ──────────────────────────────── */
+
+const glassCard: React.CSSProperties = {
+  background: "rgba(255,255,255,0.02)",
+  border: "1px solid var(--border-subtle)",
+  borderRadius: "0.75rem",
+  backdropFilter: "blur(12px)",
+};
+
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: "0.6875rem",
+  fontWeight: 600,
+  color: "var(--text-secondary)",
+  letterSpacing: "0.03em",
+  textTransform: "uppercase",
+};
+
+const iconBtn: React.CSSProperties = {
+  width: "2.25rem",
+  height: "2.25rem",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "0.5rem",
+  border: "1px solid var(--border-subtle)",
+  background: "rgba(255,255,255,0.03)",
+  color: "var(--text-secondary)",
+  cursor: "pointer",
+  transition: "all 0.2s",
+};
+
+/* ── Particle canvas ────────────────────────────── */
+
+function Particles() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let w = window.innerWidth;
+    let h = window.innerHeight;
+    canvas.width = w;
+    canvas.height = h;
+
+    const colors = [
+      "rgba(168,133,247,0.12)",
+      "rgba(6,182,212,0.1)",
+      "rgba(16,185,129,0.08)",
+      "rgba(236,72,153,0.06)",
+    ];
+
+    const dots = Array.from({ length: 30 }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 1.8 + 0.5,
+      dx: (Math.random() - 0.5) * 0.35,
+      dy: (Math.random() - 0.5) * 0.35,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+
+    let raf: number;
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      dots.forEach((d) => {
+        d.x += d.dx;
+        d.y += d.dy;
+        if (d.x < 0 || d.x > w) d.dx *= -1;
+        if (d.y < 0 || d.y > h) d.dy *= -1;
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fillStyle = d.color;
+        ctx.fill();
+      });
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+
+    const onResize = () => {
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w;
+      canvas.height = h;
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "fixed",
+        inset: 0,
+        pointerEvents: "none",
+        zIndex: 0,
+      }}
+    />
+  );
+}
+
+/* ── Main Component ─────────────────────────────── */
 
 export function DashboardClient({
   store: initialStore,
@@ -97,14 +204,37 @@ export function DashboardClient({
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
-      {/* Header */}
-      <header style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(var(--bg-primary),0.8)", backdropFilter: "blur(16px)", position: "sticky", top: 0, zIndex: 40 }}>
-        <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 1rem", height: "3.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", position: "relative" }}>
+      <Particles />
+
+      {/* ── Header ─────────────────────────────────── */}
+      <header
+        style={{
+          borderBottom: "1px solid var(--border-subtle)",
+          background: "rgba(6,6,11,0.85)",
+          backdropFilter: "blur(16px)",
+          position: "sticky",
+          top: 0,
+          zIndex: 40,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "80rem",
+            margin: "0 auto",
+            padding: "0 1rem",
+            height: "3.5rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
             <StoreAvatar name={store.name} size="md" />
             <div style={{ minWidth: 0 }}>
-              <h1 style={{ fontWeight: 700, fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{store.name}</h1>
+              <h1 style={{ fontWeight: 700, fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {store.name}
+              </h1>
               <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 stallhq.link/{store.slug}
               </p>
@@ -119,40 +249,21 @@ export function DashboardClient({
               { icon: ShoppingCart, label: "Orders", onClick: () => setShowOrders(true) },
               { icon: Palette, label: "Theme", onClick: () => setShowTheme(true) },
             ].map(({ icon: Icon, label, onClick }) => (
-              <button
-                key={label}
-                onClick={onClick}
-                className="icon-button"
-                title={label}
-              >
-                <Icon style={{ width: "1rem", height: "1rem" }} />
+              <button key={label} onClick={onClick} style={iconBtn} title={label} className="icon-button">
+                <Icon size={16} />
               </button>
             ))}
 
             <div style={{ width: "1px", height: "1.25rem", background: "var(--border-subtle)", margin: "0 0.25rem" }} />
 
-            <a
-              href={`/${store.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="icon-button"
-              title="View Store"
-            >
-              <ExternalLink style={{ width: "1rem", height: "1rem" }} />
+            <a href={`/${store.slug}`} target="_blank" rel="noopener noreferrer" style={iconBtn} title="View Store" className="icon-button">
+              <ExternalLink size={16} />
             </a>
-            <button
-              onClick={() => setShowSettings(true)}
-              className="icon-button"
-              title="Settings"
-            >
-              <Settings style={{ width: "1rem", height: "1rem" }} />
+            <button onClick={() => setShowSettings(true)} style={iconBtn} title="Settings" className="icon-button">
+              <Settings size={16} />
             </button>
-            <button
-              onClick={handleLogout}
-              className="icon-button"
-              title="Logout"
-            >
-              <LogOut style={{ width: "1rem", height: "1rem" }} />
+            <button onClick={handleLogout} style={iconBtn} title="Logout" className="icon-button">
+              <LogOut size={16} />
             </button>
           </div>
 
@@ -160,18 +271,32 @@ export function DashboardClient({
           <div style={{ position: "relative" }} className="sm:hidden">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
+              style={iconBtn}
               className="icon-button"
             >
-              <MoreVertical style={{ width: "1.25rem", height: "1.25rem" }} />
+              <MoreVertical size={20} />
             </button>
 
             {showMobileMenu && (
               <>
+                <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setShowMobileMenu(false)} />
                 <div
-                  style={{ position: "fixed", inset: 0, zIndex: 40 }}
-                  onClick={() => setShowMobileMenu(false)}
-                />
-                <div className="scale-in" style={{ position: "absolute", right: 0, top: "100%", marginTop: "0.5rem", width: "12rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", zIndex: 50, padding: "0.375rem 0", overflow: "hidden" }}>
+                  className="scale-in"
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "100%",
+                    marginTop: "0.5rem",
+                    width: "12rem",
+                    background: "var(--bg-secondary)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: "0.75rem",
+                    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+                    zIndex: 50,
+                    padding: "0.375rem 0",
+                    overflow: "hidden",
+                  }}
+                >
                   {[
                     { icon: Share2, label: "Share Store", onClick: () => { setShowShareCard(true); setShowMobileMenu(false); } },
                     { icon: BarChart3, label: "Analytics", onClick: () => { setShowAnalytics(true); setShowMobileMenu(false); } },
@@ -184,7 +309,7 @@ export function DashboardClient({
                       onClick={onClick}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
                     >
-                      <Icon style={{ width: "1rem", height: "1rem" }} />
+                      <Icon size={16} />
                       {label}
                     </button>
                   ))}
@@ -197,21 +322,21 @@ export function DashboardClient({
                     rel="noopener noreferrer"
                     style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none" }}
                   >
-                    <ExternalLink style={{ width: "1rem", height: "1rem" }} />
+                    <ExternalLink size={16} />
                     View Store
                   </a>
                   <button
                     onClick={() => { setShowSettings(true); setShowMobileMenu(false); }}
                     style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
                   >
-                    <Settings style={{ width: "1rem", height: "1rem" }} />
+                    <Settings size={16} />
                     Settings
                   </button>
                   <button
                     onClick={handleLogout}
                     style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--glow-red)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
                   >
-                    <LogOut style={{ width: "1rem", height: "1rem" }} />
+                    <LogOut size={16} />
                     Logout
                   </button>
                 </div>
@@ -221,50 +346,60 @@ export function DashboardClient({
         </div>
       </header>
 
-      <main style={{ maxWidth: "80rem", margin: "0 auto", padding: "2rem 1rem" }}>
+      {/* ── Main ───────────────────────────────────── */}
+      <main style={{ maxWidth: "80rem", margin: "0 auto", padding: "1.5rem 1rem", position: "relative", zIndex: 1 }}>
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem", marginBottom: "2.5rem" }}>
-          <StatCard
-            icon={<Package style={{ width: "1rem", height: "1rem" }} />}
-            label="Products"
-            value={products.length}
-            accent="purple"
-          />
-          <StatCard
-            icon={<LinkIcon style={{ width: "1rem", height: "1rem" }} />}
-            label="Store URL"
-            value={
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem", marginBottom: "2rem" }}>
+          {/* Product count */}
+          <div style={{ ...glassCard, padding: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div style={{ width: "2.25rem", height: "2.25rem", borderRadius: "0.5rem", background: "linear-gradient(135deg, rgba(168,133,247,0.15), rgba(6,182,212,0.1))", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Package size={16} style={{ color: "var(--glow-purple)" }} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", ...labelStyle, marginBottom: 0 }}>Products</p>
+              <p style={{ fontSize: "1.125rem", fontWeight: 700 }}>{products.length}</p>
+            </div>
+          </div>
+
+          {/* Store URL */}
+          <div style={{ ...glassCard, padding: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div style={{ width: "2.25rem", height: "2.25rem", borderRadius: "0.5rem", background: "linear-gradient(135deg, rgba(6,182,212,0.15), rgba(16,185,129,0.1))", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <LinkIcon size={16} style={{ color: "var(--glow-cyan)" }} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", ...labelStyle, marginBottom: 0 }}>Store URL</p>
               <a
                 href={`/${store.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--glow-purple)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", textDecoration: "none" }}
+                style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--glow-cyan)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", textDecoration: "none" }}
               >
                 stallhq.link/{store.slug}
               </a>
-            }
-            accent="cyan"
-          />
+            </div>
+          </div>
         </div>
 
-        {/* Products */}
+        {/* Products section */}
         <section>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
-            <h2 style={{ fontSize: "1.125rem", fontWeight: 700 }}>Products</h2>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+            <div>
+              <h2 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.125rem" }}>Products</h2>
+              <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", letterSpacing: "0.03em", textTransform: "uppercase" }}>
+                Manage your inventory
+              </p>
+            </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <button
                 onClick={() => setShowBatchUpload(true)}
                 className="glow-button-secondary"
                 style={{ padding: "0.625rem 0.75rem", fontSize: "0.75rem" }}
               >
-                <Upload style={{ width: "0.875rem", height: "0.875rem" }} />
+                <Upload size={14} />
                 <span className="hidden sm:inline">Batch Upload</span>
               </button>
               <button
-                onClick={() => {
-                  setEditingProduct(null);
-                  setShowProductForm(true);
-                }}
+                onClick={() => { setEditingProduct(null); setShowProductForm(true); }}
                 className="glow-button"
                 style={{ padding: "0.625rem 0.75rem", fontSize: "0.75rem" }}
               >
@@ -276,38 +411,29 @@ export function DashboardClient({
           {products.length > 0 ? (
             <DashboardProductGrid
               products={products}
-              onEdit={(product) => {
-                setEditingProduct(product);
-                setShowProductForm(true);
-              }}
+              onEdit={(product) => { setEditingProduct(product); setShowProductForm(true); }}
               onDelete={handleDeleteProduct}
             />
           ) : (
-            <EmptyState
-              icon={
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />
-                </svg>
-              }
-              title="No products yet"
-              description="Add your first product to start selling."
-              action={
-                <button
-                  onClick={() => {
-                    setEditingProduct(null);
-                    setShowProductForm(true);
-                  }}
-                  className="glow-button"
-                >
-                  + Add Product
-                </button>
-              }
-            />
+            <div style={{ ...glassCard, padding: "3rem 1.5rem", textAlign: "center" }}>
+              <div style={{ width: "3rem", height: "3rem", borderRadius: "0.75rem", background: "linear-gradient(135deg, rgba(168,133,247,0.15), rgba(6,182,212,0.1))", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
+                <Package size={20} style={{ color: "var(--glow-purple)" }} />
+              </div>
+              <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.25rem" }}>No products yet</h3>
+              <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>Add your first product to start selling.</p>
+              <button
+                onClick={() => { setEditingProduct(null); setShowProductForm(true); }}
+                className="glow-button"
+                style={{ padding: "0.75rem 1.5rem", fontSize: "0.8125rem", margin: "0 auto" }}
+              >
+                + Add Product
+              </button>
+            </div>
           )}
         </section>
       </main>
 
-      {/* Modals */}
+      {/* ── Modals ─────────────────────────────────── */}
       {showProductForm && (
         <ProductForm
           store={store}
@@ -316,45 +442,55 @@ export function DashboardClient({
           onSaved={handleProductSaved}
         />
       )}
-
       {showSettings && (
-        <StoreSettings
-          store={store}
-          onClose={() => setShowSettings(false)}
-          onSaved={handleStoreUpdated}
-        />
+        <StoreSettings store={store} onClose={() => setShowSettings(false)} onSaved={handleStoreUpdated} />
       )}
-
       {showShareCard && (
         <ShareCard store={store} onClose={() => setShowShareCard(false)} />
       )}
-
       {showAnalytics && (
-        <Modal open={showAnalytics} onClose={() => setShowAnalytics(false)} title="Analytics" maxWidth="max-w-2xl">
-          <AnalyticsDashboard store={store} />
-        </Modal>
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setShowAnalytics(false)} />
+          <div className="slide-up" style={{ position: "relative", width: "100%", maxWidth: "42rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <BarChart3 size={18} style={{ color: "var(--glow-purple)" }} />
+                <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Analytics</h2>
+              </div>
+              <button onClick={() => setShowAnalytics(false)} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ padding: "1.25rem" }}>
+              <AnalyticsDashboard store={store} />
+            </div>
+          </div>
+        </div>
       )}
-
       {showBatchUpload && (
-        <BatchUpload
-          store={store}
-          onClose={() => setShowBatchUpload(false)}
-          onComplete={() => { fetchProducts(); setShowBatchUpload(false); }}
-        />
+        <BatchUpload store={store} onClose={() => setShowBatchUpload(false)} onComplete={() => { fetchProducts(); setShowBatchUpload(false); }} />
       )}
-
       {showTheme && (
-        <ThemeSettings
-          store={store}
-          onClose={() => setShowTheme(false)}
-          onSaved={handleStoreUpdated}
-        />
+        <ThemeSettings store={store} onClose={() => setShowTheme(false)} onSaved={handleStoreUpdated} />
       )}
-
       {showOrders && (
-        <Modal open={showOrders} onClose={() => setShowOrders(false)} title="Orders" maxWidth="max-w-2xl">
-          <OrderManager storeId={store.id} />
-        </Modal>
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setShowOrders(false)} />
+          <div className="slide-up" style={{ position: "relative", width: "100%", maxWidth: "42rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <ShoppingCart size={18} style={{ color: "var(--glow-purple)" }} />
+                <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Orders</h2>
+              </div>
+              <button onClick={() => setShowOrders(false)} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ padding: "1.25rem" }}>
+              <OrderManager storeId={store.id} />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

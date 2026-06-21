@@ -10,6 +10,13 @@ interface ShareCardProps {
   onClose: () => void;
 }
 
+const glassCard: React.CSSProperties = {
+  background: "rgba(255,255,255,0.02)",
+  border: "1px solid var(--border-subtle)",
+  borderRadius: "0.75rem",
+  backdropFilter: "blur(12px)",
+};
+
 export function ShareCard({ store, onClose }: ShareCardProps) {
   const [copied, setCopied] = useState(false);
   const storeUrl = `https://stallhq.link/${store.slug}`;
@@ -20,7 +27,6 @@ export function ShareCard({ store, onClose }: ShareCardProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for older browsers
       const textarea = document.createElement("textarea");
       textarea.value = storeUrl;
       document.body.appendChild(textarea);
@@ -35,12 +41,10 @@ export function ShareCard({ store, onClose }: ShareCardProps) {
   const handleDownloadQR = () => {
     const svg = document.getElementById("store-qr-code");
     if (!svg) return;
-
     const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const img = new Image();
-
     img.onload = () => {
       canvas.width = img.width;
       canvas.height = img.height;
@@ -49,132 +53,100 @@ export function ShareCard({ store, onClose }: ShareCardProps) {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
       }
-
       const link = document.createElement("a");
       link.download = `${store.slug}-qr-code.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
     };
-
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: store.name,
-          text: `Check out ${store.name} on StallHq!`,
-          url: storeUrl,
-        });
-      } catch {
-        // User cancelled or error occurred
-      }
+        await navigator.share({ title: store.name, text: `Check out ${store.name} on StallHq!`, url: storeUrl });
+      } catch { /* User cancelled */ }
     } else {
       handleCopy();
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={onClose} />
 
-      <div className="relative w-full max-w-md bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)] shadow-2xl slide-up">
+      <div className="slide-up" style={{ position: "relative", width: "100%", maxWidth: "28rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)" }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
-          <h2 className="text-lg font-semibold">Share Your Store</h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-[var(--bg-card)] transition-colors"
-          >
-            <X className="w-5 h-5" />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)" }}>
+          <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Share Your Store</h2>
+          <button onClick={onClose} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
+            <X size={18} />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-8">
+        <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Store Preview Card */}
-          <div className="bg-gradient-to-br from-purple-500/10 to-cyan-500/10 rounded-xl p-6 border border-[var(--border-subtle)]">
-            <div className="flex items-center gap-4 mb-4">
+          <div style={{ background: "linear-gradient(135deg, rgba(168,133,247,0.1), rgba(6,182,212,0.06))", borderRadius: "0.75rem", padding: "1.5rem", border: "1px solid var(--border-subtle)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
               {store.logo_url ? (
-                <img
-                  src={store.logo_url}
-                  alt={store.name}
-                  className="w-16 h-16 rounded-xl object-cover"
-                />
+                <img src={store.logo_url} alt={store.name} style={{ width: "4rem", height: "4rem", borderRadius: "0.75rem", objectFit: "cover" }} />
               ) : (
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center font-bold text-2xl">
+                <div style={{ width: "4rem", height: "4rem", borderRadius: "0.75rem", background: "linear-gradient(135deg, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "1.25rem" }}>
                   {store.name.charAt(0).toUpperCase()}
                 </div>
               )}
               <div>
-                <h3 className="font-bold text-lg">{store.name}</h3>
-                <p className="text-sm text-[var(--text-secondary)]">
+                <h3 style={{ fontWeight: 700, fontSize: "1rem", marginBottom: "0.125rem" }}>{store.name}</h3>
+                <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
                   {store.description || "Digital storefront"}
                 </p>
               </div>
             </div>
 
             {/* QR Code */}
-            <div className="flex justify-center py-4">
-              <div className="bg-white p-4 rounded-xl">
-                <QRCodeSVG
-                  id="store-qr-code"
-                  value={storeUrl}
-                  size={160}
-                  level="H"
-                  includeMargin={false}
-                />
+            <div style={{ display: "flex", justifyContent: "center", padding: "1rem 0" }}>
+              <div style={{ background: "white", padding: "1rem", borderRadius: "0.75rem" }}>
+                <QRCodeSVG id="store-qr-code" value={storeUrl} size={140} level="H" includeMargin={false} />
               </div>
             </div>
 
             {/* URL */}
-            <div className="flex items-center justify-center gap-2 text-sm">
-              <span className="text-[var(--text-muted)]">stallhq.link/</span>
-              <span className="font-semibold text-[var(--glow-purple)]">
-                {store.slug}
-              </span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem", fontSize: "0.8125rem" }}>
+              <span style={{ color: "var(--text-muted)" }}>stallhq.link/</span>
+              <span style={{ fontWeight: 600, color: "var(--glow-purple)" }}>{store.slug}</span>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              onClick={handleCopy}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-colors"
-            >
-              {copied ? (
-                <Check className="w-5 h-5 text-[var(--glow-green)]" />
-              ) : (
-                <Copy className="w-5 h-5 text-[var(--text-secondary)]" />
-              )}
-              <span className="text-xs text-[var(--text-secondary)]">
-                {copied ? "Copied!" : "Copy Link"}
-              </span>
-            </button>
-
-            <button
-              onClick={handleDownloadQR}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-colors"
-            >
-              <Download className="w-5 h-5 text-[var(--text-secondary)]" />
-              <span className="text-xs text-[var(--text-secondary)]">
-                Download QR
-              </span>
-            </button>
-
-            <button
-              onClick={handleShare}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition-colors"
-            >
-              <Share2 className="w-5 h-5 text-[var(--text-secondary)]" />
-              <span className="text-xs text-[var(--text-secondary)]">
-                Share
-              </span>
-            </button>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem" }}>
+            {[
+              { icon: copied ? Check : Copy, label: copied ? "Copied!" : "Copy Link", onClick: handleCopy, color: copied ? "var(--glow-green)" : "var(--text-secondary)" },
+              { icon: Download, label: "Download QR", onClick: handleDownloadQR, color: "var(--text-secondary)" },
+              { icon: Share2, label: "Share", onClick: handleShare, color: "var(--text-secondary)" },
+            ].map(({ icon: Icon, label, onClick, color }) => (
+              <button
+                key={label}
+                onClick={onClick}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "1rem",
+                  borderRadius: "0.75rem",
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border-subtle)",
+                  color,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--text-muted)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-subtle)"; }}
+              >
+                <Icon size={20} />
+                <span style={{ fontSize: "0.6875rem" }}>{label}</span>
+              </button>
+            ))}
           </div>
         </div>
       </div>

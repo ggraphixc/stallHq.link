@@ -19,59 +19,48 @@ interface VariantDraft {
 }
 
 const COMMON_OPTIONS = [
-  {
-    name: "Size",
-    values: ["XS", "S", "M", "L", "XL", "XXL", "3XL"],
-  },
-  {
-    name: "Color",
-    values: [
-      "Black",
-      "White",
-      "Red",
-      "Blue",
-      "Green",
-      "Yellow",
-      "Pink",
-      "Purple",
-      "Orange",
-      "Grey",
-      "Brown",
-      "Navy",
-    ],
-  },
-  {
-    name: "Material",
-    values: ["Cotton", "Polyester", "Silk", "Leather", "Denim", "Wool"],
-  },
+  { name: "Size", values: ["XS", "S", "M", "L", "XL", "XXL", "3XL"] },
+  { name: "Color", values: ["Black", "White", "Red", "Blue", "Green", "Yellow", "Pink", "Purple", "Orange", "Grey", "Brown", "Navy"] },
+  { name: "Material", values: ["Cotton", "Polyester", "Silk", "Leather", "Denim", "Wool"] },
 ];
 
-export function VariantManager({
-  variants,
-  onChange,
-  basePrice,
-}: VariantManagerProps) {
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "0.5rem 0.625rem",
+  fontSize: "0.75rem",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border-subtle)",
+  borderRadius: "0.5rem",
+  color: "var(--text-primary)",
+  outline: "none",
+  transition: "border-color 0.2s",
+};
+
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: "0.6875rem",
+  fontWeight: 600,
+  color: "var(--text-secondary)",
+  letterSpacing: "0.03em",
+  textTransform: "uppercase",
+  marginBottom: "0.375rem",
+};
+
+export function VariantManager({ variants, onChange, basePrice }: VariantManagerProps) {
   const [drafts, setDrafts] = useState<VariantDraft[]>([
     { optionName: "Size", optionValue: "", price: "", stock: "0", sku: "" },
   ]);
   const [customOptionName, setCustomOptionName] = useState("");
 
   const addDraft = () => {
-    setDrafts([
-      ...drafts,
-      { optionName: "Size", optionValue: "", price: "", stock: "0", sku: "" },
-    ]);
+    setDrafts([...drafts, { optionName: "Size", optionValue: "", price: "", stock: "0", sku: "" }]);
   };
 
   const removeDraft = (index: number) => {
     setDrafts(drafts.filter((_, i) => i !== index));
   };
 
-  const updateDraft = (
-    index: number,
-    field: keyof VariantDraft,
-    value: string
-  ) => {
+  const updateDraft = (index: number, field: keyof VariantDraft, value: string) => {
     const updated = [...drafts];
     updated[index][field] = value;
     setDrafts(updated);
@@ -90,74 +79,57 @@ export function VariantManager({
         stock: parseInt(d.stock) || 0,
         sku: d.sku || null,
       }));
-
     onChange([...variants, ...newVariants]);
-    setDrafts([
-      { optionName: "Size", optionValue: "", price: "", stock: "0", sku: "" },
-    ]);
+    setDrafts([{ optionName: "Size", optionValue: "", price: "", stock: "0", sku: "" }]);
   };
 
   const removeVariant = (id: string) => {
     onChange(variants.filter((v) => v.id !== id));
   };
 
-  const updateVariant = (
-    id: string,
-    field: keyof ProductVariant,
-    value: string | number | null
-  ) => {
-    onChange(
-      variants.map((v) => (v.id === id ? { ...v, [field]: value } : v))
-    );
-  };
-
-  // Group variants by option name
   const groupedVariants = variants.reduce(
     (acc, variant) => {
-      if (!acc[variant.option_name]) {
-        acc[variant.option_name] = [];
-      }
+      if (!acc[variant.option_name]) acc[variant.option_name] = [];
       acc[variant.option_name].push(variant);
       return acc;
     },
     {} as Record<string, ProductVariant[]>
   );
 
+  const glassCard: React.CSSProperties = {
+    background: "rgba(255,255,255,0.02)",
+    border: "1px solid var(--border-subtle)",
+    borderRadius: "0.75rem",
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <label className="block text-sm font-medium">Product Variants</label>
-        <span className="text-xs text-[var(--text-muted)]">
-          Optional: Add sizes, colors, etc.
-        </span>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <label style={{ ...labelStyle, marginBottom: 0 }}>Product Variants</label>
+        <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Optional</span>
       </div>
 
       {/* Existing Variants */}
       {Object.entries(groupedVariants).map(([optionName, optionVariants]) => (
-        <div
-          key={optionName}
-          className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]"
-        >
-          <h4 className="text-sm font-medium mb-2">{optionName}</h4>
-          <div className="space-y-2">
+        <div key={optionName} style={{ ...glassCard, padding: "0.75rem" }}>
+          <h4 style={{ fontSize: "0.8125rem", fontWeight: 600, marginBottom: "0.5rem" }}>{optionName}</h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {optionVariants.map((variant) => (
-              <div key={variant.id} className="flex items-center gap-2">
-                <GripVertical className="w-4 h-4 text-[var(--text-muted)]" />
-                <span className="flex-1 text-sm">{variant.option_value}</span>
+              <div key={variant.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <GripVertical size={14} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: "0.8125rem" }}>{variant.option_value}</span>
                 {variant.price !== null && (
-                  <span className="text-xs text-[var(--glow-green)]">
-                    ₦{variant.price.toLocaleString()}
-                  </span>
+                  <span style={{ fontSize: "0.6875rem", color: "var(--glow-green)" }}>₦{variant.price.toLocaleString()}</span>
                 )}
-                <span className="text-xs text-[var(--text-muted)]">
-                  Stock: {variant.stock}
-                </span>
+                <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Stock: {variant.stock}</span>
                 <button
                   type="button"
                   onClick={() => removeVariant(variant.id)}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[var(--glow-red-dim)] text-[var(--text-muted)] hover:text-[var(--glow-red)]"
+                  style={{ width: "1.75rem", height: "1.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer", transition: "color 0.2s" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--glow-red)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)"; }}
                 >
-                  <X className="w-4 h-4" />
+                  <X size={14} />
                 </button>
               </div>
             ))}
@@ -166,20 +138,19 @@ export function VariantManager({
       ))}
 
       {/* Add New Variants */}
-      <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-3">
-        <h4 className="text-sm font-medium">Add Variants</h4>
+      <div style={{ ...glassCard, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <h4 style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Add Variants</h4>
 
         {drafts.map((draft, index) => (
-          <div key={index} className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-start">
+          <div key={index} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "0.5rem", alignItems: "start" }} className="!grid-cols-2 sm:!grid-cols-4">
             <select
               value={draft.optionName}
               onChange={(e) => updateDraft(index, "optionName", e.target.value)}
-              className="ambient-input !py-2 !px-3 text-sm"
+              className="ambient-input"
+              style={{ ...inputStyle, cursor: "pointer" }}
             >
               {COMMON_OPTIONS.map((opt) => (
-                <option key={opt.name} value={opt.name}>
-                  {opt.name}
-                </option>
+                <option key={opt.name} value={opt.name}>{opt.name}</option>
               ))}
               <option value="custom">Custom...</option>
             </select>
@@ -190,22 +161,20 @@ export function VariantManager({
                 value={customOptionName}
                 onChange={(e) => setCustomOptionName(e.target.value)}
                 placeholder="Option name"
-                className="ambient-input !py-2 !px-3 text-sm"
+                className="ambient-input"
+                style={inputStyle}
               />
             ) : (
               <select
                 value={draft.optionValue}
                 onChange={(e) => updateDraft(index, "optionValue", e.target.value)}
-                className="ambient-input !py-2 !px-3 text-sm"
+                className="ambient-input"
+                style={{ ...inputStyle, cursor: "pointer" }}
               >
                 <option value="">Select</option>
-                {COMMON_OPTIONS.find((o) => o.name === draft.optionName)?.values.map(
-                  (val) => (
-                    <option key={val} value={val}>
-                      {val}
-                    </option>
-                  )
-                )}
+                {COMMON_OPTIONS.find((o) => o.name === draft.optionName)?.values.map((val) => (
+                  <option key={val} value={val}>{val}</option>
+                ))}
               </select>
             )}
 
@@ -213,38 +182,44 @@ export function VariantManager({
               type="number"
               value={draft.price}
               onChange={(e) => updateDraft(index, "price", e.target.value)}
-              placeholder="Price (optional)"
-              className="ambient-input !py-2 !px-3 text-sm"
+              placeholder="Price (opt.)"
+              className="ambient-input"
+              style={inputStyle}
             />
 
-            <div className="flex items-center gap-1">
+            <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
               <input
                 type="number"
                 value={draft.stock}
                 onChange={(e) => updateDraft(index, "stock", e.target.value)}
                 placeholder="Stock"
-                className="ambient-input !py-2 !px-3 text-sm flex-1"
+                className="ambient-input"
+                style={{ ...inputStyle, flex: 1 }}
               />
               {drafts.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeDraft(index)}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[var(--glow-red-dim)] text-[var(--text-muted)] hover:text-[var(--glow-red)]"
+                  style={{ width: "1.75rem", height: "1.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--glow-red)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)"; }}
                 >
-                  <X className="w-4 h-4" />
+                  <X size={14} />
                 </button>
               )}
             </div>
           </div>
         ))}
 
-        <div className="flex items-center gap-2">
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <button
             type="button"
             onClick={addDraft}
-            className="text-sm text-[var(--glow-purple)] hover:text-[var(--glow-purple)]/80 flex items-center gap-1"
+            style={{ fontSize: "0.75rem", color: "var(--glow-purple)", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", padding: 0 }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.7"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
           >
-            <Plus className="w-4 h-4" />
+            <Plus size={14} />
             Add another
           </button>
         </div>
@@ -253,7 +228,9 @@ export function VariantManager({
           type="button"
           onClick={addVariants}
           disabled={drafts.every((d) => !d.optionValue)}
-          className="w-full py-2 rounded-lg bg-[var(--glow-purple)]/10 text-[var(--glow-purple)] text-sm font-medium hover:bg-[var(--glow-purple)]/20 transition-colors disabled:opacity-50"
+          style={{ width: "100%", padding: "0.5rem", borderRadius: "0.5rem", background: "rgba(168,133,247,0.1)", color: "var(--glow-purple)", fontSize: "0.75rem", fontWeight: 600, border: "none", cursor: drafts.every((d) => !d.optionValue) ? "not-allowed" : "pointer", opacity: drafts.every((d) => !d.optionValue) ? 0.5 : 1, transition: "background 0.2s" }}
+          onMouseEnter={(e) => { if (!drafts.every((d) => !d.optionValue)) (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.2)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.1)"; }}
         >
           Add Variants
         </button>
