@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ExplorerPage } from "./ExplorerPage";
 
 export default async function ExplorePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Fetch public stores (setup complete only)
   const { data: stores } = await supabase
