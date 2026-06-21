@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Plus, Minus, Trash2, MessageCircle } from "lucide-react";
+import { X, Plus, Minus, Trash2, MessageCircle, ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { generateWhatsAppUrl } from "@/lib/whatsapp";
 import { useAnalytics } from "@/hooks/useAnalytics";
@@ -12,15 +12,20 @@ interface CartDrawerProps {
   store: Store;
 }
 
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "0.625rem 0.75rem",
+  fontSize: "0.8125rem",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border-subtle)",
+  borderRadius: "0.5rem",
+  color: "var(--text-primary)",
+  outline: "none",
+  transition: "border-color 0.2s",
+};
+
 export function CartDrawer({ store }: CartDrawerProps) {
-  const {
-    items,
-    updateQuantity,
-    removeItem,
-    clearCart,
-    total,
-    itemCount,
-  } = useCart();
+  const { items, updateQuantity, removeItem, clearCart, total, itemCount } = useCart();
   const { trackWhatsAppClick } = useAnalytics();
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -28,20 +33,15 @@ export function CartDrawer({ store }: CartDrawerProps) {
 
   const handleCheckout = async () => {
     trackWhatsAppClick(store.id);
-
-    // Create order in database
     try {
       const orderItems = items.map((item) => ({
         product_id: item.product.id,
         product_name: item.product.name,
         variant_id: item.variant?.id,
-        variant_name: item.variant
-          ? `${item.variant.option_name}: ${item.variant.option_value}`
-          : undefined,
+        variant_name: item.variant ? `${item.variant.option_name}: ${item.variant.option_value}` : undefined,
         price: item.variant?.price ?? item.product.price,
         quantity: item.quantity,
       }));
-
       await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -59,8 +59,6 @@ export function CartDrawer({ store }: CartDrawerProps) {
     } catch (error) {
       console.error("Error creating order:", error);
     }
-
-    // Open WhatsApp
     const url = generateWhatsAppUrl(store.whatsapp_number, store.name, items);
     window.open(url, "_blank");
     clearCart();
@@ -69,168 +67,219 @@ export function CartDrawer({ store }: CartDrawerProps) {
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
-        <button className="glow-button !px-4" aria-label="Open cart">
-          <span className="relative">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="9" cy="21" r="1" />
-              <circle cx="20" cy="21" r="1" />
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-            </svg>
-            {itemCount > 0 && (
-              <span className="absolute -top-2 -right-2 w-5 h-5 bg-[var(--glow-green)] rounded-full text-xs font-bold flex items-center justify-center text-black">
-                {itemCount}
-              </span>
-            )}
-          </span>
-          <span className="hidden sm:inline">Cart</span>
+        <button
+          style={{
+            ...{
+              width: "2.25rem",
+              height: "2.25rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "0.625rem",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              position: "relative" as const,
+              color: "white",
+              background: "linear-gradient(135deg, #a855f7, #6366f1)",
+            },
+          }}
+          className="icon-button"
+          aria-label="Open cart"
+        >
+          <ShoppingBag size={18} />
+          {itemCount > 0 && (
+            <span style={{
+              position: "absolute",
+              top: "-0.25rem",
+              right: "-0.25rem",
+              width: "1rem",
+              height: "1rem",
+              borderRadius: "50%",
+              background: "var(--glow-green)",
+              color: "black",
+              fontSize: "0.5625rem",
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              lineHeight: 1,
+            }}>
+              {itemCount}
+            </span>
+          )}
         </button>
       </Dialog.Trigger>
 
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed right-0 top-0 h-full w-full max-w-md bg-[var(--bg-secondary)] z-50 flex flex-col slide-up">
+        <Dialog.Overlay style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.6)",
+          backdropFilter: "blur(4px)",
+          zIndex: 50,
+        }} />
+        <Dialog.Content style={{
+          position: "fixed",
+          right: 0,
+          top: 0,
+          height: "100%",
+          width: "100%",
+          maxWidth: "28rem",
+          background: "var(--bg-secondary)",
+          border: "none",
+          borderLeft: "1px solid var(--border-subtle)",
+          zIndex: 50,
+          display: "flex",
+          flexDirection: "column",
+          outline: "none",
+        }} className="slide-up">
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
-            <Dialog.Title className="text-lg font-semibold">
-              Your Cart ({itemCount})
+          <div style={{
+            padding: "1.25rem",
+            borderBottom: "1px solid var(--border-subtle)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}>
+            <Dialog.Title style={{ fontSize: "1rem", fontWeight: 700 }}>
+              Cart ({itemCount})
             </Dialog.Title>
             <Dialog.Close asChild>
-              <button
-                className="w-11 h-11 rounded-lg hover:bg-[var(--bg-card)] transition-colors flex items-center justify-center"
-                aria-label="Close cart"
-              >
-                <X className="w-5 h-5" />
+              <button style={{
+                width: "2.25rem",
+                height: "2.25rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "0.5rem",
+                border: "1px solid var(--border-subtle)",
+                background: "rgba(255,255,255,0.03)",
+                color: "var(--text-muted)",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}>
+                <X size={18} />
               </button>
             </Dialog.Close>
           </div>
 
           {/* Items */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div style={{ flex: 1, overflowY: "auto", padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)]">
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  className="mb-4 opacity-50"
-                >
-                  <circle cx="9" cy="21" r="1" />
-                  <circle cx="20" cy="21" r="1" />
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                </svg>
-                <p>Your cart is empty</p>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>
+                <ShoppingBag size={48} style={{ opacity: 0.3, marginBottom: "1rem" }} />
+                <p style={{ fontSize: "0.875rem" }}>Your cart is empty</p>
               </div>
             ) : (
               items.map((item) => {
                 const itemPrice = item.variant?.price ?? item.product.price;
-                const itemKey = item.variant?.id
-                  ? `${item.product.id}-${item.variant.id}`
-                  : item.product.id;
-
+                const itemKey = item.variant?.id ? `${item.product.id}-${item.variant.id}` : item.product.id;
                 return (
-                  <div
-                    key={itemKey}
-                    className="flex gap-4 p-3 rounded-lg bg-[var(--bg-card)]"
-                  >
-                    {/* Product Image */}
-                    <div className="w-20 h-20 rounded-lg overflow-hidden bg-[var(--bg-primary)] flex-shrink-0">
+                  <div key={itemKey} style={{
+                    display: "flex",
+                    gap: "0.75rem",
+                    padding: "0.75rem",
+                    borderRadius: "0.75rem",
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--border-subtle)",
+                  }}>
+                    {/* Image */}
+                    <div style={{
+                      width: "4.5rem",
+                      height: "4.5rem",
+                      borderRadius: "0.5rem",
+                      overflow: "hidden",
+                      flexShrink: 0,
+                      background: "var(--bg-primary)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}>
                       {item.product.image_url ? (
-                        <img
-                          src={item.product.image_url}
-                          alt={item.product.name}
-                          className="w-full h-full object-cover"
-                        />
+                        <img src={item.product.image_url} alt={item.product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)]">
-                          <svg
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                          >
-                            <rect
-                              x="3"
-                              y="3"
-                              width="18"
-                              height="18"
-                              rx="2"
-                              ry="2"
-                            />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <polyline points="21 15 16 10 5 21" />
-                          </svg>
-                        </div>
+                        <ShoppingBag size={20} style={{ color: "var(--text-muted)" }} />
                       )}
                     </div>
 
                     {/* Details */}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium truncate">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h4 style={{ fontSize: "0.8125rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {item.product.name}
                       </h4>
                       {item.variant && (
-                        <p className="text-xs text-[var(--glow-purple)]">
+                        <p style={{ fontSize: "0.6875rem", color: "var(--glow-purple)", marginTop: "0.125rem" }}>
                           {item.variant.option_name}: {item.variant.option_value}
                         </p>
                       )}
-                      <p className="text-sm text-[var(--glow-green)]">
+                      <p style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--glow-green)", marginTop: "0.25rem" }}>
                         ₦{itemPrice.toLocaleString()}
                       </p>
 
-                      {/* Quantity Controls */}
-                      <div className="flex items-center gap-2 mt-2">
+                      {/* Quantity */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.5rem" }}>
                         <button
-                          onClick={() =>
-                            updateQuantity(
-                              item.product.id,
-                              item.quantity - 1,
-                              item.variant?.id
-                            )
-                          }
-                          className="w-10 h-10 rounded-lg bg-[var(--bg-primary)] flex items-center justify-center hover:bg-[var(--bg-card-hover)] transition-colors"
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variant?.id)}
+                          style={{
+                            width: "1.75rem",
+                            height: "1.75rem",
+                            borderRadius: "0.375rem",
+                            background: "var(--bg-primary)",
+                            border: "1px solid var(--border-subtle)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "var(--text-secondary)",
+                            cursor: "pointer",
+                          }}
                           aria-label="Decrease quantity"
                         >
-                          <Minus className="w-4 h-4" />
+                          <Minus size={12} />
                         </button>
-                        <span className="w-8 text-center font-medium">
+                        <span style={{ width: "1.5rem", textAlign: "center", fontSize: "0.8125rem", fontWeight: 600 }}>
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() =>
-                            updateQuantity(
-                              item.product.id,
-                              item.quantity + 1,
-                              item.variant?.id
-                            )
-                          }
-                          className="w-10 h-10 rounded-lg bg-[var(--bg-primary)] flex items-center justify-center hover:bg-[var(--bg-card-hover)] transition-colors"
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variant?.id)}
+                          style={{
+                            width: "1.75rem",
+                            height: "1.75rem",
+                            borderRadius: "0.375rem",
+                            background: "var(--bg-primary)",
+                            border: "1px solid var(--border-subtle)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "var(--text-secondary)",
+                            cursor: "pointer",
+                          }}
                           aria-label="Increase quantity"
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus size={12} />
                         </button>
 
                         <button
-                          onClick={() =>
-                            removeItem(item.product.id, item.variant?.id)
-                          }
-                          className="ml-auto w-10 h-10 flex items-center justify-center text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                          onClick={() => removeItem(item.product.id, item.variant?.id)}
+                          style={{
+                            marginLeft: "auto",
+                            width: "1.75rem",
+                            height: "1.75rem",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderRadius: "0.375rem",
+                            border: "none",
+                            background: "transparent",
+                            color: "var(--glow-red)",
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,0.1)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
                           aria-label="Remove item"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 size={12} />
                         </button>
                       </div>
                     </div>
@@ -242,56 +291,58 @@ export function CartDrawer({ store }: CartDrawerProps) {
 
           {/* Footer */}
           {items.length > 0 && (
-            <div className="p-5 border-t border-[var(--border-subtle)] space-y-4">
-              {/* Customer Info */}
-              <div className="space-y-3">
-                <p className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">Your Info (optional)</p>
-                <input
-                  type="text"
-                  className="ambient-input"
-                  placeholder="Your name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                />
-                <input
-                  type="tel"
-                  className="ambient-input"
-                  placeholder="Phone number"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                />
-                <input
-                  type="email"
-                  className="ambient-input"
-                  placeholder="Email for order updates"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                />
+            <div style={{
+              padding: "1.25rem",
+              borderTop: "1px solid var(--border-subtle)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
+            }}>
+              {/* Customer info */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <p style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.03em", textTransform: "uppercase" }}>
+                  Your Info (optional)
+                </p>
+                <input type="text" placeholder="Your name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="ambient-input" style={inputStyle} />
+                <input type="tel" placeholder="Phone number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="ambient-input" style={inputStyle} />
+                <input type="email" placeholder="Email for order updates" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="ambient-input" style={inputStyle} />
               </div>
 
               {/* Total */}
-              <div className="flex items-center justify-between text-lg">
-                <span className="text-[var(--text-secondary)]">Total</span>
-                <span className="price-display">₦{total.toLocaleString()}</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>Total</span>
+                <span className="price-display" style={{ fontSize: "1.125rem", fontWeight: 700 }}>₦{total.toLocaleString()}</span>
               </div>
 
-              {/* Actions */}
-              <div className="space-y-2">
-                <button
-                  onClick={handleCheckout}
-                  className="glow-button whatsapp-button w-full"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  Checkout via WhatsApp
-                </button>
+              {/* Checkout */}
+              <button onClick={handleCheckout} className="glow-button whatsapp-button" style={{
+                width: "100%",
+                padding: "0.75rem",
+                fontSize: "0.875rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+              }}>
+                <MessageCircle size={18} />
+                Checkout via WhatsApp
+              </button>
 
-                <button
-                  onClick={clearCart}
-                  className="w-full py-3 text-sm text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-                >
-                  Clear Cart
-                </button>
-              </div>
+              <button onClick={clearCart} style={{
+                width: "100%",
+                padding: "0.5rem",
+                fontSize: "0.75rem",
+                color: "var(--text-muted)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                transition: "color 0.2s",
+              }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)"; }}
+              >
+                Clear Cart
+              </button>
             </div>
           )}
         </Dialog.Content>

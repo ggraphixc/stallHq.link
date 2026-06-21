@@ -24,12 +24,12 @@ function CardImage({ product }: { product: Product }) {
   const hasMultiple = allImages.length > 1;
 
   const navBtn: React.CSSProperties = {
-    width: "1.5rem",
-    height: "1.5rem",
+    width: "2.25rem",
+    height: "2.25rem",
     borderRadius: "50%",
-    background: "rgba(0,0,0,0.55)",
-    backdropFilter: "blur(6px)",
-    border: "1px solid rgba(255,255,255,0.15)",
+    background: "rgba(0,0,0,0.6)",
+    backdropFilter: "blur(8px)",
+    border: "1px solid rgba(255,255,255,0.2)",
     color: "white",
     cursor: "pointer",
     display: "flex",
@@ -67,30 +67,28 @@ function CardImage({ product }: { product: Product }) {
         <>
           <button
             onClick={(e) => { e.stopPropagation(); setImgIndex((i) => (i === 0 ? allImages.length - 1 : i - 1)); }}
-            className="sm:!opacity-0 sm:group-hover:!opacity-100"
-            style={{ ...navBtn, position: "absolute", left: "0.25rem", top: "50%", transform: "translateY(-50%)", opacity: 1, transition: "opacity 0.2s", zIndex: 5 }}
+            style={{ ...navBtn, position: "absolute", left: "0.5rem", top: "50%", transform: "translateY(-50%)", zIndex: 5 }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.7)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.55)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.6)"; }}
           >
-            <ChevronLeft size={12} />
+            <ChevronLeft size={18} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); setImgIndex((i) => (i === allImages.length - 1 ? 0 : i + 1)); }}
-            className="sm:!opacity-0 sm:group-hover:!opacity-100"
-            style={{ ...navBtn, position: "absolute", right: "0.25rem", top: "50%", transform: "translateY(-50%)", opacity: 1, transition: "opacity 0.2s", zIndex: 5 }}
+            style={{ ...navBtn, position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", zIndex: 5 }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.7)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.55)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.6)"; }}
           >
-            <ChevronRight size={12} />
+            <ChevronRight size={18} />
           </button>
           {/* Dots */}
-          <div style={{ position: "absolute", bottom: "0.375rem", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "0.2rem", zIndex: 5 }}>
+          <div style={{ position: "absolute", bottom: "0.625rem", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "0.375rem", zIndex: 5 }}>
             {allImages.map((_, i) => (
               <span
                 key={i}
                 style={{
-                  width: "0.3rem",
-                  height: "0.3rem",
+                  width: "0.4375rem",
+                  height: "0.4375rem",
                   borderRadius: "50%",
                   background: i === imgIndex ? "white" : "rgba(255,255,255,0.4)",
                   transition: "background 0.2s",
@@ -111,11 +109,11 @@ export function DashboardProductGrid({
   togglingId,
 }: DashboardProductGridProps) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem" }} className="md:!grid-cols-3 lg:!grid-cols-4">
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem" }}>
       {products.map((product, index) => (
         <div
           key={product.id}
-          className="fade-in ambient-card group"
+          className="fade-in ambient-card"
           style={{
             animationDelay: `${index * 50}ms`,
             borderRadius: "0.75rem",
@@ -127,79 +125,65 @@ export function DashboardProductGrid({
           }}
         >
           {/* Image */}
-          <div
-            style={{
-              position: "relative",
-              aspectRatio: "1",
-              background: "var(--bg-secondary)",
-              overflow: "hidden",
-            }}
-          >
+          <div style={{ position: "relative", aspectRatio: "1", background: "var(--bg-secondary)", overflow: "hidden" }}>
             <CardImage product={product} />
 
             {/* Category badge */}
             {product.category && (
-              <span
-                className="category-tag"
-                style={{
-                  position: "absolute",
-                  top: "0.625rem",
-                  left: "0.625rem",
-                }}
-              >
+              <span className="category-tag" style={{ position: "absolute", top: "0.625rem", left: "0.625rem" }}>
                 {product.category}
               </span>
             )}
 
             {/* Inactive badge */}
             {!product.in_stock && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: "0.625rem",
-                  right: "0.625rem",
-                  fontSize: "0.5625rem",
-                  fontWeight: 600,
-                  padding: "0.125rem 0.375rem",
-                  borderRadius: "0.25rem",
-                  background: "rgba(239,68,68,0.85)",
-                  color: "white",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  zIndex: 2,
-                }}
-              >
+              <span style={{
+                position: "absolute",
+                top: "0.625rem",
+                right: "0.625rem",
+                fontSize: "0.5625rem",
+                fontWeight: 600,
+                padding: "0.125rem 0.375rem",
+                borderRadius: "0.25rem",
+                background: "rgba(239,68,68,0.85)",
+                color: "white",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                zIndex: 2,
+              }}>
                 Off
               </span>
             )}
 
-            {/* Overlay buttons — visible on hover (desktop) / always (mobile) */}
-            <div
-              className="sm:!opacity-0 sm:group-hover:!opacity-100"
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "rgba(0,0,0,0.45)",
-                backdropFilter: "blur(2px)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.5rem",
-                opacity: 1,
-                transition: "opacity 0.2s",
-                zIndex: 3,
-              }}
-            >
-              {/* Edit */}
+            {/* Dark overlay */}
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(2px)",
+              zIndex: 3,
+            }} />
+
+            {/* Buttons at bottom, side by side */}
+            <div style={{
+              position: "absolute",
+              bottom: "0.75rem",
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              zIndex: 4,
+            }}>
               <button
                 onClick={(e) => { e.stopPropagation(); onEdit(product); }}
                 style={{
-                  width: "2.5rem",
-                  height: "2.5rem",
-                  borderRadius: "0.625rem",
-                  background: "rgba(255,255,255,0.15)",
-                  backdropFilter: "blur(8px)",
-                  border: "1px solid rgba(255,255,255,0.2)",
+                  width: "2.75rem",
+                  height: "2.75rem",
+                  borderRadius: "0.75rem",
+                  background: "rgba(255,255,255,0.18)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.25)",
                   color: "white",
                   cursor: "pointer",
                   display: "flex",
@@ -208,23 +192,22 @@ export function DashboardProductGrid({
                   transition: "all 0.2s",
                 }}
                 aria-label={`Edit ${product.name}`}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.6)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.15)"; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.5)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.18)"; }}
               >
-                <Pencil size={15} />
+                <Pencil size={16} />
               </button>
 
-              {/* Toggle activate/deactivate */}
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleStock(product.id, product.in_stock); }}
                 disabled={togglingId === product.id}
                 style={{
-                  width: "2.5rem",
-                  height: "2.5rem",
-                  borderRadius: "0.625rem",
+                  width: "2.75rem",
+                  height: "2.75rem",
+                  borderRadius: "0.75rem",
                   background: product.in_stock ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)",
-                  backdropFilter: "blur(8px)",
-                  border: `1px solid ${product.in_stock ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.4)"}`,
+                  backdropFilter: "blur(10px)",
+                  border: `1px solid ${product.in_stock ? "rgba(16,185,129,0.5)" : "rgba(239,68,68,0.5)"}`,
                   color: "white",
                   cursor: togglingId === product.id ? "wait" : "pointer",
                   display: "flex",
@@ -245,11 +228,11 @@ export function DashboardProductGrid({
                 }}
               >
                 {togglingId === product.id ? (
-                  <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} />
+                  <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
                 ) : product.in_stock ? (
-                  <ToggleRight size={16} />
+                  <ToggleRight size={18} />
                 ) : (
-                  <ToggleLeft size={16} />
+                  <ToggleLeft size={18} />
                 )}
               </button>
             </div>
@@ -257,16 +240,7 @@ export function DashboardProductGrid({
 
           {/* Content */}
           <div style={{ padding: "0.75rem" }}>
-            <h3
-              style={{
-                fontSize: "0.8125rem",
-                fontWeight: 600,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                marginBottom: "0.25rem",
-              }}
-            >
+            <h3 style={{ fontSize: "0.8125rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: "0.25rem" }}>
               {product.name}
             </h3>
             <p className="price-display" style={{ fontSize: "0.9375rem", fontWeight: 700 }}>

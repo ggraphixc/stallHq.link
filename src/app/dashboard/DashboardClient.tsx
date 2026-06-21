@@ -13,6 +13,7 @@ import { ThemeSettings } from "@/components/ThemeSettings";
 import { OrderManager } from "@/components/OrderManager";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { createClient } from "@/lib/supabase/client";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   Settings,
   LogOut,
@@ -147,6 +148,7 @@ export function DashboardClient({
   products: initialProducts,
 }: DashboardClientProps) {
   const router = useRouter();
+  const isDesktop = useMediaQuery("(min-width: 640px)");
   const [store, setStore] = useState<Store>(initialStore);
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [showProductForm, setShowProductForm] = useState(false);
@@ -255,107 +257,111 @@ export function DashboardClient({
           </div>
 
           {/* Desktop actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }} className="hidden sm:flex">
-            {[
-              { icon: Share2, label: "Share", onClick: () => setShowShareCard(true) },
-              { icon: BarChart3, label: "Analytics", onClick: () => setShowAnalytics(true) },
-              { icon: ShoppingCart, label: "Orders", onClick: () => setShowOrders(true) },
-              { icon: Palette, label: "Theme", onClick: () => setShowTheme(true) },
-            ].map(({ icon: Icon, label, onClick }) => (
-              <button key={label} onClick={onClick} style={iconBtn} title={label} className="icon-button">
-                <Icon size={16} />
+          {isDesktop && (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+              {[
+                { icon: Share2, label: "Share", onClick: () => setShowShareCard(true) },
+                { icon: BarChart3, label: "Analytics", onClick: () => setShowAnalytics(true) },
+                { icon: ShoppingCart, label: "Orders", onClick: () => setShowOrders(true) },
+                { icon: Palette, label: "Theme", onClick: () => setShowTheme(true) },
+              ].map(({ icon: Icon, label, onClick }) => (
+                <button key={label} onClick={onClick} style={iconBtn} className="icon-button" title={label}>
+                  <Icon size={16} />
+                </button>
+              ))}
+
+              <div style={{ width: "1px", height: "1.25rem", background: "var(--border-subtle)", margin: "0 0.25rem" }} />
+
+              <a href={`/${store.slug}`} target="_blank" rel="noopener noreferrer" style={iconBtn} className="icon-button" title="View Store">
+                <ExternalLink size={16} />
+              </a>
+              <button onClick={() => setShowSettings(true)} style={iconBtn} className="icon-button" title="Settings">
+                <Settings size={16} />
               </button>
-            ))}
-
-            <div style={{ width: "1px", height: "1.25rem", background: "var(--border-subtle)", margin: "0 0.25rem" }} />
-
-            <a href={`/${store.slug}`} target="_blank" rel="noopener noreferrer" style={iconBtn} title="View Store" className="icon-button">
-              <ExternalLink size={16} />
-            </a>
-            <button onClick={() => setShowSettings(true)} style={iconBtn} title="Settings" className="icon-button">
-              <Settings size={16} />
-            </button>
-            <button onClick={handleLogout} style={iconBtn} title="Logout" className="icon-button">
-              <LogOut size={16} />
-            </button>
-          </div>
+              <button onClick={handleLogout} style={iconBtn} className="icon-button" title="Logout">
+                <LogOut size={16} />
+              </button>
+            </div>
+          )}
 
           {/* Mobile menu */}
-          <div style={{ position: "relative" }} className="sm:hidden">
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              style={iconBtn}
-              className="icon-button"
-            >
-              <MoreVertical size={20} />
-            </button>
+          {!isDesktop && (
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                style={iconBtn}
+                className="icon-button"
+              >
+                <MoreVertical size={20} />
+              </button>
 
-            {showMobileMenu && (
-              <>
-                <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setShowMobileMenu(false)} />
-                <div
-                  className="scale-in"
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: "100%",
-                    marginTop: "0.5rem",
-                    width: "12rem",
-                    background: "var(--bg-secondary)",
-                    border: "1px solid var(--border-subtle)",
-                    borderRadius: "0.75rem",
-                    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-                    zIndex: 50,
-                    padding: "0.375rem 0",
-                    overflow: "hidden",
-                  }}
-                >
-                  {[
-                    { icon: Share2, label: "Share Store", onClick: () => { setShowShareCard(true); setShowMobileMenu(false); } },
-                    { icon: BarChart3, label: "Analytics", onClick: () => { setShowAnalytics(true); setShowMobileMenu(false); } },
-                    { icon: ShoppingCart, label: "Orders", onClick: () => { setShowOrders(true); setShowMobileMenu(false); } },
-                    { icon: Palette, label: "Theme", onClick: () => { setShowTheme(true); setShowMobileMenu(false); } },
-                    { icon: Upload, label: "Batch Upload", onClick: () => { setShowBatchUpload(true); setShowMobileMenu(false); } },
-                  ].map(({ icon: Icon, label, onClick }) => (
+              {showMobileMenu && (
+                <>
+                  <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setShowMobileMenu(false)} />
+                  <div
+                    className="scale-in"
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      top: "100%",
+                      marginTop: "0.5rem",
+                      width: "12rem",
+                      background: "var(--bg-secondary)",
+                      border: "1px solid var(--border-subtle)",
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+                      zIndex: 50,
+                      padding: "0.375rem 0",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {[
+                      { icon: Share2, label: "Share Store", onClick: () => { setShowShareCard(true); setShowMobileMenu(false); } },
+                      { icon: BarChart3, label: "Analytics", onClick: () => { setShowAnalytics(true); setShowMobileMenu(false); } },
+                      { icon: ShoppingCart, label: "Orders", onClick: () => { setShowOrders(true); setShowMobileMenu(false); } },
+                      { icon: Palette, label: "Theme", onClick: () => { setShowTheme(true); setShowMobileMenu(false); } },
+                      { icon: Upload, label: "Batch Upload", onClick: () => { setShowBatchUpload(true); setShowMobileMenu(false); } },
+                    ].map(({ icon: Icon, label, onClick }) => (
+                      <button
+                        key={label}
+                        onClick={onClick}
+                        style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
+                      >
+                        <Icon size={16} />
+                        {label}
+                      </button>
+                    ))}
+
+                    <div style={{ height: "1px", background: "var(--border-subtle)", margin: "0.375rem 0" }} />
+
+                    <a
+                      href={`/${store.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none" }}
+                    >
+                      <ExternalLink size={16} />
+                      View Store
+                    </a>
                     <button
-                      key={label}
-                      onClick={onClick}
+                      onClick={() => { setShowSettings(true); setShowMobileMenu(false); }}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
                     >
-                      <Icon size={16} />
-                      {label}
+                      <Settings size={16} />
+                      Settings
                     </button>
-                  ))}
-
-                  <div style={{ height: "1px", background: "var(--border-subtle)", margin: "0.375rem 0" }} />
-
-                  <a
-                    href={`/${store.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none" }}
-                  >
-                    <ExternalLink size={16} />
-                    View Store
-                  </a>
-                  <button
-                    onClick={() => { setShowSettings(true); setShowMobileMenu(false); }}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
-                  >
-                    <Settings size={16} />
-                    Settings
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--glow-red)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
-                  >
-                    <LogOut size={16} />
-                    Logout
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+                    <button
+                      onClick={handleLogout}
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "var(--glow-red)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
+                    >
+                      <LogOut size={16} />
+                      Logout
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -409,7 +415,7 @@ export function DashboardClient({
                 style={{ padding: "0.625rem 0.75rem", fontSize: "0.75rem" }}
               >
                 <Upload size={14} />
-                <span className="hidden sm:inline">Batch Upload</span>
+                {isDesktop && <span>Batch Upload</span>}
               </button>
               <a
                 href="/dashboard/products"

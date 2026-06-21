@@ -9,6 +9,20 @@ interface StoreHeaderProps {
   store: Store;
 }
 
+const iconBtn: React.CSSProperties = {
+  width: "2.25rem",
+  height: "2.25rem",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "0.625rem",
+  border: "none",
+  cursor: "pointer",
+  transition: "all 0.2s",
+  position: "relative",
+  color: "white",
+};
+
 export function StoreHeader({ store }: StoreHeaderProps) {
   return (
     <header style={{
@@ -36,23 +50,18 @@ export function StoreHeader({ store }: StoreHeaderProps) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          {/* WhatsApp Chat — icon only */}
           <a
             href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="glow-button whatsapp-button"
-            style={{
-              padding: "0.5rem 0.75rem",
-              fontSize: "0.75rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.375rem",
-              minHeight: "2.25rem",
-            }}
+            style={{ ...iconBtn, background: "linear-gradient(135deg, #25d366, #128c7e)" }}
+            title="Chat on WhatsApp"
           >
-            <MessageCircle size={16} />
-            <span>Chat</span>
+            <MessageCircle size={18} />
           </a>
+
+          {/* Cart — icon only */}
           <CartDrawer store={store} />
         </div>
       </div>

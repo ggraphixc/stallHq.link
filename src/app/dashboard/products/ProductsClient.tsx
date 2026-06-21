@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Store, Product } from "@/types";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   Package,
   Pencil,
@@ -138,6 +139,7 @@ export function ProductsClient({
 }: ProductsClientProps) {
   const router = useRouter();
   const supabase = createClient();
+  const isDesktop = useMediaQuery("(min-width: 640px)");
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [search, setSearch] = useState("");
   const [filterStock, setFilterStock] = useState<"all" | "in_stock" | "out_of_stock">("all");
@@ -255,7 +257,7 @@ export function ProductsClient({
               style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem" }}
             >
               <Plus size={14} />
-              <span className="hidden sm:inline">Add Product</span>
+              {isDesktop && <span>Add Product</span>}
             </button>
           </div>
         </div>
