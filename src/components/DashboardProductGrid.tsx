@@ -1,13 +1,107 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { Product } from "@/types";
-import { Pencil, ShoppingBag, ToggleLeft, ToggleRight, Loader2 } from "lucide-react";
+import { Pencil, ShoppingBag, ToggleLeft, ToggleRight, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DashboardProductGridProps {
   products: Product[];
   onEdit: (product: Product) => void;
   onToggleStock: (productId: string, currentInStock: boolean) => void;
   togglingId: string | null;
+}
+
+function CardImage({ product }: { product: Product }) {
+  const [imgIndex, setImgIndex] = useState(0);
+
+  const allImages = useMemo(() => {
+    const imgs: string[] = [];
+    if (product.image_url) imgs.push(product.image_url);
+    if (product.images && product.images.length > 0) imgs.push(...product.images);
+    return imgs;
+  }, [product.image_url, product.images]);
+
+  const hasMultiple = allImages.length > 1;
+
+  const navBtn: React.CSSProperties = {
+    width: "1.5rem",
+    height: "1.5rem",
+    borderRadius: "50%",
+    background: "rgba(0,0,0,0.55)",
+    backdropFilter: "blur(6px)",
+    border: "1px solid rgba(255,255,255,0.15)",
+    color: "white",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.2s",
+    flexShrink: 0,
+    padding: 0,
+  };
+
+  return (
+    <>
+      {product.image_url ? (
+        <img
+          src={allImages[imgIndex]}
+          alt={product.name}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            transition: "transform 0.5s, opacity 0.3s",
+          }}
+          loading="lazy"
+          onMouseEnter={(e) => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1.08)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"; }}
+        />
+      ) : (
+        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <ShoppingBag size={32} style={{ color: "var(--text-muted)" }} />
+        </div>
+      )}
+
+      {/* Carousel nav */}
+      {hasMultiple && (
+        <>
+          <button
+            onClick={(e) => { e.stopPropagation(); setImgIndex((i) => (i === 0 ? allImages.length - 1 : i - 1)); }}
+            className="sm:!opacity-0 sm:group-hover:!opacity-100"
+            style={{ ...navBtn, position: "absolute", left: "0.25rem", top: "50%", transform: "translateY(-50%)", opacity: 1, transition: "opacity 0.2s", zIndex: 5 }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.7)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.55)"; }}
+          >
+            <ChevronLeft size={12} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setImgIndex((i) => (i === allImages.length - 1 ? 0 : i + 1)); }}
+            className="sm:!opacity-0 sm:group-hover:!opacity-100"
+            style={{ ...navBtn, position: "absolute", right: "0.25rem", top: "50%", transform: "translateY(-50%)", opacity: 1, transition: "opacity 0.2s", zIndex: 5 }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.7)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.55)"; }}
+          >
+            <ChevronRight size={12} />
+          </button>
+          {/* Dots */}
+          <div style={{ position: "absolute", bottom: "0.375rem", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "0.2rem", zIndex: 5 }}>
+            {allImages.map((_, i) => (
+              <span
+                key={i}
+                style={{
+                  width: "0.3rem",
+                  height: "0.3rem",
+                  borderRadius: "50%",
+                  background: i === imgIndex ? "white" : "rgba(255,255,255,0.4)",
+                  transition: "background 0.2s",
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  );
 }
 
 export function DashboardProductGrid({
@@ -41,25 +135,7 @@ export function DashboardProductGrid({
               overflow: "hidden",
             }}
           >
-            {product.image_url ? (
-              <img
-                src={product.image_url}
-                alt={product.name}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  transition: "transform 0.5s",
-                }}
-                loading="lazy"
-                onMouseEnter={(e) => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1.08)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"; }}
-              />
-            ) : (
-              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <ShoppingBag size={32} style={{ color: "var(--text-muted)" }} />
-              </div>
-            )}
+            <CardImage product={product} />
 
             {/* Category badge */}
             {product.category && (

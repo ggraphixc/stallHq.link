@@ -1,8 +1,9 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Product, ProductWithRating } from "@/types";
-import { ShoppingBag, Plus, Pencil, ToggleLeft, ToggleRight, Loader2 } from "lucide-react";
+import { ShoppingBag, Plus, Pencil, ToggleLeft, ToggleRight, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { RatingDisplay } from "./RatingDisplay";
 
 interface ProductCardProps {
@@ -24,6 +25,46 @@ export function ProductCard({
   onToggleStock,
   togglingId,
 }: ProductCardProps) {
+  const [imgIndex, setImgIndex] = useState(0);
+
+  const allImages = useMemo(() => {
+    const imgs: string[] = [];
+    if (product.image_url) imgs.push(product.image_url);
+    if (product.images && product.images.length > 0) imgs.push(...product.images);
+    return imgs;
+  }, [product.image_url, product.images]);
+
+  const hasMultipleImages = allImages.length > 1;
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setImgIndex((i) => (i === 0 ? allImages.length - 1 : i - 1));
+  };
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setImgIndex((i) => (i === allImages.length - 1 ? 0 : i + 1));
+  };
+
+  const navBtnStyle: React.CSSProperties = {
+    width: "1.75rem",
+    height: "1.75rem",
+    borderRadius: "50%",
+    background: "rgba(0,0,0,0.55)",
+    backdropFilter: "blur(6px)",
+    border: "1px solid rgba(255,255,255,0.15)",
+    color: "white",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.2s",
+    flexShrink: 0,
+    padding: 0,
+  };
+
   return (
     <div className="ambient-card ambient-card-interactive group" style={{ position: "relative" }}>
       {/* Image */}
@@ -31,9 +72,9 @@ export function ProductCard({
         href={storeId ? `/${storeId}/product/${product.id}` : "#"}
         className="block aspect-square bg-[var(--bg-secondary)] relative overflow-hidden"
       >
-        {product.image_url ? (
+        {allImages.length > 0 ? (
           <img
-            src={product.image_url}
+            src={allImages[imgIndex]}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
@@ -71,6 +112,39 @@ export function ProductCard({
           >
             Off
           </span>
+        )}
+
+        {/* Image carousel nav — only when multiple images & not owner overlay */}
+        {hasMultipleImages && !isOwner && (
+          <>
+            <button onClick={prevImage} className="sm:!opacity-0 sm:group-hover:!opacity-100" style={{ ...navBtnStyle, position: "absolute", left: "0.375rem", top: "50%", transform: "translateY(-50%)", opacity: 1, transition: "opacity 0.2s", zIndex: 5 }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.7)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.55)"; }}
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button onClick={nextImage} className="sm:!opacity-0 sm:group-hover:!opacity-100" style={{ ...navBtnStyle, position: "absolute", right: "0.375rem", top: "50%", transform: "translateY(-50%)", opacity: 1, transition: "opacity 0.2s", zIndex: 5 }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.7)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.55)"; }}
+            >
+              <ChevronRight size={14} />
+            </button>
+            {/* Dot indicators */}
+            <div style={{ position: "absolute", bottom: "0.5rem", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "0.25rem", zIndex: 5 }}>
+              {allImages.map((_, i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: "0.375rem",
+                    height: "0.375rem",
+                    borderRadius: "50%",
+                    background: i === imgIndex ? "white" : "rgba(255,255,255,0.4)",
+                    transition: "background 0.2s",
+                  }}
+                />
+              ))}
+            </div>
+          </>
         )}
 
         {/* Owner overlay */}
@@ -161,11 +235,29 @@ export function ProductCard({
                 <ToggleLeft size={16} />
               )}
             </button>
+
+            {/* Image carousel nav (owner mode) */}
+            {hasMultipleImages && (
+              <>
+                <button onClick={prevImage} style={{ ...navBtnStyle, position: "absolute", left: "0.375rem", top: "50%", transform: "translateY(-50%)", zIndex: 5 }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.7)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.55)"; }}
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <button onClick={nextImage} style={{ ...navBtnStyle, position: "absolute", right: "0.375rem", top: "50%", transform: "translateY(-50%)", zIndex: 5 }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.7)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.55)"; }}
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </>
+            )}
           </div>
         )}
 
         {/* Hover overlay (non-owner) */}
-        {!isOwner && (
+        {!isOwner && !hasMultipleImages && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         )}
       </Link>
