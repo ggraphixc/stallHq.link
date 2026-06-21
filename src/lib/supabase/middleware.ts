@@ -34,19 +34,23 @@ export async function updateSession(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (
-      !user &&
-      !request.nextUrl.pathname.startsWith("/auth") &&
-      !request.nextUrl.pathname.startsWith("/api") &&
-      request.nextUrl.pathname !== "/" &&
-      request.nextUrl.pathname !== "/demo-store"
-    ) {
+    const isAuthRoute = request.nextUrl.pathname.startsWith("/auth");
+    const isApiRoute = request.nextUrl.pathname.startsWith("/api");
+    const isPublicPage = request.nextUrl.pathname === "/" || request.nextUrl.pathname === "/demo-store";
+    const needsAuth = !isAuthRoute && !isApiRoute && !isPublicPage;
+
+    if (!user && needsAuth) {
+      console.log("[Middleware] No user, redirecting to login. Path:", request.nextUrl.pathname, "Cookies:", request.cookies.getAll().map(c => c.name));
       const url = request.nextUrl.clone();
       url.pathname = "/auth/login";
       return NextResponse.redirect(url);
     }
+
+    if (user) {
+      console.log("[Middleware] User authenticated:", user.email, "Path:", request.nextUrl.pathname);
+    }
   } catch (e) {
-    console.error("Middleware error:", e);
+    console.error("[Middleware] error:", e);
   }
 
   return supabaseResponse;
