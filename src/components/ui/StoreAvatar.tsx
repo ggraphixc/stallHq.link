@@ -5,34 +5,56 @@ interface StoreAvatarProps {
   rounded?: "full" | "2xl";
 }
 
-const sizeMap = {
-  sm: "w-8 h-8 text-xs",
-  md: "w-10 h-10 text-sm",
-  lg: "w-14 h-14 text-lg",
-  xl: "w-20 h-20 text-xl",
+const sizeMap: Record<string, { box: string; fontSize: string }> = {
+  sm: { box: "2rem", fontSize: "0.75rem" },
+  md: { box: "2.5rem", fontSize: "0.875rem" },
+  lg: { box: "3.5rem", fontSize: "1.125rem" },
+  xl: { box: "5rem", fontSize: "1.25rem" },
 };
 
-const radiusMap = {
-  full: "rounded-full",
-  "2xl": "rounded-2xl",
+const radiusMap: Record<string, string> = {
+  full: "50%",
+  "2xl": "0.75rem",
 };
 
 export function StoreAvatar({ name, logoUrl, size = "md", rounded = "full" }: StoreAvatarProps) {
   const initial = name?.charAt(0)?.toUpperCase() || "?";
+  const s = sizeMap[size] || sizeMap.md;
+  const br = radiusMap[rounded] || "50%";
 
   if (logoUrl) {
     return (
       <img
         src={logoUrl}
         alt={name}
-        className={`${sizeMap[size]} ${radiusMap[rounded]} object-cover border-2 border-[var(--bg-card)]`}
+        style={{
+          width: s.box,
+          height: s.box,
+          borderRadius: br,
+          objectFit: "cover",
+          border: "2px solid var(--bg-card)",
+          flexShrink: 0,
+        }}
       />
     );
   }
 
   return (
     <div
-      className={`${sizeMap[size]} ${radiusMap[rounded]} bg-gradient-to-br from-[var(--glow-purple)] to-[var(--glow-cyan)] flex items-center justify-center font-bold text-white border-2 border-[var(--bg-card)]`}
+      style={{
+        width: s.box,
+        height: s.box,
+        borderRadius: br,
+        background: "linear-gradient(135deg, var(--glow-purple), var(--glow-cyan))",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 700,
+        fontSize: s.fontSize,
+        color: "white",
+        border: "2px solid var(--bg-card)",
+        flexShrink: 0,
+      }}
     >
       {initial}
     </div>

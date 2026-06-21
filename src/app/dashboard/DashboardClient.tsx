@@ -245,7 +245,7 @@ export function DashboardClient({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
-            <StoreAvatar name={store.name} size="md" />
+            <StoreAvatar name={store.name} logoUrl={store.logo_url} size="md" />
             <div style={{ minWidth: 0 }}>
               <h1 style={{ fontWeight: 700, fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {store.name}
