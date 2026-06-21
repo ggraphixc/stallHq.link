@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createStore, getStoreByUserId } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/api";
 import { apiRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
@@ -20,7 +19,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const store = await getStoreByUserId(user.id);
+    const { data: store, error: storeError } = await supabase
+      .from("stores")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    if (storeError) throw storeError;
+
     return addRateLimitHeaders(NextResponse.json(store), rateLimitResult.headers);
   } catch (error) {
     console.error("Error fetching store:", error);
@@ -64,16 +70,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const store = await createStore({
-      user_id: user.id,
-      slug: body.slug,
-      name: body.name,
-      description: body.description,
-      whatsapp_number: body.whatsapp_number,
-      category: body.category,
-      email: body.email,
-      setup_complete: body.setup_complete ?? false,
-    });
+    const { data: store, error: insertError } = await supabase
+      .from("stores")
+      .insert({
+        user_id: user.id,
+        slug: body.slug,
+        name: body.name,
+        description: body.description,
+        whatsapp_number: body.whatsapp_number,
+        category: body.category,
+        email: body.email,
+        setup_complete: body.setup_complete ?? false,
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
 
     return NextResponse.json(store, { status: 201 });
   } catch (error) {
