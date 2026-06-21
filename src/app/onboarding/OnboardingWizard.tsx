@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Store } from "@/types";
 import { StepIndicator } from "@/components/StepIndicator";
 import { StoreDetailsStep } from "@/components/onboarding/StoreDetailsStep";
@@ -14,7 +14,64 @@ interface OnboardingWizardProps {
   existingStore: { id: string; setup_complete: boolean } | null;
 }
 
-const STEPS = ["Store Details", "Add Products", "WhatsApp Connect"];
+const STEPS = ["Store Details", "Add Products", "WhatsApp"];
+
+function Particles() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+    const particles: { x: number; y: number; vx: number; vy: number; size: number; opacity: number }[] = [];
+
+    function resize() {
+      canvas!.width = window.innerWidth;
+      canvas!.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    for (let i = 0; i < 40; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        size: Math.random() * 2 + 0.5,
+        opacity: Math.random() * 0.3 + 0.05,
+      });
+    }
+
+    function draw() {
+      ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = canvas!.width;
+        if (p.x > canvas!.width) p.x = 0;
+        if (p.y < 0) p.y = canvas!.height;
+        if (p.y > canvas!.height) p.y = 0;
+        ctx!.beginPath();
+        ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(168, 133, 247, ${p.opacity})`;
+        ctx!.fill();
+      }
+      animId = requestAnimationFrame(draw);
+    }
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0.5 }} />;
+}
 
 export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(existingStore ? 1 : 0);
@@ -48,66 +105,48 @@ export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
-      {/* Animated background orbs */}
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-        <div style={{ position: "absolute", top: "25%", left: "33%", width: "24rem", height: "24rem", background: "rgba(168,133,247,0.06)", borderRadius: "50%", filter: "blur(48px)", animation: "float 6s ease-in-out infinite" }} />
-        <div style={{ position: "absolute", bottom: "25%", right: "33%", width: "20rem", height: "20rem", background: "rgba(6,182,212,0.05)", borderRadius: "50%", filter: "blur(48px)", animation: "float 6s ease-in-out infinite", animationDelay: "-3s" }} />
-      </div>
+      <Particles />
 
       {/* Header */}
-      <header style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(var(--bg-primary),0.8)", backdropFilter: "blur(16px)", position: "relative", zIndex: 10 }}>
-        <div style={{ maxWidth: "42rem", margin: "0 auto", padding: "0 1.5rem", height: "4rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none" }}>
-            <div style={{ width: "2.25rem", height: "2.25rem", borderRadius: "0.75rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 24px rgba(168,133,247,0.2)" }}>
-              <MessageCircle style={{ width: "1.25rem", height: "1.25rem", color: "white" }} />
+      <header style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(6,6,11,0.8)", backdropFilter: "blur(16px)", position: "relative", zIndex: 10 }}>
+        <div style={{ maxWidth: "40rem", margin: "0 auto", padding: "0 1.5rem", height: "3.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
+            <div style={{ width: "1.75rem", height: "1.75rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <MessageCircle style={{ width: "0.875rem", height: "0.875rem", color: "white" }} />
             </div>
-            <span style={{ fontWeight: 700, fontSize: "1.125rem" }} className="text-gradient">StallHq</span>
+            <span style={{ fontWeight: 700, fontSize: "1rem" }} className="text-gradient">StallHq</span>
           </Link>
           {currentStep < STEPS.length - 1 && (
-            <button
-              onClick={handleSkip}
-              style={{ fontSize: "0.875rem", color: "var(--text-muted)", padding: "0.5rem 1rem", borderRadius: "0.5rem", border: "none", background: "transparent", cursor: "pointer" }}
-            >
-              Skip for now
+            <button onClick={handleSkip} style={{ fontSize: "0.75rem", color: "var(--text-muted)", padding: "0.375rem 0.75rem", borderRadius: "0.375rem", border: "1px solid var(--border-subtle)", background: "transparent", cursor: "pointer" }}>
+              Skip
             </button>
           )}
         </div>
       </header>
 
       {/* Progress */}
-      <div style={{ maxWidth: "42rem", width: "100%", margin: "0 auto", padding: "2.5rem 1.5rem 0", position: "relative", zIndex: 10 }}>
+      <div style={{ maxWidth: "28rem", width: "100%", margin: "0 auto", padding: "1.5rem 1.5rem 0", position: "relative", zIndex: 10 }}>
         <StepIndicator steps={STEPS} currentStep={currentStep} />
       </div>
 
       {/* Content */}
-      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem 1.5rem", position: "relative", zIndex: 10 }}>
-        <div style={{ width: "100%", maxWidth: "32rem", margin: "0 auto" }}>
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", position: "relative", zIndex: 10 }}>
+        <div style={{ width: "100%", maxWidth: "28rem" }}>
           {currentStep === 0 && (
-            <StoreDetailsStep
-              existingStore={store}
-              onStoreCreated={handleStoreCreated}
-            />
+            <StoreDetailsStep existingStore={store} onStoreCreated={handleStoreCreated} />
           )}
           {currentStep === 1 && store && (
-            <ProductEntryStep
-              store={store}
-              onProductsAdded={handleProductsAdded}
-              onSkip={handleSkip}
-            />
+            <ProductEntryStep store={store} onProductsAdded={handleProductsAdded} onSkip={handleSkip} />
           )}
           {currentStep === 2 && store && (
-            <WhatsAppConnectStep
-              store={store}
-              onConnected={handleWhatsAppConnected}
-              onSkip={handleSkip}
-            />
+            <WhatsAppConnectStep store={store} onConnected={handleWhatsAppConnected} onSkip={handleSkip} />
           )}
         </div>
       </main>
 
       {/* Footer */}
-      <footer style={{ borderTop: "1px solid var(--border-subtle)", background: "rgba(var(--bg-primary),0.8)", backdropFilter: "blur(16px)", padding: "1.25rem 0", position: "relative", zIndex: 10 }}>
-        <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+      <footer style={{ borderTop: "1px solid var(--border-subtle)", background: "rgba(6,6,11,0.8)", backdropFilter: "blur(16px)", padding: "0.75rem 0", position: "relative", zIndex: 10 }}>
+        <p style={{ textAlign: "center", fontSize: "0.625rem", color: "var(--text-muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>
           Step {currentStep + 1} of {STEPS.length}
         </p>
       </footer>
