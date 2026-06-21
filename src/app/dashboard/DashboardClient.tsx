@@ -158,6 +158,7 @@ export function DashboardClient({
   const [showTheme, setShowTheme] = useState(false);
   const [showOrders, setShowOrders] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -188,15 +189,25 @@ export function DashboardClient({
     fetchProducts();
   };
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+  const handleToggleStock = async (productId: string, currentInStock: boolean) => {
+    setTogglingId(productId);
     try {
-      const res = await fetch(`/api/products/${productId}`, { method: "DELETE" });
+      const res = await fetch(`/api/products/${productId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ in_stock: !currentInStock }),
+      });
       if (res.ok) {
-        setProducts(products.filter((p) => p.id !== productId));
+        setProducts(
+          products.map((p) =>
+            p.id === productId ? { ...p, in_stock: !currentInStock } : p
+          )
+        );
       }
     } catch (error) {
-      console.error("Error deleting product:", error);
+      console.error("Error toggling stock:", error);
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -414,7 +425,8 @@ export function DashboardClient({
             <DashboardProductGrid
               products={products}
               onEdit={(product) => { router.push(`/dashboard/products/${product.id}`); }}
-              onDelete={handleDeleteProduct}
+              onToggleStock={handleToggleStock}
+              togglingId={togglingId}
             />
           ) : (
             <div style={{ ...glassCard, padding: "3rem 1.5rem", textAlign: "center" }}>

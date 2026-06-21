@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Store, Product } from "@/types";
 import { StoreHeader } from "@/components/StoreHeader";
 import { ProductGrid } from "@/components/ProductGrid";
@@ -10,6 +11,7 @@ import { StoreHoursBadge } from "@/components/StoreHoursBadge";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { createClient } from "@/lib/supabase/client";
 
 interface StorePageProps {
   store: Store;
@@ -17,11 +19,54 @@ interface StorePageProps {
 }
 
 export function StorePage({ store, products }: StorePageProps) {
+  const router = useRouter();
   const { trackVisit } = useAnalytics();
+  const supabase = createClient();
+
+  const [isOwner, setIsOwner] = useState(false);
+  const [localProducts, setLocalProducts] = useState<Product[]>(products);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     trackVisit(store.id);
   }, [store.id, trackVisit]);
+
+  // Check if current user is the store owner
+  useEffect(() => {
+    const checkOwner = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && user.id === store.user_id) {
+        setIsOwner(true);
+      }
+    };
+    checkOwner();
+  }, [store.user_id, supabase]);
+
+  const handleToggleStock = async (productId: string, currentInStock: boolean) => {
+    setTogglingId(productId);
+    try {
+      const res = await fetch(`/api/products/${productId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ in_stock: !currentInStock }),
+      });
+      if (res.ok) {
+        setLocalProducts((prev) =>
+          prev.map((p) =>
+            p.id === productId ? { ...p, in_stock: !currentInStock } : p
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error toggling stock:", error);
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleEdit = (product: Product) => {
+    router.push(`/dashboard/products/${product.id}`);
+  };
 
   const themeStyles = useMemo(() => {
     if (!store.theme) return {};
@@ -97,10 +142,17 @@ export function StorePage({ store, products }: StorePageProps) {
         <section>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
             <h2 style={{ fontSize: "1.125rem", fontWeight: 700 }}>Products</h2>
-            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{products.length} items</span>
+            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{localProducts.length} items</span>
           </div>
-          {products.length > 0 ? (
-            <ProductGrid products={products} storeId={store.id} />
+          {localProducts.length > 0 ? (
+            <ProductGrid
+              products={localProducts}
+              storeId={store.id}
+              isOwner={isOwner}
+              onEdit={handleEdit}
+              onToggleStock={handleToggleStock}
+              togglingId={togglingId}
+            />
           ) : (
             <EmptyState
               icon={
