@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Store, Product } from "@/types";
 import { DashboardProductGrid } from "@/components/DashboardProductGrid";
 import { ProductForm } from "@/components/ProductForm";
@@ -145,6 +146,7 @@ export function DashboardClient({
   store: initialStore,
   products: initialProducts,
 }: DashboardClientProps) {
+  const router = useRouter();
   const [store, setStore] = useState<Store>(initialStore);
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [showProductForm, setShowProductForm] = useState(false);
@@ -386,7 +388,7 @@ export function DashboardClient({
             <div>
               <h2 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.125rem" }}>Products</h2>
               <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", letterSpacing: "0.03em", textTransform: "uppercase" }}>
-                Manage your inventory
+                {products.length} product{products.length !== 1 ? "s" : ""}
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -398,36 +400,36 @@ export function DashboardClient({
                 <Upload size={14} />
                 <span className="hidden sm:inline">Batch Upload</span>
               </button>
-              <button
-                onClick={() => { setEditingProduct(null); setShowProductForm(true); }}
+              <a
+                href="/dashboard/products"
                 className="glow-button"
-                style={{ padding: "0.625rem 0.75rem", fontSize: "0.75rem" }}
+                style={{ padding: "0.625rem 0.75rem", fontSize: "0.75rem", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.375rem" }}
               >
-                + Add Product
-              </button>
+                Manage Products
+              </a>
             </div>
           </div>
 
           {products.length > 0 ? (
             <DashboardProductGrid
               products={products}
-              onEdit={(product) => { setEditingProduct(product); setShowProductForm(true); }}
+              onEdit={(product) => { router.push(`/dashboard/products/${product.id}`); }}
               onDelete={handleDeleteProduct}
             />
           ) : (
             <div style={{ ...glassCard, padding: "3rem 1.5rem", textAlign: "center" }}>
-              <div style={{ width: "3rem", height: "3rem", borderRadius: "0.75rem", background: "linear-gradient(135deg, rgba(168,133,247,0.15), rgba(6,182,212,0.1))", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
+              <div style={{ width: "3rem", height: "3rem", borderRadius: "0.75rem", background: "linear-gradient(135deg, rgba(168,133,247,0.15), rgba(16,182,212,0.1))", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
                 <Package size={20} style={{ color: "var(--glow-purple)" }} />
               </div>
               <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.25rem" }}>No products yet</h3>
               <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>Add your first product to start selling.</p>
-              <button
-                onClick={() => { setEditingProduct(null); setShowProductForm(true); }}
+              <a
+                href="/dashboard/products/new"
                 className="glow-button"
-                style={{ padding: "0.75rem 1.5rem", fontSize: "0.8125rem", margin: "0 auto" }}
+                style={{ padding: "0.75rem 1.5rem", fontSize: "0.8125rem", margin: "0 auto", textDecoration: "none", display: "inline-flex" }}
               >
                 + Add Product
-              </button>
+              </a>
             </div>
           )}
         </section>
