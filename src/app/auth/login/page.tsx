@@ -95,7 +95,7 @@ export default function LoginPage() {
       return;
     }
 
-    // Full page reload to /dashboard so middleware picks up the cookies
+    // Cookies are set on the JSON response — now navigate to dashboard
     window.location.href = "/dashboard";
   };
 

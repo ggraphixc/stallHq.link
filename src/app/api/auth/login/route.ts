@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,10 +9,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email and password required" }, { status: 400 });
     }
 
-    // Use service role to sign in (bypasses RLS)
-    const supabase = createClient(
+    let cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[] = [];
+
+    const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return req.cookies.getAll();
+          },
+          setAll(setCookies) {
+            cookiesToSet = setCookies;
+          },
+        },
+      }
     );
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -32,29 +42,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No session" }, { status: 500 });
     }
 
-    // Set auth cookies using next/headers
-    const cookieStore = await cookies();
-    const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL!.split("//")[1].split(".")[0];
-    const cookieName = `sb-${projectRef}-auth-token`;
+    // Return JSON success — cookies are set on this response
+    // Client will navigate to /dashboard after receiving this
+    const response = NextResponse.json({ success: true });
 
-    const cookieValue = JSON.stringify({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-      expires_at: Math.floor(Date.now() / 1000) + data.session.expires_in,
-      expires_in: data.session.expires_in,
-      token_type: "bearer",
-      user: data.user,
-    });
+    for (const cookie of cookiesToSet) {
+      response.cookies.set(cookie.name, cookie.value, cookie.options as any);
+    }
 
-    cookieStore.set(cookieName, cookieValue, {
-      path: "/",
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: data.session.expires_in,
-    });
-
-    return NextResponse.json({ success: true });
+    return response;
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
