@@ -1,3 +1,6 @@
+import { SubscriptionPlan } from "@/types";
+import { getPlanName } from "@/lib/subscription";
+
 const BREVO_API_KEY = process.env.BREVO_API_KEY!;
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || "ggraphixc@gmail.com";
 const BREVO_SENDER_NAME = "StallHq";
@@ -258,6 +261,131 @@ export async function sendWelcomeEmail({
 }
 
 // ─── Order emails ────────────────────────────────────────────────────────────
+
+// ─── Subscription emails ─────────────────────────────────────────────────────
+
+export async function sendTrialExpiryReminder({
+  email,
+  storeName,
+  storeSlug,
+  daysLeft,
+}: {
+  email: string;
+  storeName: string;
+  storeSlug: string;
+  daysLeft: number;
+}) {
+  const urgency = daysLeft <= 1 ? "tomorrow" : `in ${daysLeft} days`;
+  const icon = daysLeft <= 1 ? "&#9888;" : "&#9203;";
+  const bgColor = daysLeft <= 1 ? "rgba(239,68,68,0.08)" : "rgba(234,179,8,0.08)";
+  const borderColor = daysLeft <= 1 ? "rgba(239,68,68,0.15)" : "rgba(234,179,8,0.15)";
+  const accentColor = daysLeft <= 1 ? "#ef4444" : "#eab308";
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">${icon}</div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Trial Expiring ${urgency}</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:12px;padding:20px;text-align:center;">
+            <p style="margin:0;font-size:32px;font-weight:700;color:${accentColor};">${daysLeft}</p>
+            <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">${daysLeft === 1 ? "day" : "days"} remaining</p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">Your free trial for <strong>${storeName}</strong> expires ${urgency}. Upgrade now to keep your store live and your products visible to customers.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);border-radius:12px;">
+            <tr>
+              <td style="padding:16px 20px;">
+                <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">What happens if you don't upgrade?</p>
+                <p style="margin:0;font-size:13px;color:#e0e0e0;line-height:1.5;">Your store goes offline and customers can no longer browse your products. Your data is preserved — upgrade anytime to bring it back.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/upgrade" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Upgrade Now</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: daysLeft <= 1
+      ? `⚠️ Your StallHq trial expires tomorrow — ${storeName}`
+      : `Your StallHq trial expires in ${daysLeft} days — ${storeName}`,
+    htmlContent: html,
+    tags: ["subscription", "trial_expiry"],
+  });
+}
+
+export async function sendSubscriptionExpiryReminder({
+  email,
+  storeName,
+  plan,
+  daysLeft,
+}: {
+  email: string;
+  storeName: string;
+  plan: string;
+  daysLeft: number;
+}) {
+  const urgency = daysLeft <= 1 ? "tomorrow" : `in ${daysLeft} days`;
+  const icon = daysLeft <= 1 ? "&#9888;" : "&#9203;";
+  const bgColor = daysLeft <= 1 ? "rgba(239,68,68,0.08)" : "rgba(234,179,8,0.08)";
+  const accentColor = daysLeft <= 1 ? "#ef4444" : "#eab308";
+  const planLabel = getPlanName(plan as SubscriptionPlan);
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">${icon}</div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Subscription Expiring ${urgency}</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <div style="background:${bgColor};border:1px solid ${bgColor.replace("0.08", "0.15")};border-radius:12px;padding:20px;text-align:center;">
+            <p style="margin:0;font-size:13px;color:#94a3b8;">Current plan</p>
+            <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:${accentColor};">${planLabel}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#94a3b8;">${daysLeft} ${daysLeft === 1 ? "day" : "days"} remaining</p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">Your <strong>${planLabel}</strong> subscription for <strong>${storeName}</strong> expires ${urgency}. Renew now to keep your store live with all your plan features.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/upgrade" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Renew Now</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: daysLeft <= 1
+      ? `⚠️ Your StallHq subscription expires tomorrow — ${storeName}`
+      : `Your StallHq subscription expires in ${daysLeft} days — ${storeName}`,
+    htmlContent: html,
+    tags: ["subscription", "subscription_expiry"],
+  });
+}
 
 export async function sendOrderNotification({
   storeEmail,

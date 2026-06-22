@@ -55,7 +55,7 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                     ? "var(--glow-green)"
                     : "var(--text-muted)",
                   textAlign: "center",
-                  maxWidth: "72px",
+                  maxWidth: steps.length > 3 ? "64px" : "72px",
                   letterSpacing: "0.02em",
                 }}
               >

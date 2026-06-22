@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Store } from "@/types";
 import { StepIndicator } from "@/components/StepIndicator";
 import { StoreDetailsStep } from "@/components/onboarding/StoreDetailsStep";
+import { PlanSelectionStep } from "@/components/onboarding/PlanSelectionStep";
 import { ProductEntryStep } from "@/components/onboarding/ProductEntryStep";
 import { WhatsAppConnectStep } from "@/components/onboarding/WhatsAppConnectStep";
 import { OnboardingComplete } from "@/components/onboarding/OnboardingComplete";
@@ -14,7 +15,7 @@ interface OnboardingWizardProps {
   existingStore: { id: string; setup_complete: boolean } | null;
 }
 
-const STEPS = ["Store Details", "Add Products", "WhatsApp"];
+const STEPS = ["Store Details", "Choose Plan", "Add Products", "WhatsApp"];
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -83,8 +84,12 @@ export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
     setCurrentStep(1);
   };
 
-  const handleProductsAdded = () => {
+  const handlePlanSelected = () => {
     setCurrentStep(2);
+  };
+
+  const handleProductsAdded = () => {
+    setCurrentStep(3);
   };
 
   const handleWhatsAppConnected = () => {
@@ -116,7 +121,7 @@ export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
             </div>
             <span style={{ fontWeight: 700, fontSize: "1rem" }} className="text-gradient">StallHq</span>
           </Link>
-          {currentStep < STEPS.length - 1 && (
+          {currentStep < STEPS.length - 1 && currentStep !== 1 && (
             <button onClick={handleSkip} style={{ fontSize: "0.75rem", color: "var(--text-muted)", padding: "0.625rem 1rem", borderRadius: "0.375rem", border: "1px solid var(--border-subtle)", background: "transparent", cursor: "pointer", minHeight: "44px", display: "flex", alignItems: "center" }}>
               Skip
             </button>
@@ -136,9 +141,12 @@ export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
             <StoreDetailsStep existingStore={store} onStoreCreated={handleStoreCreated} />
           )}
           {currentStep === 1 && store && (
-            <ProductEntryStep store={store} onProductsAdded={handleProductsAdded} onSkip={handleSkip} />
+            <PlanSelectionStep store={store} onPlanSelected={handlePlanSelected} onSkip={handleSkip} />
           )}
           {currentStep === 2 && store && (
+            <ProductEntryStep store={store} onProductsAdded={handleProductsAdded} onSkip={handleSkip} />
+          )}
+          {currentStep === 3 && store && (
             <WhatsAppConnectStep store={store} onConnected={handleWhatsAppConnected} onSkip={handleSkip} />
           )}
         </div>
