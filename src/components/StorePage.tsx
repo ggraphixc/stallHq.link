@@ -214,8 +214,22 @@ export function StorePage({ store, products }: StorePageProps) {
               <StoreAvatar name={store.name} logoUrl={store.logo_url} size="xl" rounded="2xl" />
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h1 style={{ fontSize: "clamp(1.25rem, 4vw, 1.75rem)", fontWeight: 800, letterSpacing: "-0.025em" }}>
+                <h1 style={{ fontSize: "clamp(1.25rem, 4vw, 1.75rem)", fontWeight: 800, letterSpacing: "-0.025em", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                   {store.name}
+                  {store.verified && (
+                    <span title="Verified Vendor" style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "1.5rem",
+                      height: "1.5rem",
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, #06b6d4, #10b981)",
+                      flexShrink: 0,
+                    }}>
+                      <ShieldCheck size={12} style={{ color: "white" }} />
+                    </span>
+                  )}
                 </h1>
                 {store.description && (
                   <p style={{

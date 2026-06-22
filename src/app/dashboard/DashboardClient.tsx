@@ -14,6 +14,7 @@ import { OrderManager } from "@/components/OrderManager";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { createClient } from "@/lib/supabase/client";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { getProductLimit, getDaysRemaining, isTrial, formatNaira, getPlanName, hasReachedProductLimit } from "@/lib/subscription";
 import {
   Settings,
   LogOut,
@@ -27,6 +28,9 @@ import {
   Link as LinkIcon,
   MoreVertical,
   X,
+  AlertTriangle,
+  Clock,
+  Crown,
 } from "lucide-react";
 
 interface DashboardClientProps {
@@ -163,6 +167,12 @@ export function DashboardClient({
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const supabase = createClient();
+
+  // Subscription info
+  const productLimit = getProductLimit(store);
+  const daysLeft = getDaysRemaining(store);
+  const inTrial = isTrial(store);
+  const atLimit = hasReachedProductLimit(store, products.length);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -397,6 +407,115 @@ export function DashboardClient({
               </a>
             </div>
           </div>
+        </div>
+
+        {/* ── Subscription Banner ──────────────────────── */}
+        {/* Trial urgency banner */}
+        {inTrial && daysLeft !== null && daysLeft <= 3 && (
+          <div style={{
+            ...glassCard,
+            padding: "0.875rem 1rem",
+            marginBottom: "1.5rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            background: "rgba(239,68,68,0.06)",
+            borderColor: "rgba(239,68,68,0.2)",
+          }}>
+            <div style={{
+              width: "2rem",
+              height: "2rem",
+              borderRadius: "0.5rem",
+              background: "rgba(239,68,68,0.15)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <AlertTriangle size={14} style={{ color: "var(--glow-red)" }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: "0.8125rem", fontWeight: 600 }}>
+                {daysLeft === 0 ? "Trial expires today" : `${daysLeft} day${daysLeft !== 1 ? "s" : ""} left in your trial`}
+              </p>
+              <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                Upgrade now to keep your store live and products listed.
+              </p>
+            </div>
+            <a
+              href="/upgrade"
+              style={{
+                padding: "0.5rem 1rem",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                background: "var(--glow-red)",
+                color: "white",
+                borderRadius: "0.5rem",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >
+              Upgrade
+            </a>
+          </div>
+        )}
+
+        {/* Plan info bar */}
+        <div style={{
+          ...glassCard,
+          padding: "0.75rem 1rem",
+          marginBottom: "1.5rem",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "0.5rem",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.375rem",
+              padding: "0.25rem 0.625rem",
+              borderRadius: "9999px",
+              background: inTrial ? "rgba(168,133,247,0.1)" : "rgba(16,185,129,0.1)",
+              color: inTrial ? "var(--glow-purple)" : "var(--glow-green)",
+              fontSize: "0.6875rem",
+              fontWeight: 600,
+            }}>
+              {inTrial ? <Clock size={10} /> : <Crown size={10} />}
+              {getPlanName(store.plan)}
+            </div>
+            {productLimit > 0 && (
+              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                {products.length}/{productLimit} products
+              </span>
+            )}
+            {productLimit === 0 && (
+              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                {products.length} products (unlimited)
+              </span>
+            )}
+            {daysLeft !== null && (
+              <span style={{ fontSize: "0.6875rem", color: daysLeft <= 3 ? "var(--glow-red)" : "var(--text-muted)" }}>
+                {inTrial ? `${daysLeft}d left` : `Expires in ${daysLeft}d`}
+              </span>
+            )}
+          </div>
+          {inTrial && (
+            <a
+              href="/upgrade"
+              style={{
+                fontSize: "0.6875rem",
+                fontWeight: 600,
+                color: "var(--glow-purple)",
+                textDecoration: "none",
+              }}
+            >
+              View Plans →
+            </a>
+          )}
         </div>
 
         {/* Products section */}

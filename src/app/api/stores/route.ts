@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/api";
 import { apiRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
+import { canCustomizeTheme } from "@/lib/subscription";
 
 export async function GET(request: Request) {
   const rateLimitResult = await apiRateLimit(request);
@@ -81,6 +82,8 @@ export async function POST(request: NextRequest) {
         category: body.category,
         email: body.email,
         setup_complete: body.setup_complete ?? false,
+        plan: "trial",
+        trial_ends_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
       })
       .select()
       .single();
@@ -127,12 +130,31 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Store not found" }, { status: 404 });
     }
 
+    // Prevent users from self-upgrading plan fields
+    const { plan: _plan, verified: _verified, subscription_expires_at: _sub, trial_ends_at: _trial, ...safeBody } = body;
+
+    // Validate theme changes — only quarterly+ can customize
+    if (safeBody.theme) {
+      const { data: currentStore } = await supabase
+        .from("stores")
+        .select("plan")
+        .eq("id", store.id)
+        .single();
+
+      if (currentStore && !canCustomizeTheme({ plan: currentStore.plan } as any)) {
+        return NextResponse.json(
+          { error: "Custom themes are available on Growth and Premium plans. Upgrade your plan to unlock.", upgradeRequired: true },
+          { status: 403 }
+        );
+      }
+    }
+
     // If slug is being changed, check uniqueness
-    if (body.slug) {
+    if (safeBody.slug) {
       const { data: existingStore } = await supabase
         .from("stores")
         .select("id")
-        .eq("slug", body.slug)
+        .eq("slug", safeBody.slug)
         .neq("id", store.id)
         .single();
 
@@ -146,7 +168,7 @@ export async function PATCH(request: NextRequest) {
 
     const { data: updatedStore, error } = await supabase
       .from("stores")
-      .update({ ...body, updated_at: new Date().toISOString() })
+      .update({ ...safeBody, updated_at: new Date().toISOString() })
       .eq("id", store.id)
       .select()
       .single();

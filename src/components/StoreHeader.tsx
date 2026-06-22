@@ -3,7 +3,7 @@
 import { Store } from "@/types";
 import { CartDrawer } from "./CartDrawer";
 import { StoreAvatar } from "./ui/StoreAvatar";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ShieldCheck } from "lucide-react";
 
 interface StoreHeaderProps {
   store: Store;
@@ -44,8 +44,22 @@ export function StoreHeader({ store }: StoreHeaderProps) {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
           <StoreAvatar name={store.name} logoUrl={store.logo_url} size="md" />
-          <h1 style={{ fontWeight: 700, fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <h1 style={{ fontWeight: 700, fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.375rem" }}>
             {store.name}
+            {store.verified && (
+              <span title="Verified Vendor" style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "1.125rem",
+                height: "1.125rem",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #06b6d4, #10b981)",
+                flexShrink: 0,
+              }}>
+                <ShieldCheck size={8} style={{ color: "white" }} />
+              </span>
+            )}
           </h1>
         </div>
 

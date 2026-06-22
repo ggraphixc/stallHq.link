@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Store, Product } from "@/types";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { getProductLimit, hasReachedProductLimit } from "@/lib/subscription";
 import {
   Package,
   Pencil,
@@ -146,6 +147,9 @@ export function ProductsClient({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  const productLimit = getProductLimit(store);
+  const atLimit = hasReachedProductLimit(store, products.length);
+
   const filteredProducts = products.filter((p) => {
     const matchesSearch =
       !search ||
@@ -245,20 +249,30 @@ export function ProductsClient({
             <div>
               <h1 style={{ fontWeight: 700, fontSize: "0.875rem" }}>Products</h1>
               <p style={{ fontSize: "0.625rem", color: "var(--text-muted)" }}>
-                {products.length} product{products.length !== 1 ? "s" : ""} total
+                {products.length}{productLimit > 0 ? `/${productLimit}` : ""} product{products.length !== 1 ? "s" : ""} total
               </p>
             </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <button
-              onClick={() => router.push("/dashboard/products/new")}
-              className="glow-button"
-              style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem" }}
-            >
-              <Plus size={14} />
-              {isDesktop && <span>Add Product</span>}
-            </button>
+            {atLimit ? (
+              <a
+                href="/upgrade"
+                className="glow-button"
+                style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.375rem" }}
+              >
+                Upgrade Plan
+              </a>
+            ) : (
+              <button
+                onClick={() => router.push("/dashboard/products/new")}
+                className="glow-button"
+                style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem" }}
+              >
+                <Plus size={14} />
+                {isDesktop && <span>Add Product</span>}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -321,13 +335,23 @@ export function ProductsClient({
               {search || filterStock !== "all" ? "Try adjusting your search or filters." : "Add your first product to start selling."}
             </p>
             {!search && filterStock === "all" && (
-              <button
-                onClick={() => router.push("/dashboard/products/new")}
-                className="glow-button"
-                style={{ padding: "0.75rem 1.5rem", fontSize: "0.8125rem", margin: "0 auto" }}
-              >
-                + Add Product
-              </button>
+              atLimit ? (
+                <a
+                  href="/upgrade"
+                  className="glow-button"
+                  style={{ padding: "0.75rem 1.5rem", fontSize: "0.8125rem", margin: "0 auto", textDecoration: "none", display: "inline-flex" }}
+                >
+                  Upgrade to Add More
+                </a>
+              ) : (
+                <button
+                  onClick={() => router.push("/dashboard/products/new")}
+                  className="glow-button"
+                  style={{ padding: "0.75rem 1.5rem", fontSize: "0.8125rem", margin: "0 auto" }}
+                >
+                  + Add Product
+                </button>
+              )
             )}
           </div>
         ) : (

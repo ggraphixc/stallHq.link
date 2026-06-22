@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/api";
+import { getProductLimit, hasReachedProductLimit } from "@/lib/subscription";
 
 export async function GET(request: NextRequest) {
   try {
@@ -56,6 +57,53 @@ export async function POST(request: NextRequest) {
 
     if (!store) {
       return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    }
+
+    // Check subscription plan and product limit
+    const { data: storeData } = await authSupabase
+      .from("stores")
+      .select("plan, subscription_expires_at, trial_ends_at")
+      .eq("id", body.store_id)
+      .single();
+
+    if (storeData) {
+      // Check if trial has expired
+      const now = new Date();
+      if (storeData.plan === "trial" && storeData.trial_ends_at && new Date(storeData.trial_ends_at) <= now) {
+        return NextResponse.json(
+          { error: "Your free trial has expired. Please upgrade your plan to add products.", upgradeRequired: true },
+          { status: 403 }
+        );
+      }
+
+      // Check if paid subscription has expired
+      if (storeData.plan !== "trial" && storeData.subscription_expires_at && new Date(storeData.subscription_expires_at) <= now) {
+        return NextResponse.json(
+          { error: "Your subscription has expired. Please renew your plan to add products.", upgradeRequired: true },
+          { status: 403 }
+        );
+      }
+
+      // Check product limit
+      const limit = getProductLimit({ plan: storeData.plan } as any);
+      if (limit > 0) {
+        const { count } = await authSupabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .eq("store_id", body.store_id);
+
+        if (count !== null && count >= limit) {
+          return NextResponse.json(
+            {
+              error: `You've reached the ${limit}-product limit for your ${storeData.plan === "trial" ? "trial" : "current plan"}. Upgrade to add more products.`,
+              upgradeRequired: true,
+              currentCount: count,
+              limit,
+            },
+            { status: 403 }
+          );
+        }
+      }
     }
 
     const { data: product, error: insertError } = await authSupabase

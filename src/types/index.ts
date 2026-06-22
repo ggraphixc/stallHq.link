@@ -19,6 +19,8 @@ export interface StoreHours {
   };
 }
 
+export type SubscriptionPlan = "trial" | "monthly" | "quarterly" | "annual";
+
 export interface Store {
   id: string;
   user_id: string;
@@ -33,6 +35,10 @@ export interface Store {
   theme: StoreTheme | null;
   store_hours: StoreHours | null;
   setup_complete: boolean;
+  plan: SubscriptionPlan;
+  verified: boolean;
+  trial_ends_at: string | null;
+  subscription_expires_at: string | null;
   created_at: string;
 }
 

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Store, StoreTheme } from "@/types";
-import { X, Loader2, Palette } from "lucide-react";
+import { X, Loader2, Palette, Lock } from "lucide-react";
+import { canCustomizeTheme } from "@/lib/subscription";
 
 interface ThemeSettingsProps {
   store: Store;
@@ -121,45 +122,100 @@ export function ThemeSettings({ store, onClose, onSaved }: ThemeSettingsProps) {
           {selectedPreset !== "Default" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <h3 style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Custom Colors</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                {[
-                  { label: "Primary Color", field: "primaryColor" as const },
-                  { label: "Accent Color", field: "accentColor" as const },
-                  { label: "Background", field: "backgroundColor" as const },
-                  { label: "Card Background", field: "cardBackground" as const },
-                ].map(({ label, field }) => (
-                  <div key={field}>
-                    <label style={labelStyle}>{label}</label>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <input
-                        type="color"
-                        value={theme[field] || "#a855f7"}
-                        onChange={(e) => setTheme({ ...theme, [field]: e.target.value })}
-                        style={{ width: "2rem", height: "2rem", borderRadius: "0.25rem", border: "none", cursor: "pointer", padding: 0 }}
-                      />
-                      <input
-                        type="text"
-                        value={theme[field] || "#a855f7"}
-                        onChange={(e) => setTheme({ ...theme, [field]: e.target.value })}
-                        className="ambient-input"
-                        style={{ flex: 1, padding: "0.375rem 0.5rem", fontSize: "0.75rem" }}
-                      />
+
+              {!canCustomizeTheme(store) ? (
+                <div style={{
+                  ...glassCard,
+                  padding: "1.5rem",
+                  textAlign: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  background: "rgba(168,133,247,0.04)",
+                  borderColor: "rgba(168,133,247,0.15)",
+                }}>
+                  <div style={{
+                    width: "2.5rem",
+                    height: "2.5rem",
+                    borderRadius: "0.5rem",
+                    background: "linear-gradient(135deg, rgba(168,133,247,0.15), rgba(6,182,212,0.1))",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}>
+                    <Lock size={14} style={{ color: "var(--glow-purple)" }} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: "0.8125rem", fontWeight: 600, marginBottom: "0.25rem" }}>
+                      Premium Feature
+                    </p>
+                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                      Custom brand colors are available on the <strong style={{ color: "var(--glow-purple)" }}>Growth</strong> and <strong style={{ color: "var(--glow-purple)" }}>Premium</strong> plans.
+                    </p>
+                  </div>
+                  <a
+                    href="/upgrade"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.375rem",
+                      padding: "0.5rem 1rem",
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      background: "var(--glow-purple)",
+                      color: "white",
+                      borderRadius: "0.5rem",
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    Upgrade Plan
+                  </a>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                  {[
+                    { label: "Primary Color", field: "primaryColor" as const },
+                    { label: "Accent Color", field: "accentColor" as const },
+                    { label: "Background", field: "backgroundColor" as const },
+                    { label: "Card Background", field: "cardBackground" as const },
+                  ].map(({ label, field }) => (
+                    <div key={field}>
+                      <label style={labelStyle}>{label}</label>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <input
+                          type="color"
+                          value={theme[field] || "#a855f7"}
+                          onChange={(e) => setTheme({ ...theme, [field]: e.target.value })}
+                          style={{ width: "2rem", height: "2rem", borderRadius: "0.25rem", border: "none", cursor: "pointer", padding: 0 }}
+                        />
+                        <input
+                          type="text"
+                          value={theme[field] || "#a855f7"}
+                          onChange={(e) => setTheme({ ...theme, [field]: e.target.value })}
+                          className="ambient-input"
+                          style={{ flex: 1, padding: "0.375rem 0.5rem", fontSize: "0.75rem" }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Preview — only show when custom colors are allowed */}
+              {canCustomizeTheme(store) && (
+                <div style={{ ...glassCard, padding: "1rem" }}>
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>Preview</p>
+                  <div style={{ borderRadius: "0.5rem", padding: "1rem", background: theme.backgroundColor, color: theme.textColor }}>
+                    <div style={{ width: "100%", height: "2rem", borderRadius: "0.25rem", background: theme.primaryColor, marginBottom: "0.5rem" }} />
+                    <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: theme.cardBackground }}>
+                      <div style={{ width: "4rem", height: "1rem", borderRadius: "0.25rem", background: theme.accentColor, marginBottom: "0.5rem" }} />
+                      <div style={{ width: "6rem", height: "0.75rem", borderRadius: "0.25rem", background: "rgba(255,255,255,0.2)" }} />
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Preview */}
-              <div style={{ ...glassCard, padding: "1rem" }}>
-                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>Preview</p>
-                <div style={{ borderRadius: "0.5rem", padding: "1rem", background: theme.backgroundColor, color: theme.textColor }}>
-                  <div style={{ width: "100%", height: "2rem", borderRadius: "0.25rem", background: theme.primaryColor, marginBottom: "0.5rem" }} />
-                  <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: theme.cardBackground }}>
-                    <div style={{ width: "4rem", height: "1rem", borderRadius: "0.25rem", background: theme.accentColor, marginBottom: "0.5rem" }} />
-                    <div style={{ width: "6rem", height: "0.75rem", borderRadius: "0.25rem", background: "rgba(255,255,255,0.2)" }} />
-                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
