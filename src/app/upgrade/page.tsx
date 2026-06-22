@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PLANS, formatNaira, getPlanName } from "@/lib/subscription";
 import { SubscriptionPlan } from "@/types";
 import {
@@ -14,6 +15,8 @@ import {
   Palette,
   BarChart3,
   Link as LinkIcon,
+  Loader2,
+  CheckCircle2,
 } from "lucide-react";
 
 /* ── Particle canvas ────────────────────────────── */
@@ -112,8 +115,44 @@ const planIcons: Record<SubscriptionPlan, React.ReactNode> = {
 
 /* ── Main Component ─────────────────────────────── */
 
-export default function UpgradePage() {
+function UpgradeContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const plans: SubscriptionPlan[] = ["monthly", "quarterly", "annual"];
+  const [loadingPlan, setLoadingPlan] = useState<SubscriptionPlan | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  // Check for payment success redirect
+  useEffect(() => {
+    if (searchParams.get("payment") === "success") {
+      setPaymentSuccess(true);
+      // Clean up URL
+      router.replace("/upgrade");
+    }
+  }, [searchParams, router]);
+
+  const handlePayment = useCallback(async (plan: SubscriptionPlan) => {
+    setLoadingPlan(plan);
+    try {
+      const res = await fetch("/api/payments/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to initialize payment");
+      }
+
+      // Redirect to Paystack checkout
+      window.location.href = data.authorization_url;
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Payment failed. Please try again.");
+      setLoadingPlan(null);
+    }
+  }, []);
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)", position: "relative" }}>
@@ -160,6 +199,37 @@ export default function UpgradePage() {
 
       {/* Main */}
       <main style={{ maxWidth: "60rem", margin: "0 auto", padding: "2rem 1rem", position: "relative", zIndex: 1 }}>
+        {/* Payment Success Banner */}
+        {paymentSuccess && (
+          <div style={{
+            ...glassCard,
+            padding: "1rem 1.25rem",
+            marginBottom: "2rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            background: "rgba(16,185,129,0.06)",
+            borderColor: "rgba(16,185,129,0.2)",
+          }} className="slide-up">
+            <CheckCircle2 size={20} style={{ color: "var(--glow-green)", flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600 }}>Payment successful!</p>
+              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Your plan has been upgraded. Redirecting to dashboard...</p>
+            </div>
+            <a href="/dashboard" style={{
+              padding: "0.5rem 1rem",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              background: "var(--glow-green)",
+              color: "white",
+              borderRadius: "0.5rem",
+              textDecoration: "none",
+            }}>
+              Go to Dashboard
+            </a>
+          </div>
+        )}
+
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
           <div style={{
@@ -282,13 +352,18 @@ export default function UpgradePage() {
                       padding: "0.75rem",
                       fontSize: "0.8125rem",
                       fontWeight: 600,
+                      opacity: loadingPlan && loadingPlan !== planKey ? 0.5 : 1,
+                      cursor: loadingPlan ? "not-allowed" : "pointer",
                     }}
-                    onClick={() => {
-                      // TODO: Integrate Paystack checkout
-                      alert("Payment integration coming soon! For now, contact us to upgrade.");
-                    }}
+                    disabled={!!loadingPlan}
+                    onClick={() => handlePayment(planKey)}
                   >
-                    {plan.price === 0 ? "Get Started Free" : `Pay ${formatNaira(plan.price)}`}
+                    {loadingPlan === planKey ? (
+                      <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
+                        <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                        Processing...
+                      </span>
+                    ) : plan.price === 0 ? "Get Started Free" : `Pay ${formatNaira(plan.price)}`}
                   </button>
                 </div>
               </div>
@@ -329,5 +404,17 @@ export default function UpgradePage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function UpgradePage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", background: "var(--bg-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Loader2 size={24} style={{ animation: "spin 1s linear infinite", color: "var(--glow-purple)" }} />
+      </div>
+    }>
+      <UpgradeContent />
+    </Suspense>
   );
 }

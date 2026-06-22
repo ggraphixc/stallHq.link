@@ -17,6 +17,10 @@ const DEMO_STORE: Store = {
   theme: null,
   store_hours: null,
   setup_complete: true,
+  plan: "trial",
+  verified: false,
+  trial_ends_at: null,
+  subscription_expires_at: null,
   created_at: new Date().toISOString(),
 };
 
