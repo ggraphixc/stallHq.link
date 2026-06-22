@@ -10,6 +10,7 @@ import { StoreHoursBadge } from "@/components/StoreHoursBadge";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { useFavorites } from "@/hooks/useFavorites";
 import { createClient } from "@/lib/supabase/client";
 import {
   MessageCircle,
@@ -120,6 +121,7 @@ const sectionLabel: React.CSSProperties = {
 
 export function StorePage({ store, products }: StorePageProps) {
   const { trackVisit } = useAnalytics();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const supabase = createClient();
 
   const [isOwner, setIsOwner] = useState(false);
@@ -399,6 +401,8 @@ export function StorePage({ store, products }: StorePageProps) {
               <ProductGrid
                 products={filteredProducts}
                 storeId={store.id}
+                isFavorite={isFavorite}
+                onToggleFavorite={toggleFavorite}
               />
             ) : (
               <div style={{ ...glassCard, padding: "3rem 1.5rem", textAlign: "center" }}>

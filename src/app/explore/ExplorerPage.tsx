@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { Store as StoreIcon, ArrowRight } from "lucide-react";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -22,9 +22,62 @@ interface ExplorerPageProps {
   categories: string[];
 }
 
+interface SuggestedStore {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  category: string | null;
+}
+
 export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [suggestions, setSuggestions] = useState<SuggestedStore[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch autocomplete suggestions
+  const fetchSuggestions = useCallback(async (q: string) => {
+    if (q.length < 2) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+    setLoadingSuggestions(true);
+    try {
+      const res = await fetch(`/api/stores/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      setSuggestions(data.stores || []);
+      setShowDropdown((data.stores || []).length > 0);
+    } catch {
+      setSuggestions([]);
+      setShowDropdown(false);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, []);
+
+  // Debounced search
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchSuggestions(search), 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [search, fetchSuggestions]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const filteredStores = stores.filter((store) => {
     const matchesSearch =
@@ -74,12 +127,115 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
         </div>
 
         {/* Search & Filters */}
-        <div style={{ maxWidth: "36rem", margin: "0 auto 2.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div ref={dropdownRef} style={{ maxWidth: "36rem", margin: "0 auto 2.5rem", display: "flex", flexDirection: "column", gap: "1rem", position: "relative" }}>
           <SearchInput
             value={search}
-            onChange={setSearch}
-            placeholder="Search stores..."
+            onChange={(v) => {
+              setSearch(v);
+              if (v.length >= 2) setShowDropdown(true);
+              else setShowDropdown(false);
+            }}
+            placeholder="Search stores, products, categories..."
           />
+
+          {/* Autocomplete dropdown */}
+          {showDropdown && suggestions.length > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                right: 0,
+                marginTop: "0.25rem",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "0.75rem",
+                overflow: "hidden",
+                zIndex: 50,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+                maxHeight: "20rem",
+                overflowY: "auto",
+              }}
+            >
+              {suggestions.map((store) => (
+                <Link
+                  key={store.id}
+                  href={`/${store.slug}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                    padding: "0.75rem 1rem",
+                    textDecoration: "none",
+                    color: "var(--text-primary)",
+                    borderBottom: "1px solid var(--border-subtle)",
+                    transition: "background 0.15s",
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = "var(--bg-primary)")}
+                  onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+                  onClick={() => { setShowDropdown(false); setSearch(""); }}
+                >
+                  {store.logo_url ? (
+                    <img
+                      src={store.logo_url}
+                      alt={store.name}
+                      style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "2rem",
+                        height: "2rem",
+                        borderRadius: "0.5rem",
+                        background: "linear-gradient(135deg, var(--glow-purple), var(--glow-cyan))",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <StoreIcon size={14} color="white" />
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "0.875rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {store.name}
+                    </div>
+                    {store.category && (
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "capitalize" }}>
+                        {store.category}
+                      </div>
+                    )}
+                  </div>
+                  <ArrowRight size={14} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Loading indicator */}
+          {showDropdown && loadingSuggestions && (
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                right: 0,
+                marginTop: "0.25rem",
+                padding: "1rem",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "0.75rem",
+                textAlign: "center",
+                fontSize: "0.8125rem",
+                color: "var(--text-muted)",
+                zIndex: 50,
+              }}
+            >
+              Searching...
+            </div>
+          )}
+
           {categories.length > 0 && (
             <FilterPills
               options={categories}

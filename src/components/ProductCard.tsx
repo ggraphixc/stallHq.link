@@ -3,13 +3,15 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Product, ProductWithRating } from "@/types";
-import { ShoppingBag, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingBag, Plus, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { RatingDisplay } from "./RatingDisplay";
 
 interface ProductCardProps {
   product: ProductWithRating;
   onAddToCart: (product: Product) => void;
   storeId?: string;
+  isFavorite?: boolean;
+  onToggleFavorite?: (productId: string, storeId: string) => void;
 }
 
 const navBtn: React.CSSProperties = {
@@ -29,7 +31,7 @@ const navBtn: React.CSSProperties = {
   padding: 0,
 };
 
-export function ProductCard({ product, onAddToCart, storeId }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart, storeId, isFavorite, onToggleFavorite }: ProductCardProps) {
   const [imgIndex, setImgIndex] = useState(0);
   const [hovering, setHovering] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -112,13 +114,33 @@ export function ProductCard({ product, onAddToCart, storeId }: ProductCardProps)
         {/* Inactive badge */}
         {!product.in_stock && (
           <span style={{
-            position: "absolute", top: "0.625rem", right: "0.625rem",
+            position: "absolute", top: "0.625rem", right: onToggleFavorite ? "3rem" : "0.625rem",
             fontSize: "0.5625rem", fontWeight: 600, padding: "0.125rem 0.375rem",
             borderRadius: "0.25rem", background: "rgba(239,68,68,0.85)", color: "white",
             textTransform: "uppercase", letterSpacing: "0.05em", zIndex: 5,
           }}>
             Off
           </span>
+        )}
+
+        {/* Favorite button */}
+        {onToggleFavorite && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (storeId) onToggleFavorite(product.id, storeId); }}
+            style={{
+              position: "absolute", top: "0.625rem", right: "0.625rem",
+              width: "2.25rem", height: "2.25rem",
+              borderRadius: "50%", border: "none",
+              background: isFavorite ? "rgba(239,68,68,0.9)" : "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(8px)",
+              color: isFavorite ? "white" : "rgba(255,255,255,0.8)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "all 0.2s", zIndex: 6,
+            }}
+            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart size={14} fill={isFavorite ? "currentColor" : "none"} />
+          </button>
         )}
 
         {/* < > buttons — always visible when multiple images */}

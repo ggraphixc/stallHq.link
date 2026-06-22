@@ -12,9 +12,11 @@ import { EmptyState } from "@/components/ui/EmptyState";
 interface ProductGridProps {
   products: Product[];
   storeId?: string;
+  isFavorite?: (productId: string) => boolean;
+  onToggleFavorite?: (productId: string, storeId: string) => void;
 }
 
-export function ProductGrid({ products, storeId }: ProductGridProps) {
+export function ProductGrid({ products, storeId, isFavorite, onToggleFavorite }: ProductGridProps) {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [ratings, setRatings] = useState<Record<string, { count: number; average: number }>>({});
@@ -112,6 +114,8 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
             product={product}
             onAddToCart={addItem}
             storeId={storeId}
+            isFavorite={isFavorite?.(product.id)}
+            onToggleFavorite={onToggleFavorite}
           />
         ))}
       </div>

@@ -2,11 +2,12 @@
 
 import { Product, ProductVariant } from "@/types";
 import { useCart } from "@/hooks/useCart";
-import { ShoppingBag, ArrowLeft, Check, Package } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Check, Package, Heart } from "lucide-react";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ReviewForm } from "@/components/ReviewForm";
 import { ReviewList } from "@/components/ReviewList";
+import { useFavorites } from "@/hooks/useFavorites";
 
 interface ProductDetailProps {
   product: Product & {
@@ -17,6 +18,7 @@ interface ProductDetailProps {
 
 export function ProductDetail({ product }: ProductDetailProps) {
   const { addItem } = useCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [added, setAdded] = useState(false);
   const [selectedVariants, setSelectedVariants] = useState<
     Record<string, string>
@@ -159,7 +161,23 @@ export function ProductDetail({ product }: ProductDetailProps) {
                   {product.category}
                 </span>
               )}
-              <h1 style={{ fontSize: "clamp(1.5rem,4vw,1.875rem)", fontWeight: 800, marginTop: "0.5rem" }}>{product.name}</h1>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem", marginTop: "0.5rem" }}>
+                <h1 style={{ fontSize: "clamp(1.5rem,4vw,1.875rem)", fontWeight: 800, flex: 1 }}>{product.name}</h1>
+                <button
+                  onClick={() => toggleFavorite(product.id, product.store_id)}
+                  style={{
+                    width: "2.75rem", height: "2.75rem",
+                    borderRadius: "50%", border: "1px solid var(--border-subtle)",
+                    background: isFavorite(product.id) ? "rgba(239,68,68,0.15)" : "var(--bg-card)",
+                    color: isFavorite(product.id) ? "#ef4444" : "var(--text-muted)",
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.2s", flexShrink: 0,
+                  }}
+                  aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <Heart size={18} fill={isFavorite(product.id) ? "currentColor" : "none"} />
+                </button>
+              </div>
               {product.description && (
                 <p style={{ color: "var(--text-secondary)", marginTop: "0.75rem", lineHeight: 1.6 }}>
                   {product.description}
