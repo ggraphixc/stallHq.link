@@ -634,3 +634,121 @@ export async function sendStatusUpdateEmail({
     tags: ["order", "status_update"],
   });
 }
+
+// ─── Support emails ──────────────────────────────────────────────────
+
+export async function sendSupportTicketCreated({
+  adminEmail,
+  vendorEmail,
+  ticketId,
+  subject,
+  category,
+}: {
+  adminEmail: string;
+  vendorEmail: string;
+  ticketId: string;
+  subject: string;
+  category: string;
+}) {
+  const shortId = ticketId.slice(0, 8);
+  const categoryLabel = category.replace("_", " ");
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#128172;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">New Support Ticket</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">Ticket #${shortId}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.15);border-radius:12px;">
+            <tr>
+              <td style="padding:16px 20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:4px 0;"><span style="font-size:13px;color:#94a3b8;">Subject</span></td>
+                    <td style="padding:4px 0;text-align:right;"><span style="font-size:14px;font-weight:600;color:#a78bfa;">${subject}</span></td>
+                  </tr>
+                  <tr>
+                    <td style="padding:4px 0;"><span style="font-size:13px;color:#94a3b8;">Category</span></td>
+                    <td style="padding:4px 0;text-align:right;"><span style="font-size:14px;color:#f1f5f9;text-transform:capitalize;">${categoryLabel}</span></td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">A vendor has submitted a new support ticket. Log in to the admin panel to view and respond.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/admin/support" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Ticket</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email: adminEmail }],
+    subject: `New support ticket #${shortId}: ${subject}`,
+    htmlContent: html,
+    tags: ["support", "new_ticket"],
+  });
+}
+
+export async function sendSupportReplyNotification({
+  vendorEmail,
+  ticketId,
+  subject,
+  replyPreview,
+}: {
+  vendorEmail: string;
+  ticketId: string;
+  subject: string;
+  replyPreview: string;
+}) {
+  const shortId = ticketId.slice(0, 8);
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#128172;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Support Reply</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">Ticket #${shortId}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">The support team has replied to your ticket <strong>"${subject}"</strong>:</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <div style="padding:14px 18px;background:rgba(16,185,129,0.06);border-left:3px solid #10b981;border-radius:0 8px 8px 0;">
+            <p style="margin:0;font-size:13px;color:#e0e0e0;line-height:1.5;">${replyPreview.slice(0, 200)}${replyPreview.length > 200 ? "..." : ""}</p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/dashboard/support?ticket=${ticketId}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Ticket</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email: vendorEmail }],
+    subject: `Support reply on ticket #${shortId}: ${subject}`,
+    htmlContent: html,
+    tags: ["support", "reply"],
+  });
+}

@@ -4,7 +4,8 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, Store, Users, ShoppingCart, Crown,
-  Activity, MessageCircle, Shield, ArrowLeft, Menu, X
+  Activity, MessageCircle, Shield, ArrowLeft, Menu, X,
+  LifeBuoy, Bell, Settings
 } from "lucide-react";
 import { useState } from "react";
 
@@ -14,6 +15,9 @@ const NAV_ITEMS = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/subscriptions", label: "Subscriptions", icon: Crown },
+  { href: "/admin/support", label: "Support", icon: LifeBuoy },
+  { href: "/admin/notifications", label: "Notifications", icon: Bell },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/system", label: "System", icon: Activity },
 ];
 

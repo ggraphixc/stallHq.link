@@ -32,6 +32,7 @@ import {
   AlertTriangle,
   Clock,
   Crown,
+  LifeBuoy,
 } from "lucide-react";
 
 interface DashboardClientProps {
@@ -289,6 +290,9 @@ export function DashboardClient({
               <button onClick={() => setShowSettings(true)} style={iconBtn} className="icon-button" title="Settings">
                 <Settings size={16} />
               </button>
+              <a href="/dashboard/support" style={iconBtn} className="icon-button" title="Support">
+                <LifeBuoy size={16} />
+              </a>
               <button onClick={handleLogout} style={iconBtn} className="icon-button" title="Logout">
                 <LogOut size={16} />
               </button>
@@ -332,6 +336,7 @@ export function DashboardClient({
                       { icon: ShoppingCart, label: "Orders", onClick: () => { setShowOrders(true); setShowMobileMenu(false); } },
                       { icon: Palette, label: "Theme", onClick: () => { setShowTheme(true); setShowMobileMenu(false); } },
                       { icon: Upload, label: "Batch Upload", onClick: () => { setShowBatchUpload(true); setShowMobileMenu(false); } },
+                      { icon: LifeBuoy, label: "Support", onClick: () => { window.location.href = "/dashboard/support"; } },
                     ].map(({ icon: Icon, label, onClick }) => (
                       <button
                         key={label}

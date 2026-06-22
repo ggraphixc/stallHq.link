@@ -1,0 +1,185 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle } from "lucide-react";
+
+interface Setting {
+  key: string; value: any; updated_at: string;
+}
+
+const DEFAULT_SETTINGS: Record<string, any> = {
+  app_name: "StallHq", app_url: "https://hqlink.vercel.app",
+  brevo_sender_email: "ggraphixc@gmail.com", brevo_sender_name: "StallHq",
+  maintenance_mode: false, allow_signup: true,
+  max_free_products: 10, trial_days: 5, support_email: "support@stallhq.link",
+};
+
+export default function AdminSettings() {
+  const [settings, setSettings] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
+
+  useEffect(() => { fetchSettings(); }, []);
+
+  const fetchSettings = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/settings");
+      if (res.ok) {
+        const data: Setting[] = await res.json();
+        const map: Record<string, any> = { ...DEFAULT_SETTINGS };
+        data.forEach(s => { map[s.key] = s.value; });
+        setSettings(map);
+      }
+    } catch {}
+    setLoading(false);
+  };
+
+  const saveSettings = async () => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      await fetch("/api/admin/settings", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {}
+    setSaving(false);
+  };
+
+  const updateSetting = (key: string, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const tabs = [
+    { id: "general", label: "General", icon: Globe },
+    { id: "email", label: "Email", icon: Mail },
+    { id: "payments", label: "Payments", icon: CreditCard },
+    { id: "security", label: "Security", icon: Shield },
+  ];
+
+  return (
+    <div style={{ maxWidth: "48rem", margin: "0 auto" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+        <div>
+          <h1 style={{ fontSize: "clamp(1.25rem,3vw,1.5rem)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Settings size={24} style={{ color: "var(--glow-purple)" }} /> Platform Settings
+          </h1>
+          <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Configure platform-wide settings</p>
+        </div>
+        <button onClick={saveSettings} disabled={saving} className="glow-button" style={{ display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.625rem 1rem", fontSize: "0.8125rem", opacity: saving ? 0.5 : 1 }}>
+          {saving ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : saved ? <CheckCircle size={16} /> : <Save size={16} />}
+          {saving ? "Saving..." : saved ? "Saved!" : "Save"}
+        </button>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "10rem 1fr", gap: "1rem" }}>
+        {/* Sidebar */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+          {tabs.map((tab) => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 0.75rem", borderRadius: "0.5rem", border: "none", background: activeTab === tab.id ? "rgba(168,133,247,0.1)" : "transparent", color: activeTab === tab.id ? "var(--glow-purple)" : "var(--text-muted)", cursor: "pointer", fontSize: "0.8125rem", textAlign: "left", width: "100%" }}>
+              <tab.icon size={16} /> {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", padding: "1.5rem" }}>
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>Loading settings...</div>
+          ) : activeTab === "general" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700 }}>General</h3>
+              <div>
+                <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>App Name</label>
+                <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} value={settings.app_name || ""} onChange={(e) => updateSetting("app_name", e.target.value)} />
+              </div>
+              <div>
+                <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>App URL</label>
+                <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} value={settings.app_url || ""} onChange={(e) => updateSetting("app_url", e.target.value)} />
+              </div>
+              <div>
+                <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Support Email</label>
+                <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} value={settings.support_email || ""} onChange={(e) => updateSetting("support_email", e.target.value)} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                <div>
+                  <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Trial Days</label>
+                  <input className="ambient-input" type="number" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} value={settings.trial_days || 5} onChange={(e) => updateSetting("trial_days", parseInt(e.target.value) || 5)} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Max Free Products</label>
+                  <input className="ambient-input" type="number" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} value={settings.max_free_products || 10} onChange={(e) => updateSetting("max_free_products", parseInt(e.target.value) || 10)} />
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "email" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700 }}>Email (Brevo)</h3>
+              <div>
+                <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Sender Email</label>
+                <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} value={settings.brevo_sender_email || ""} onChange={(e) => updateSetting("brevo_sender_email", e.target.value)} />
+              </div>
+              <div>
+                <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Sender Name</label>
+                <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} value={settings.brevo_sender_name || ""} onChange={(e) => updateSetting("brevo_sender_name", e.target.value)} />
+              </div>
+            </div>
+          ) : activeTab === "payments" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700 }}>Payments (Paystack)</h3>
+              <div style={{ padding: "1rem", background: "rgba(168,133,247,0.05)", border: "1px solid rgba(168,133,247,0.15)", borderRadius: "0.5rem" }}>
+                <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>Paystack API keys are configured via environment variables for security.</p>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.375rem" }}>Set <code style={{ padding: "0.125rem 0.25rem", background: "var(--bg-primary)", borderRadius: "0.25rem" }}>PAYSTACK_SECRET_KEY</code> and <code style={{ padding: "0.125rem 0.25rem", background: "var(--bg-primary)", borderRadius: "0.25rem" }}>NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY</code> in your Vercel environment variables.</p>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                <div style={{ padding: "1rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)" }}>
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.25rem" }}>Monthly</p>
+                  <p style={{ fontSize: "1.25rem", fontWeight: 700 }}>₦3,500</p>
+                </div>
+                <div style={{ padding: "1rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)" }}>
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.25rem" }}>Quarterly</p>
+                  <p style={{ fontSize: "1.25rem", fontWeight: 700 }}>₦7,500</p>
+                </div>
+                <div style={{ padding: "1rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)" }}>
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.25rem" }}>Annual</p>
+                  <p style={{ fontSize: "1.25rem", fontWeight: 700 }}>₦12,000</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700 }}>Security</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={!!settings.maintenance_mode} onChange={(e) => updateSetting("maintenance_mode", e.target.checked)} style={{ width: "1rem", height: "1rem", accentColor: "var(--glow-purple)" }} />
+                  <div>
+                    <p style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Maintenance Mode</p>
+                    <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Temporarily disable public access to the platform</p>
+                  </div>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={settings.allow_signup !== false} onChange={(e) => updateSetting("allow_signup", e.target.checked)} style={{ width: "1rem", height: "1rem", accentColor: "var(--glow-purple)" }} />
+                  <div>
+                    <p style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Allow New Signups</p>
+                    <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Allow new vendors to create accounts</p>
+                  </div>
+                </label>
+              </div>
+              {settings.maintenance_mode && (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem", background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.15)", borderRadius: "0.5rem" }}>
+                  <AlertTriangle size={16} style={{ color: "#f97316" }} />
+                  <p style={{ fontSize: "0.75rem", color: "#f97316" }}>Maintenance mode is ON. Public pages are disabled.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
