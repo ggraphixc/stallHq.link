@@ -20,6 +20,15 @@ const PRESET_THEMES = [
   { name: "Midnight", theme: { primaryColor: "#6366f1", accentColor: "#8b5cf6", backgroundColor: "#0a0a14", cardBackground: "#14142a", textColor: "#f8fafc" } },
 ];
 
+const FONT_OPTIONS = [
+  { label: "Default", heading: "", body: "" },
+  { label: "Inter", heading: "Inter, sans-serif", body: "Inter, sans-serif" },
+  { label: "Space Grotesk", heading: "Space Grotesk, sans-serif", body: "Inter, sans-serif" },
+  { label: "Playfair Display", heading: "Playfair Display, serif", body: "Inter, sans-serif" },
+  { label: "DM Sans", heading: "DM Sans, sans-serif", body: "DM Sans, sans-serif" },
+  { label: "Outfit", heading: "Outfit, sans-serif", body: "Outfit, sans-serif" },
+];
+
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: "0.6875rem",
@@ -42,6 +51,9 @@ export function ThemeSettings({ store, onClose, onSaved }: ThemeSettingsProps) {
   const [selectedPreset, setSelectedPreset] = useState<string>(store.theme ? "custom" : "Default");
   const [theme, setTheme] = useState<StoreTheme>(
     store.theme || { primaryColor: "#a855f7", accentColor: "#06b6d4", backgroundColor: "#0a0a0f", cardBackground: "#16161f", textColor: "#f8fafc" }
+  );
+  const [selectedFont, setSelectedFont] = useState<string>(
+    store.theme?.fontHeading ? FONT_OPTIONS.find(f => f.heading === store.theme!.fontHeading)?.label || "Custom" : "Default"
   );
 
   const handlePresetSelect = (preset: (typeof PRESET_THEMES)[0]) => {
@@ -216,6 +228,35 @@ export function ThemeSettings({ store, onClose, onSaved }: ThemeSettingsProps) {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Font Selection */}
+          {canCustomizeTheme(store) && (
+            <div>
+              <h3 style={{ fontSize: "0.8125rem", fontWeight: 600, marginBottom: "0.75rem" }}>Typography</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
+                {FONT_OPTIONS.map((font) => (
+                  <button
+                    key={font.label}
+                    onClick={() => {
+                      setSelectedFont(font.label);
+                      setTheme({ ...theme, fontHeading: font.heading || undefined, fontBody: font.body || undefined });
+                    }}
+                    style={{
+                      ...glassCard,
+                      padding: "0.625rem",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      borderColor: selectedFont === font.label ? "var(--glow-purple)" : "var(--border-subtle)",
+                      background: selectedFont === font.label ? "rgba(168,133,247,0.08)" : "rgba(255,255,255,0.02)",
+                      textAlign: "center",
+                    }}
+                  >
+                    <span style={{ fontSize: "0.75rem", fontFamily: font.heading || "inherit" }}>{font.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 

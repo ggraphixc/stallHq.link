@@ -21,6 +21,8 @@ const DEMO_STORE: Store = {
   verified: false,
   trial_ends_at: null,
   subscription_expires_at: null,
+  low_stock_threshold: 5,
+  stock_alerts_enabled: true,
   created_at: new Date().toISOString(),
 };
 

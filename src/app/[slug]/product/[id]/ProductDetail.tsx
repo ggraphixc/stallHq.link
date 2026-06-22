@@ -8,6 +8,7 @@ import Link from "next/link";
 import { ReviewForm } from "@/components/ReviewForm";
 import { ReviewList } from "@/components/ReviewList";
 import { useFavorites } from "@/hooks/useFavorites";
+import { ShareCard } from "@/components/ShareCard";
 
 interface ProductDetailProps {
   product: Product & {
@@ -188,6 +189,9 @@ export function ProductDetail({ product }: ProductDetailProps) {
             <div className="price-display" style={{ fontSize: "clamp(1.875rem,4vw,2.25rem)" }}>
               ₦{displayPrice.toLocaleString()}
             </div>
+
+            {/* Share */}
+            <ShareCard storeSlug={product.stores.slug} storeName={product.stores.name} productName={product.name} productId={product.id} />
 
             {/* Variant Selection */}
             {Object.entries(variantGroups).map(([groupName, options]) => (

@@ -79,6 +79,8 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
   const [bannerUrl, setBannerUrl] = useState(store.banner_url || "");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [lowStockThreshold, setLowStockThreshold] = useState(store.low_stock_threshold ?? 5);
+  const [stockAlertsEnabled, setStockAlertsEnabled] = useState(store.stock_alerts_enabled ?? true);
 
   const handleImageUpload = async (file: File, type: "logo" | "banner") => {
     const setUpload = type === "logo" ? setUploadingLogo : setUploadingBanner;
@@ -113,6 +115,8 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
           email: email || undefined, description: description || undefined,
           store_hours: storeHours,
           logo_url: logoUrl || null, banner_url: bannerUrl || null,
+          low_stock_threshold: lowStockThreshold,
+          stock_alerts_enabled: stockAlertsEnabled,
         }),
       });
       const data = await res.json();
@@ -218,6 +222,35 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
 
           <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "1rem" }}>
             <StoreHoursManager hours={storeHours} onChange={setStoreHours} />
+          </div>
+
+          {/* Inventory Alerts */}
+          <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "1rem" }}>
+            <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <input
+                type="checkbox"
+                checked={stockAlertsEnabled}
+                onChange={(e) => setStockAlertsEnabled(e.target.checked)}
+                style={{ width: "1rem", height: "1rem", accentColor: "var(--glow-purple)" }}
+              />
+              Enable Low Stock Alerts
+            </label>
+            <p style={hintStyle}>Get email alerts when products are running low</p>
+            {stockAlertsEnabled && (
+              <div style={{ marginTop: "0.5rem" }}>
+                <label style={labelStyle}>Alert when stock reaches</label>
+                <input
+                  type="number"
+                  className="ambient-input"
+                  style={inputStyle}
+                  min={1}
+                  max={100}
+                  value={lowStockThreshold}
+                  onChange={(e) => setLowStockThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                />
+                <p style={hintStyle}>Email sent when any product&apos;s stock drops to this level</p>
+              </div>
+            )}
           </div>
 
           <button

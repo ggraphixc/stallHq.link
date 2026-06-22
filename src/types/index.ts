@@ -4,6 +4,8 @@ export interface StoreTheme {
   backgroundColor?: string;
   cardBackground?: string;
   textColor?: string;
+  fontHeading?: string;
+  fontBody?: string;
 }
 
 export interface StoreHours {
@@ -39,6 +41,8 @@ export interface Store {
   verified: boolean;
   trial_ends_at: string | null;
   subscription_expires_at: string | null;
+  low_stock_threshold: number;
+  stock_alerts_enabled: boolean;
   created_at: string;
 }
 

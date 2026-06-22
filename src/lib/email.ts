@@ -387,6 +387,72 @@ export async function sendSubscriptionExpiryReminder({
   });
 }
 
+// ─── Inventory emails ───────────────────────────────────────────────
+
+export async function sendLowStockAlert({
+  storeEmail,
+  storeName,
+  storeSlug,
+  items,
+  threshold,
+}: {
+  storeEmail: string;
+  storeName: string;
+  storeSlug: string;
+  items: { name: string; stock: number; variant?: string }[];
+  threshold: number;
+}) {
+  const itemList = items
+    .map((item) => {
+      const variant = item.variant ? ` (${item.variant})` : "";
+      return `<tr>
+        <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);color:#e0e0e0;font-size:14px;">${item.name}${variant}</td>
+        <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:right;font-size:14px;font-weight:600;color:${item.stock === 0 ? "#ef4444" : "#eab308"};">${item.stock}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#eab308,#f97316);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#9888;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Low Stock Alert</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${items.length} product${items.length > 1 ? "s" : ""} in your store ${items.length > 1 ? "have" : "has"} stock at or below <strong>${threshold}</strong> units.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.12);border-radius:12px;overflow:hidden;">
+            <tr>
+              <td style="padding:12px 16px;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid rgba(255,255,255,0.06);">Product</td>
+              <td style="padding:12px 16px;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;text-align:right;border-bottom:1px solid rgba(255,255,255,0.06);">Stock</td>
+            </tr>
+            ${itemList}
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/dashboard/products" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Manage Products</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email: storeEmail }],
+    subject: `⚠️ Low stock alert — ${storeName}`,
+    htmlContent: html,
+    tags: ["inventory", "low_stock"],
+  });
+}
+
 export async function sendOrderNotification({
   storeEmail,
   storeName,

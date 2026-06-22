@@ -7,6 +7,7 @@ import { DashboardProductGrid } from "@/components/DashboardProductGrid";
 import { ProductForm } from "@/components/ProductForm";
 import { StoreSettings } from "@/components/StoreSettings";
 import { ShareCard } from "@/components/ShareCard";
+import { QrCode } from "lucide-react";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { BatchUpload } from "@/components/BatchUpload";
 import { ThemeSettings } from "@/components/ThemeSettings";
@@ -585,7 +586,25 @@ export function DashboardClient({
         <StoreSettings store={store} onClose={() => setShowSettings(false)} onSaved={handleStoreUpdated} />
       )}
       {showShareCard && (
-        <ShareCard store={store} onClose={() => setShowShareCard(false)} />
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setShowShareCard(false)} />
+          <div className="slide-up" style={{ position: "relative", width: "100%", maxWidth: "28rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", padding: "1.5rem", textAlign: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
+              <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Share Your Store</h2>
+              <button onClick={() => setShowShareCard(false)} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>✕</button>
+            </div>
+            <div style={{ padding: "1rem", background: "white", borderRadius: "0.75rem", display: "inline-block", marginBottom: "1rem" }}>
+              <QrCode size={180} strokeWidth={1} color="#000" />
+            </div>
+            <p style={{ fontFamily: "monospace", fontSize: "0.8125rem", color: "var(--text-secondary)", padding: "0.625rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", marginBottom: "1rem", wordBreak: "break-all" }}>
+              {typeof window !== "undefined" ? window.location.origin : ""}/{store.slug}
+            </p>
+            <ShareCard storeSlug={store.slug} storeName={store.name} />
+            <a href={`/${store.slug}`} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", color: "var(--glow-cyan)", textDecoration: "none", marginTop: "0.75rem" }}>
+              <ExternalLink size={14} /> View Live Store
+            </a>
+          </div>
+        </div>
       )}
       {showAnalytics && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>

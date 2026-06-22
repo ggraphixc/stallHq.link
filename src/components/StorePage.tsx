@@ -11,6 +11,7 @@ import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useFavorites } from "@/hooks/useFavorites";
+import { ShareCard } from "@/components/ShareCard";
 import { createClient } from "@/lib/supabase/client";
 import {
   MessageCircle,
@@ -176,6 +177,12 @@ export function StorePage({ store, products }: StorePageProps) {
     if (store.theme.textColor) {
       styles["--text-primary"] = store.theme.textColor;
     }
+    if (store.theme.fontHeading) {
+      styles["--font-display"] = store.theme.fontHeading;
+    }
+    if (store.theme.fontBody) {
+      styles["--font-body"] = store.theme.fontBody;
+    }
     return styles;
   }, [store.theme]);
 
@@ -267,6 +274,11 @@ export function StorePage({ store, products }: StorePageProps) {
                       {store.category}
                     </span>
                   )}
+                </div>
+
+                {/* Share */}
+                <div style={{ marginTop: "0.75rem" }}>
+                  <ShareCard storeSlug={store.slug} storeName={store.name} />
                 </div>
               </div>
 
