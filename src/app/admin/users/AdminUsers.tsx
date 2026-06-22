@@ -81,6 +81,7 @@ export function AdminUsers() {
                     alignItems: "center", gap: "1rem", padding: "0.875rem 1rem",
                     cursor: "pointer", minHeight: "44px",
                   }}
+                  className="admin-user-row"
                   onClick={() => setExpandedId(isExpanded ? null : u.id)}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
@@ -96,10 +97,10 @@ export function AdminUsers() {
                       <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</p>
                     </div>
                   </div>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem" }} className="admin-hide-mobile">
                     <Store size={12} /> {u.stores.length}
                   </span>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem" }} className="admin-hide-mobile">
                     <ShoppingCart size={12} /> {u.total_orders}
                   </span>
                   <ChevronDown size={14} style={{

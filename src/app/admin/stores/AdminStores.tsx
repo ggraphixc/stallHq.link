@@ -149,6 +149,7 @@ export function AdminStores() {
                     alignItems: "center", gap: "1rem", padding: "0.875rem 1rem",
                     cursor: "pointer", minHeight: "44px",
                   }}
+                  className="admin-store-row"
                   onClick={() => setExpandedId(isExpanded ? null : store.id)}
                 >
                   <div style={{ minWidth: 0 }}>
@@ -161,16 +162,16 @@ export function AdminStores() {
                   <span style={{
                     padding: "0.1875rem 0.5rem", borderRadius: "0.25rem", fontSize: "0.6875rem",
                     fontWeight: 600, color: getPlanColor(store.plan), background: `${getPlanColor(store.plan)}15`,
-                  }}>{getPlanName(store.plan)}</span>
+                  }} className="admin-hide-mobile">{getPlanName(store.plan)}</span>
                   <span style={{
                     padding: "0.1875rem 0.5rem", borderRadius: "0.25rem", fontSize: "0.6875rem",
                     fontWeight: 600, color: active ? "var(--glow-green)" : "var(--glow-red)",
                     background: active ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
                   }}>{active ? "Active" : "Expired"}</span>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem" }} className="admin-hide-mobile">
                     <Clock size={12} /> {daysLeft !== null ? `${daysLeft}d` : "—"}
                   </span>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{store.product_count} products</span>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }} className="admin-hide-mobile">{store.product_count} products</span>
                   <ChevronDown size={14} style={{
                     color: "var(--text-muted)", transition: "transform 0.2s",
                     transform: isExpanded ? "rotate(180deg)" : "rotate(0)",

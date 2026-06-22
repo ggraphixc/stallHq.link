@@ -596,7 +596,7 @@ export function DashboardClient({
           <div className="slide-up" style={{ position: "relative", width: "100%", maxWidth: "28rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", padding: "1.5rem", textAlign: "center" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
               <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Share Your Store</h2>
-              <button onClick={() => setShowShareCard(false)} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>✕</button>
+              <button onClick={() => setShowShareCard(false)} style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>✕</button>
             </div>
             <div style={{ padding: "1rem", background: "white", borderRadius: "0.75rem", display: "inline-block", marginBottom: "1rem" }}>
               <QrCode size={180} strokeWidth={1} color="#000" />
@@ -620,7 +620,7 @@ export function DashboardClient({
                 <BarChart3 size={18} style={{ color: "var(--glow-purple)" }} />
                 <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Analytics</h2>
               </div>
-              <button onClick={() => setShowAnalytics(false)} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
+              <button onClick={() => setShowAnalytics(false)} style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
                 <X size={18} />
               </button>
             </div>
@@ -645,7 +645,7 @@ export function DashboardClient({
                 <ShoppingCart size={18} style={{ color: "var(--glow-purple)" }} />
                 <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Orders</h2>
               </div>
-              <button onClick={() => setShowOrders(false)} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
+              <button onClick={() => setShowOrders(false)} style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
                 <X size={18} />
               </button>
             </div>

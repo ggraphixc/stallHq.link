@@ -189,6 +189,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           .admin-mobile-header { display: flex !important; }
           .admin-sidebar-mobile { display: flex !important; }
           .admin-main { margin-left: 0 !important; padding-top: 3.5rem !important; }
+          .admin-hide-mobile { display: none !important; }
+          .admin-grid-stacked { grid-template-columns: 1fr !important; }
+          .admin-grid-2col { grid-template-columns: 1fr !important; }
+          .admin-support-detail { grid-template-columns: 1fr !important; }
+          .admin-flex-wrap { flex-wrap: wrap !important; }
+        }
+        @media (max-width: 480px) {
+          .admin-hide-small { display: none !important; }
+          .admin-settings-tabs { flex-direction: column !important; }
         }
       `}</style>
     </div>

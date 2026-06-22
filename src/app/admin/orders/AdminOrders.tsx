@@ -136,12 +136,13 @@ export function AdminOrders() {
                     alignItems: "center", gap: "1rem", padding: "0.875rem 1rem",
                     cursor: "pointer", minHeight: "44px",
                   }}
+                  className="admin-order-row"
                   onClick={() => setExpandedId(isExpanded ? null : order.id)}
                 >
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                       <span style={{ fontWeight: 600, fontSize: "0.875rem", fontFamily: "monospace" }}>#{shortId}</span>
-                      <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>{order.stores?.name || "Unknown"}</span>
+                      <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} className="admin-hide-mobile">{order.stores?.name || "Unknown"}</span>
                     </div>
                     <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
                       {order.customer_name || "Anonymous"} · {new Date(order.created_at).toLocaleDateString()}

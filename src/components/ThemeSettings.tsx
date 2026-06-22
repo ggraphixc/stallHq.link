@@ -91,7 +91,7 @@ export function ThemeSettings({ store, onClose, onSaved }: ThemeSettingsProps) {
             <Palette size={18} style={{ color: "var(--glow-purple)" }} />
             <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Store Theme</h2>
           </div>
-          <button onClick={onClose} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
+          <button onClick={onClose} style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
             <X size={18} />
           </button>
         </div>
@@ -106,7 +106,7 @@ export function ThemeSettings({ store, onClose, onSaved }: ThemeSettingsProps) {
           {/* Preset Themes */}
           <div>
             <h3 style={{ fontSize: "0.8125rem", fontWeight: 600, marginBottom: "0.75rem" }}>Preset Themes</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 90px), 1fr))", gap: "0.5rem" }}>
               {PRESET_THEMES.map((preset) => (
                 <button
                   key={preset.name}
@@ -186,7 +186,7 @@ export function ThemeSettings({ store, onClose, onSaved }: ThemeSettingsProps) {
                   </a>
                 </div>
               ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 150px), 1fr))", gap: "0.75rem" }}>
                   {[
                     { label: "Primary Color", field: "primaryColor" as const },
                     { label: "Accent Color", field: "accentColor" as const },
@@ -235,7 +235,7 @@ export function ThemeSettings({ store, onClose, onSaved }: ThemeSettingsProps) {
           {canCustomizeTheme(store) && (
             <div>
               <h3 style={{ fontSize: "0.8125rem", fontWeight: 600, marginBottom: "0.75rem" }}>Typography</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 90px), 1fr))", gap: "0.5rem" }}>
                 {FONT_OPTIONS.map((font) => (
                   <button
                     key={font.label}

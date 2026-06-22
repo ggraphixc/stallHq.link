@@ -92,7 +92,7 @@ export default function AdminSupport() {
         <button onClick={() => setSelectedTicket(null)} style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", marginBottom: "1rem" }}>
           <ChevronLeft size={16} /> Back to tickets
         </button>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 16rem", gap: "1rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 16rem", gap: "1rem" }} className="admin-support-detail">
           {/* Conversation */}
           <div style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", overflow: "hidden" }}>
             <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)" }}>
@@ -163,7 +163,7 @@ export default function AdminSupport() {
 
   return (
     <div style={{ maxWidth: "56rem", margin: "0 auto" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
         <div>
           <h1 style={{ fontSize: "clamp(1.25rem,3vw,1.5rem)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <LifeBuoy size={24} style={{ color: "var(--glow-purple)" }} /> Support Tickets
@@ -173,10 +173,10 @@ export default function AdminSupport() {
       </div>
 
       {/* Filter Tabs */}
-      <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1rem", padding: "0.25rem", background: "var(--bg-secondary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)" }}>
+      <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1rem", padding: "0.25rem", background: "var(--bg-secondary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", overflowX: "auto" }}>
         {(["all", "open", "in_progress", "replied"] as const).map((s) => (
-          <button key={s} onClick={() => setFilterStatus(s)} style={{ flex: 1, padding: "0.5rem", borderRadius: "0.375rem", border: "none", background: filterStatus === s ? "var(--glow-purple)" : "transparent", color: filterStatus === s ? "white" : "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, textTransform: "capitalize" }}>
-            {s === "all" ? `All (${ticketCounts.all})` : s === "in_progress" ? `In Progress (${ticketCounts.in_progress})` : `${s} (${ticketCounts[s as keyof typeof ticketCounts] || 0})`}
+          <button key={s} onClick={() => setFilterStatus(s)} style={{ flex: "0 0 auto", padding: "0.5rem 0.75rem", borderRadius: "0.375rem", border: "none", background: filterStatus === s ? "var(--glow-purple)" : "transparent", color: filterStatus === s ? "white" : "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, textTransform: "capitalize", whiteSpace: "nowrap" }}>
+            {s === "all" ? `All (${ticketCounts.all})` : s === "in_progress" ? `Active (${ticketCounts.in_progress})` : `${s} (${ticketCounts[s as keyof typeof ticketCounts] || 0})`}
           </button>
         ))}
       </div>

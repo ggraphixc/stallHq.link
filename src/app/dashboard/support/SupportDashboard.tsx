@@ -253,7 +253,7 @@ export default function SupportDashboard() {
           <div className="slide-up" style={{ position: "relative", width: "100%", maxWidth: "32rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)" }}>
               <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>New Support Ticket</h2>
-              <button onClick={() => setShowNewTicket(false)} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>✕</button>
+              <button onClick={() => setShowNewTicket(false)} style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>✕</button>
             </div>
             <form onSubmit={submitTicket} style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
               {error && (

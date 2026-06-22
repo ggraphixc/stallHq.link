@@ -64,7 +64,7 @@ export default function AdminSettings() {
 
   return (
     <div style={{ maxWidth: "48rem", margin: "0 auto" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
         <div>
           <h1 style={{ fontSize: "clamp(1.25rem,3vw,1.5rem)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <Settings size={24} style={{ color: "var(--glow-purple)" }} /> Platform Settings
@@ -77,7 +77,7 @@ export default function AdminSettings() {
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "10rem 1fr", gap: "1rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "10rem 1fr", gap: "1rem" }} className="admin-grid-2col">
         {/* Sidebar */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
           {tabs.map((tab) => (
