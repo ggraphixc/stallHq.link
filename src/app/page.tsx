@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { Store, ShoppingCart, BarChart3, QrCode, Zap, Shield, ArrowRight, Check, Star, Users, TrendingUp } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Store, ShoppingCart, BarChart3, QrCode, Zap, Shield, ArrowRight, Check, Star, Users, TrendingUp, Menu, X } from "lucide-react";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -93,20 +93,24 @@ const sectionStyle: React.CSSProperties = { maxWidth: 800, margin: "0 auto", pad
 const labelStyle: React.CSSProperties = { textAlign: "center", fontSize: 11, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "2.5rem" };
 
 export default function Home() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <>
       <Particles />
-      <main className="relative z-10">
+      <main className="relative z-10" style={{ overflowX: "hidden" }}>
         {/* Header */}
-        <header style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "rgba(6,6,11,0.8)", backdropFilter: "blur(16px)", borderBottom: "1px solid var(--border-subtle)" }}>
-          <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 1.5rem", height: "3.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
+        <header style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "rgba(6,6,11,0.95)", borderBottom: "1px solid var(--border-subtle)", overflow: "hidden" }}>
+          <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 1rem", height: "3.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none", flexShrink: 0 }}>
               <div style={{ width: "1.75rem", height: "1.75rem", borderRadius: "0.375rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ color: "white", fontWeight: 700, fontSize: "0.75rem" }}>S</span>
               </div>
               <span style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--text-primary)" }}>StallHq</span>
             </Link>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+
+            {/* Desktop nav */}
+            <div className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <Link href="/explore" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", textDecoration: "none", padding: "0.5rem" }}>
                 Explore
               </Link>
@@ -117,29 +121,53 @@ export default function Home() {
                 Get Started
               </Link>
             </div>
+
+            {/* Mobile hamburger */}
+            <button
+              className="show-mobile-only"
+              onClick={() => setMenuOpen(!menuOpen)}
+              style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}
+            >
+              {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
+
+          {/* Mobile menu dropdown */}
+          {menuOpen && (
+            <div className="show-mobile-only" style={{ borderTop: "1px solid var(--border-subtle)", padding: "0.75rem 1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <Link href="/explore" onClick={() => setMenuOpen(false)} style={{ fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none", padding: "0.75rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                Explore Stores
+              </Link>
+              <Link href="/auth/login" onClick={() => setMenuOpen(false)} style={{ fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none", padding: "0.75rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                Login
+              </Link>
+              <Link href="/auth/signup" onClick={() => setMenuOpen(false)} className="glow-button" style={{ fontSize: "0.875rem", padding: "0.75rem", textAlign: "center", marginTop: "0.25rem" }}>
+                Get Started
+              </Link>
+            </div>
+          )}
         </header>
 
         {/* Hero */}
-        <section style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: "0 1.5rem", textAlign: "center", position: "relative" }}>
+        <section style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: "4.5rem 1.25rem 2rem", textAlign: "center", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: "25%", left: "50%", transform: "translateX(-50%)", width: 700, height: 400, background: "var(--glow-purple)", borderRadius: "50%", opacity: 0.04, filter: "blur(140px)", pointerEvents: "none" }} />
-          <div style={{ position: "relative", zIndex: 10, maxWidth: 640, display: "flex", flexDirection: "column", gap: "1.25rem" }} className="fade-in">
+          <div style={{ position: "relative", zIndex: 10, maxWidth: 540, width: "100%", display: "flex", flexDirection: "column", gap: "1.25rem" }} className="fade-in">
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: 999, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.03)", fontSize: 12, color: "var(--text-secondary)", alignSelf: "center" }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--glow-green)", animation: "pulse 2s infinite" }} />
               Start with a free trial
             </div>
-            <h1 style={{ fontSize: "clamp(2.25rem, 5vw, 3.75rem)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+            <h1 style={{ fontSize: "clamp(1.75rem, 6vw, 3.75rem)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1, wordBreak: "break-word" }}>
               Your WhatsApp.<br />
               <span className="text-gradient">Your Store.</span>
             </h1>
-            <p style={{ fontSize: 14, color: "var(--text-secondary)", maxWidth: 440, margin: "0 auto", lineHeight: 1.6 }}>
+            <p style={{ fontSize: "clamp(0.8125rem, 2.5vw, 1rem)", color: "var(--text-secondary)", maxWidth: 440, margin: "0 auto", lineHeight: 1.6 }}>
               Turn your WhatsApp into a full online store. Customers browse your products, place orders, and you get notified instantly — no app needed.
             </p>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", paddingTop: 8, flexWrap: "wrap" }}>
-              <Link href="/auth/signup" className="glow-button" style={{ fontSize: 13, padding: "12px 28px", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", paddingTop: 8, flexWrap: "wrap" }}>
+              <Link href="/auth/signup" className="glow-button" style={{ fontSize: 13, padding: "12px 20px", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 Start Selling Free <ArrowRight size={14} />
               </Link>
-              <Link href="/explore" className="glow-button-secondary" style={{ fontSize: 13, padding: "12px 28px" }}>
+              <Link href="/explore" className="glow-button-secondary" style={{ fontSize: 13, padding: "12px 20px" }}>
                 Browse Stores
               </Link>
             </div>
