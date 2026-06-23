@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { Store } from "@/types";
 import { Package, Loader2, Plus, X, ArrowRight } from "lucide-react";
 
@@ -39,7 +40,7 @@ const labelStyle: React.CSSProperties = {
 
 export function ProductEntryStep({ store, onProductsAdded, onSkip }: ProductEntryStepProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { error: showError, success: showSuccess, confirm } = useAlert();
   const [products, setProducts] = useState<ProductDraft[]>([{ name: "", price: "", category: "" }]);
 
   const addProduct = () => setProducts([...products, { name: "", price: "", category: "" }]);
@@ -57,7 +58,6 @@ export function ProductEntryStep({ store, onProductsAdded, onSkip }: ProductEntr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     const validProducts = products.filter((p) => p.name && p.price);
     if (validProducts.length === 0) { onSkip(); return; }
@@ -81,7 +81,7 @@ export function ProductEntryStep({ store, onProductsAdded, onSkip }: ProductEntr
       }
       onProductsAdded();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      showError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -100,13 +100,6 @@ export function ProductEntryStep({ store, onProductsAdded, onSkip }: ProductEntr
 
       {/* Form */}
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
-        {/* Error */}
-        {error && (
-          <div style={{ padding: "0.625rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "var(--glow-red)", fontSize: "0.75rem" }}>
-            {error}
-          </div>
-        )}
-
         {/* Product Cards */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
           {products.map((product, index) => (

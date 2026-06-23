@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { Store, SubscriptionPlan } from "@/types";
 import { PLANS, formatNaira, getPlanName, getDaysRemaining, isSubscriptionActive, isTrialExpired } from "@/lib/subscription";
 import {
@@ -27,6 +28,7 @@ interface SubscriptionsClientProps {
 }
 
 export function SubscriptionsClient({ stores, payments, currentUserId }: SubscriptionsClientProps) {
+  const { error: showError } = useAlert();
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState<SubscriptionPlan | "all">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "expired" | "trial">("all");

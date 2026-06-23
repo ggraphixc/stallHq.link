@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { Store, StoreTheme } from "@/types";
 import { X, Loader2, Palette, Lock } from "lucide-react";
 import { canCustomizeTheme } from "@/lib/subscription";
@@ -47,7 +48,7 @@ const glassCard: React.CSSProperties = {
 
 export function ThemeSettings({ store, onClose, onSaved }: ThemeSettingsProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { error: showError, success: showSuccess, confirm } = useAlert();
   const [selectedPreset, setSelectedPreset] = useState<string>(store.theme ? "custom" : "Default");
   const [theme, setTheme] = useState<StoreTheme>(
     store.theme || { primaryColor: "#a855f7", accentColor: "#06b6d4", backgroundColor: "#0a0a0f", cardBackground: "#16161f", textColor: "#f8fafc" }
@@ -63,7 +64,6 @@ export function ThemeSettings({ store, onClose, onSaved }: ThemeSettingsProps) {
 
   const handleSubmit = async () => {
     setLoading(true);
-    setError("");
     try {
       const res = await fetch("/api/stores", {
         method: "PATCH",
@@ -74,7 +74,7 @@ export function ThemeSettings({ store, onClose, onSaved }: ThemeSettingsProps) {
       if (!res.ok) throw new Error(data.error || "Failed to save theme");
       onSaved(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      showError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -97,12 +97,6 @@ export function ThemeSettings({ store, onClose, onSaved }: ThemeSettingsProps) {
         </div>
 
         <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          {error && (
-            <div style={{ padding: "0.625rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "var(--glow-red)", fontSize: "0.75rem" }}>
-              {error}
-            </div>
-          )}
-
           {/* Preset Themes */}
           <div>
             <h3 style={{ fontSize: "0.8125rem", fontWeight: 600, marginBottom: "0.75rem" }}>Preset Themes</h3>

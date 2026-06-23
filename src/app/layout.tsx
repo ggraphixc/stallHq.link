@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AlertProvider } from "@/contexts/AlertContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -60,7 +61,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
       </head>
       <body>
-        {children}
+        <AlertProvider>{children}</AlertProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { Product } from "@/types";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Pencil, ShoppingBag, ToggleLeft, ToggleRight, Loader2, ChevronLeft, ChevronRight, Share2 } from "lucide-react";
@@ -115,6 +116,7 @@ export function DashboardProductGrid({
   storeName,
 }: DashboardProductGridProps) {
   const [shareProduct, setShareProduct] = useState<Product | null>(null);
+  const { error: showError, success: showSuccess, confirm } = useAlert();
   const isDesktop = useMediaQuery("(min-width: 640px)");
   return (
     <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "repeat(2, 1fr)" : "1fr", gap: "0.75rem" }}>

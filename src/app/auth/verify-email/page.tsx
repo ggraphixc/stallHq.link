@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, MessageCircle, RefreshCw } from "lucide-react";
+import { useAlert } from "@/contexts/AlertContext";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -73,6 +74,7 @@ function VerifyEmailForm() {
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const { error: showError, success: showSuccess } = useAlert();
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
@@ -140,14 +142,15 @@ function VerifyEmailForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Invalid code");
+        showError(data.error || "Invalid code");
         setCode(["", "", "", "", "", ""]);
         inputRefs.current[0]?.focus();
       } else {
+        showSuccess("Email verified successfully!");
         setSuccess(true);
       }
     } catch {
-      setError("Network error. Please try again.");
+      showError("Network error. Please try again.");
     }
     setLoading(false);
   };
@@ -193,13 +196,6 @@ function VerifyEmailForm() {
               <span style={{ fontWeight: 500, color: "var(--text-secondary)" }}>{email}</span>
             </p>
           </div>
-
-          {/* Error */}
-          {error && (
-            <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "var(--glow-red)", fontSize: "0.75rem", textAlign: "center" }}>
-              {error}
-            </div>
-          )}
 
           {/* Success */}
           {success && (

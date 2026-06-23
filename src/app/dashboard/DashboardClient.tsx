@@ -15,6 +15,7 @@ import { OrderManager } from "@/components/OrderManager";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { createClient } from "@/lib/supabase/client";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useAlert } from "@/contexts/AlertContext";
 import { getProductLimit, getDaysRemaining, isTrial, formatNaira, getPlanName, hasReachedProductLimit, getPlanUsagePercent } from "@/lib/subscription";
 import {
   Settings,
@@ -154,6 +155,7 @@ export function DashboardClient({
   products: initialProducts,
 }: DashboardClientProps) {
   const router = useRouter();
+  const { error: showError, success: showSuccess, confirm } = useAlert();
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const [store, setStore] = useState<Store>(initialStore);
   const [products, setProducts] = useState<Product[]>(initialProducts);

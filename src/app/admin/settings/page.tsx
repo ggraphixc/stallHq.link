@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle } from "lucide-react";
 
 interface Setting {
@@ -15,15 +16,13 @@ const DEFAULT_SETTINGS: Record<string, any> = {
 };
 
 export default function AdminSettings() {
+  const { error: showError, success: showSuccess } = useAlert();
   const [settings, setSettings] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
 
   useEffect(() => { fetchSettings(); }, []);
-
-  const [error, setError] = useState("");
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -35,23 +34,20 @@ export default function AdminSettings() {
         data.forEach(s => { map[s.key] = s.value; });
         setSettings(map);
       }
-    } catch { setError("Failed to load settings"); }
+    } catch { showError("Failed to load settings"); }
     setLoading(false);
   };
 
   const saveSettings = async () => {
     setSaving(true);
-    setSaved(false);
-    setError("");
     try {
       const res = await fetch("/api/admin/settings", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ settings }),
       });
       if (!res.ok) throw new Error("Failed to save");
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch { setError("Failed to save settings"); }
+      showSuccess("Settings saved");
+    } catch { showError("Failed to save settings"); }
     setSaving(false);
   };
 
@@ -76,8 +72,8 @@ export default function AdminSettings() {
           <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Configure platform-wide settings</p>
         </div>
         <button onClick={saveSettings} disabled={saving} className="glow-button" style={{ display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.625rem 1rem", fontSize: "0.8125rem", opacity: saving ? 0.5 : 1 }}>
-          {saving ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : saved ? <CheckCircle size={16} /> : <Save size={16} />}
-          {saving ? "Saving..." : saved ? "Saved!" : "Save"}
+          {saving ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={16} />}
+          {saving ? "Saving..." : "Save"}
         </button>
       </div>
 

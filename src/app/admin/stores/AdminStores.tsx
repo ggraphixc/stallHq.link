@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { Store, SubscriptionPlan } from "@/types";
 import { PLANS, getPlanName, getDaysRemaining, isSubscriptionActive } from "@/lib/subscription";
 import {
@@ -14,6 +15,7 @@ interface StoreWithCount extends Store {
 }
 
 export function AdminStores() {
+  const { error: showError } = useAlert();
   const [stores, setStores] = useState<StoreWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { Order } from "@/types";
 import { Package, Clock, CheckCircle, Truck, XCircle, ChevronDown, Loader2, Download } from "lucide-react";
 
@@ -44,6 +45,7 @@ const labelStyle: React.CSSProperties = {
 
 export function OrderManager({ storeId }: OrderManagerProps) {
   const [orders, setOrders] = useState<Order[]>([]);
+  const { error: showError, success: showSuccess, confirm } = useAlert();
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");

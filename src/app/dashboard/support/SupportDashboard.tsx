@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LifeBuoy, Plus, MessageCircle, Clock, CheckCircle, ChevronLeft, Send, AlertCircle, Shield, Zap } from "lucide-react";
 
@@ -50,6 +51,7 @@ interface Message {
 
 export default function SupportDashboard() {
   const router = useRouter();
+  const { error: showError, success: showSuccess, confirm } = useAlert();
   const searchParams = useSearchParams();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,6 @@ export default function SupportDashboard() {
   const [priority, setPriority] = useState("normal");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchTickets();
@@ -103,7 +104,6 @@ export default function SupportDashboard() {
     e.preventDefault();
     if (!subject.trim() || !message.trim()) return;
     setSubmitting(true);
-    setError("");
     try {
       const res = await fetch("/api/support/tickets", {
         method: "POST",
@@ -117,7 +117,7 @@ export default function SupportDashboard() {
       setSubject(""); setMessage(""); setCategory("general"); setPriority("normal");
       openTicket(ticket);
     } catch {
-      setError("Failed to create ticket. Please try again.");
+      showError("Failed to create ticket. Please try again.");
     }
     setSubmitting(false);
   };
@@ -256,10 +256,6 @@ export default function SupportDashboard() {
               <button onClick={() => setShowNewTicket(false)} style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>✕</button>
             </div>
             <form onSubmit={submitTicket} style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {error && (
-                <div style={{ padding: "0.625rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "var(--glow-red)", fontSize: "0.75rem" }}>{error}</div>
-              )}
-
               <div>
                 <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.03em", display: "block", marginBottom: "0.375rem" }}>Subject</label>
                 <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} placeholder="Brief description of your issue" value={subject} onChange={(e) => setSubject(e.target.value)} required />

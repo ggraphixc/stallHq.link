@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, MessageCircle, Store, ShoppingCart, Eye, EyeOff } from "lucide-react";
+import { useAlert } from "@/contexts/AlertContext";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -68,12 +69,11 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { error: showError } = useAlert();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     // 1. Create user via server-side API (admin API — no Supabase email)
     const signupRes = await fetch("/api/auth/signup", {
@@ -84,7 +84,7 @@ export default function SignupPage() {
 
     if (!signupRes.ok) {
       const data = await signupRes.json();
-      setError(data.error || "Failed to create account");
+      showError(data.error || "Failed to create account");
       setLoading(false);
       return;
     }
@@ -166,13 +166,6 @@ export default function SignupPage() {
               <Link href="/explore" style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--text-muted)", textDecoration: "none", marginTop: "0.25rem" }}>
                 or just browse stores without an account →
               </Link>
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "var(--glow-red)", fontSize: "0.75rem" }}>
-              {error}
             </div>
           )}
 

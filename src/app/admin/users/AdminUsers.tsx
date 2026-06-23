@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { getPlanName } from "@/lib/subscription";
 import { SubscriptionPlan } from "@/types";
 import {
@@ -19,6 +20,7 @@ interface UserWithStores {
 }
 
 export function AdminUsers() {
+  const { error: showError } = useAlert();
   const [users, setUsers] = useState<UserWithStores[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);

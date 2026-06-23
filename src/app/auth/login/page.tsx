@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Mail, ArrowRight, MessageCircle, Eye, EyeOff } from "lucide-react";
+import { useAlert } from "@/contexts/AlertContext";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -66,12 +67,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { error: showError } = useAlert();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     const res = await fetch("/api/auth/login", {
       method: "POST",
@@ -91,7 +91,7 @@ export default function LoginPage() {
         window.location.href = `/auth/verify-email?email=${encodeURIComponent(email)}`;
         return;
       }
-      setError(data.error || "Login failed");
+      showError(data.error || "Login failed");
       setLoading(false);
       return;
     }
@@ -135,13 +135,6 @@ export default function LoginPage() {
               <Link href="/auth/signup" style={{ color: "var(--glow-purple)", textDecoration: "none", fontWeight: 500 }}>Create one</Link>
             </p>
           </div>
-
-          {/* Error */}
-          {error && (
-            <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "var(--glow-red)", fontSize: "0.75rem" }}>
-              {error}
-            </div>
-          )}
 
           {/* Email + Password */}
           <form onSubmit={handleEmailLogin} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>

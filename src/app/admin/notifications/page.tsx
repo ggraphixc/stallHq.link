@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { Bell, Send, Info, AlertTriangle, CheckCircle, XCircle, Megaphone, Users } from "lucide-react";
 
 const TYPE_OPTIONS = [
@@ -26,6 +27,7 @@ interface Notification {
 }
 
 export default function AdminNotifications() {
+  const { error: showError } = useAlert();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCompose, setShowCompose] = useState(false);
@@ -34,7 +36,6 @@ export default function AdminNotifications() {
   const [type, setType] = useState("info");
   const [target, setTarget] = useState("all");
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => { fetchNotifications(); }, []);
 
@@ -43,7 +44,7 @@ export default function AdminNotifications() {
     try {
       const res = await fetch("/api/admin/notifications");
       if (res.ok) setNotifications(await res.json());
-    } catch { setError("Failed to load notifications"); }
+    } catch { showError("Failed to load notifications"); }
     setLoading(false);
   };
 
@@ -51,7 +52,6 @@ export default function AdminNotifications() {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
     setSending(true);
-    setError("");
     try {
       const res = await fetch("/api/admin/notifications", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -62,7 +62,7 @@ export default function AdminNotifications() {
       setNotifications(prev => [notif, ...prev]);
       setShowCompose(false);
       setTitle(""); setBody(""); setType("info"); setTarget("all");
-    } catch { setError("Failed to send notification"); }
+    } catch { showError("Failed to send notification"); }
     setSending(false);
   };
 
@@ -90,7 +90,6 @@ export default function AdminNotifications() {
               <button onClick={() => setShowCompose(false)} style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>✕</button>
             </div>
             <form onSubmit={sendNotification} style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {error && <div style={{ padding: "0.625rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "var(--glow-red)", fontSize: "0.75rem" }}>{error}</div>}
 
               <div>
                 <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Title</label>

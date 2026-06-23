@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import {
   Store, Users, ShoppingCart, TrendingUp, Star, Activity,
   AlertTriangle, CheckCircle2, XCircle, Clock, Zap, Package,
@@ -38,9 +39,9 @@ const glassCard: React.CSSProperties = {
 };
 
 export function AdminOverview() {
+  const { error: showError } = useAlert();
   const [data, setData] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const fetchData = async () => {
     setLoading(true);
@@ -50,7 +51,7 @@ export function AdminOverview() {
       const json = await res.json();
       setData(json);
     } catch {
-      setError("Failed to load system data");
+      showError("Failed to load system data");
     } finally {
       setLoading(false);
     }
@@ -66,11 +67,11 @@ export function AdminOverview() {
     );
   }
 
-  if (error || !data) {
+  if (!data) {
     return (
       <div style={{ padding: "2rem", textAlign: "center" }}>
         <AlertTriangle size={24} style={{ color: "var(--glow-red)", marginBottom: "0.5rem" }} />
-        <p style={{ color: "var(--text-muted)" }}>{error || "No data"}</p>
+        <p style={{ color: "var(--text-muted)" }}>No data available</p>
       </div>
     );
   }

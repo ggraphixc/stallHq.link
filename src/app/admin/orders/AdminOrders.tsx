@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { Order } from "@/types";
 import {
   ShoppingCart, Search, RefreshCw, ChevronDown, Loader2, CheckCircle2,
@@ -22,6 +23,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: React.Rea
 };
 
 export function AdminOrders() {
+  const { error: showError } = useAlert();
   const [orders, setOrders] = useState<OrderWithStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);

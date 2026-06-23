@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { LifeBuoy, MessageCircle, Send, ChevronLeft, Clock, CheckCircle, AlertCircle, Filter, User } from "lucide-react";
 
 const CATEGORY_OPTIONS: Record<string, string> = {
@@ -25,6 +26,7 @@ interface Message {
 }
 
 export default function AdminSupport() {
+  const { error: showError } = useAlert();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -32,7 +34,6 @@ export default function AdminSupport() {
   const [loadingTicket, setLoadingTicket] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => { fetchTickets(); }, []);
 
@@ -41,7 +42,7 @@ export default function AdminSupport() {
     try {
       const res = await fetch("/api/support/tickets?admin=true");
       if (res.ok) setTickets(await res.json());
-    } catch { setError("Failed to load tickets"); }
+    } catch { showError("Failed to load tickets"); }
     setLoading(false);
   };
 
@@ -51,7 +52,7 @@ export default function AdminSupport() {
     try {
       const res = await fetch(`/api/support/tickets/${ticket.id}`);
       if (res.ok) setSelectedTicket(await res.json());
-    } catch { setError("Failed to load ticket"); }
+    } catch { showError("Failed to load ticket"); }
     setLoadingTicket(false);
   };
 
@@ -63,13 +64,12 @@ export default function AdminSupport() {
       });
       setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));
       if (selectedTicket?.id === ticketId) setSelectedTicket(prev => prev ? { ...prev, status } : null);
-    } catch { setError("Failed to update status"); }
+    } catch { showError("Failed to update status"); }
   };
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedTicket) return;
     setSending(true);
-    setError("");
     try {
       const res = await fetch(`/api/support/tickets/${selectedTicket.id}/messages`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -80,8 +80,8 @@ export default function AdminSupport() {
         setSelectedTicket(prev => prev ? { ...prev, messages: [...(prev.messages || []), msg], status: "replied" } : null);
         setNewMessage("");
         setTickets(prev => prev.map(t => t.id === selectedTicket.id ? { ...t, status: "replied", updated_at: new Date().toISOString() } : t));
-      } else { setError("Failed to send reply"); }
-    } catch { setError("Failed to send reply"); }
+      } else { showError("Failed to send reply"); }
+    } catch { showError("Failed to send reply"); }
     setSending(false);
   };
 

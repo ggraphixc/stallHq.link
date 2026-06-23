@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import { Store, StoreHours } from "@/types";
 import { X, Loader2, Camera } from "lucide-react";
 import { StoreHoursManager } from "./StoreHoursManager";
@@ -68,7 +69,7 @@ async function compressImage(file: File, maxWidth = 1200, quality = 0.8): Promis
 
 export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { error: showError, success: showSuccess, confirm } = useAlert();
   const [name, setName] = useState(store.name);
   const [slug, setSlug] = useState(store.slug);
   const [whatsappNumber, setWhatsappNumber] = useState(store.whatsapp_number);
@@ -96,7 +97,7 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
       const data = await res.json();
       setUrl(data.url);
     } catch {
-      setError(`Failed to upload ${type}`);
+      showError(`Failed to upload ${type}`);
     } finally {
       setUpload(false);
     }
@@ -105,7 +106,6 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
     try {
       const res = await fetch("/api/stores", {
         method: "PATCH",
@@ -123,7 +123,7 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
       if (!res.ok) throw new Error(data.error || "Failed to update store");
       onSaved(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      showError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -144,12 +144,6 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          {error && (
-            <div style={{ padding: "0.625rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "var(--glow-red)", fontSize: "0.75rem" }}>
-              {error}
-            </div>
-          )}
-
           {/* Logo Upload */}
           <div>
             <label style={labelStyle}>Store Logo</label>

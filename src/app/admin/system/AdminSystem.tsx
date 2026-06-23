@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 import {
   Activity, RefreshCw, Server, Database, Mail, CreditCard,
   Key, Globe, CheckCircle2, XCircle, Clock, Zap, HardDrive,
@@ -13,6 +14,7 @@ interface SystemData {
 }
 
 export function AdminSystem() {
+  const { error: showError } = useAlert();
   const [data, setData] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);

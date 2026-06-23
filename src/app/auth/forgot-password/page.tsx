@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Send, MessageCircle } from "lucide-react";
+import { useAlert } from "@/contexts/AlertContext";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -64,13 +65,12 @@ function Particles() {
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
+  const { error: showError, success: showSuccess } = useAlert();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     try {
       const res = await fetch("/api/auth/forgot-password", {
@@ -82,12 +82,13 @@ export default function ForgotPasswordPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Something went wrong");
+        showError(data.error || "Something went wrong");
       } else {
+        showSuccess("Password reset link sent!");
         setSent(true);
       }
     } catch {
-      setError("Network error. Please try again.");
+      showError("Network error. Please try again.");
     }
     setLoading(false);
   };
@@ -118,13 +119,6 @@ export default function ForgotPasswordPage() {
               Enter your email and we&apos;ll send you a reset link
             </p>
           </div>
-
-          {/* Error */}
-          {error && (
-            <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "var(--glow-red)", fontSize: "0.75rem" }}>
-              {error}
-            </div>
-          )}
 
           {/* Success */}
           {sent && (

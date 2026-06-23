@@ -11,6 +11,7 @@ import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useAlert } from "@/contexts/AlertContext";
 import { ShareCard } from "@/components/ShareCard";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -124,6 +125,7 @@ const sectionLabel: React.CSSProperties = {
 export function StorePage({ store, products }: StorePageProps) {
   const { trackVisit } = useAnalytics();
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { error: showError, success: showSuccess } = useAlert();
   const supabase = createClient();
 
   const [isOwner, setIsOwner] = useState(false);

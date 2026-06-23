@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, CheckCircle, MessageCircle, Eye, EyeOff } from "lucide-react";
+import { useAlert } from "@/contexts/AlertContext";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -71,8 +72,8 @@ function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const { error: showError, success: showSuccess } = useAlert();
 
   if (!token) {
     return (
@@ -93,15 +94,14 @@ function ResetPasswordForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords don't match");
+      showError("Passwords don't match");
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      showError("Password must be at least 6 characters");
       return;
     }
 
@@ -117,12 +117,13 @@ function ResetPasswordForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Something went wrong");
+        showError(data.error || "Something went wrong");
       } else {
+        showSuccess("Password updated successfully!");
         setSuccess(true);
       }
     } catch {
-      setError("Network error. Please try again.");
+      showError("Network error. Please try again.");
     }
     setLoading(false);
   };
@@ -147,13 +148,6 @@ function ResetPasswordForm() {
               Choose a strong password for your account
             </p>
           </div>
-
-          {/* Error */}
-          {error && (
-            <div style={{ padding: "0.75rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "var(--glow-red)", fontSize: "0.75rem" }}>
-              {error}
-            </div>
-          )}
 
           {/* Success */}
           {success && (
