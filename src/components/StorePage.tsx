@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Store as StoreIcon,
   ShieldCheck,
+  LayoutDashboard,
 } from "lucide-react";
 
 interface StorePageProps {
@@ -564,6 +565,43 @@ export function StorePage({ store, products }: StorePageProps) {
       </main>
 
       <StoreFooter store={store} />
+
+      {/* ── Owner Dashboard Button ────────────────── */}
+      {isOwner && (
+        <a
+          href="/dashboard"
+          style={{
+            position: "fixed",
+            bottom: "1.5rem",
+            right: "1.5rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            padding: "0.75rem 1.25rem",
+            borderRadius: "9999px",
+            background: "linear-gradient(135deg, var(--glow-purple), var(--glow-cyan))",
+            color: "white",
+            fontSize: "0.8125rem",
+            fontWeight: 600,
+            textDecoration: "none",
+            boxShadow: "0 4px 24px rgba(168,133,247,0.3)",
+            zIndex: 50,
+            transition: "transform 0.2s, box-shadow 0.2s",
+            minHeight: "44px",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.05)";
+            e.currentTarget.style.boxShadow = "0 6px 32px rgba(168,133,247,0.4)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.boxShadow = "0 4px 24px rgba(168,133,247,0.3)";
+          }}
+        >
+          <LayoutDashboard size={16} />
+          Dashboard
+        </a>
+      )}
     </div>
   );
 }

@@ -100,6 +100,13 @@ export default function LoginPage() {
     const storeCheck = await fetch("/api/stores");
     const storeData = await storeCheck.json();
     
+    // Check if user is admin
+    const adminEmails = ["zerupth@gmail.com", "ggraphixc@gmail.com"];
+    if (adminEmails.includes(email.toLowerCase())) {
+      window.location.href = "/admin";
+      return;
+    }
+    
     if (storeData.store) {
       window.location.href = "/dashboard";
     } else {

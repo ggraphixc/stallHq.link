@@ -9,7 +9,6 @@ export async function POST() {
 
   await supabase.auth.signOut();
 
-  return NextResponse.redirect(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL?.split("//")[0]}//${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).host}/auth/login`
-  );
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
+  return NextResponse.redirect(appUrl);
 }

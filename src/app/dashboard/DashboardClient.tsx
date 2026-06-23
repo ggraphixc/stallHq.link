@@ -15,7 +15,7 @@ import { OrderManager } from "@/components/OrderManager";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { createClient } from "@/lib/supabase/client";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { getProductLimit, getDaysRemaining, isTrial, formatNaira, getPlanName, hasReachedProductLimit } from "@/lib/subscription";
+import { getProductLimit, getDaysRemaining, isTrial, formatNaira, getPlanName, hasReachedProductLimit, getPlanUsagePercent } from "@/lib/subscription";
 import {
   Settings,
   LogOut,
@@ -178,7 +178,7 @@ export function DashboardClient({
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/auth/login";
+    window.location.href = "/";
   };
 
   useEffect(() => {
@@ -470,57 +470,68 @@ export function DashboardClient({
         {/* Plan info bar */}
         <div style={{
           ...glassCard,
-          padding: "0.75rem 1rem",
+          padding: "0.875rem 1rem",
           marginBottom: "1.5rem",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "0.5rem",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.375rem",
-              padding: "0.25rem 0.625rem",
-              borderRadius: "9999px",
-              background: inTrial ? "rgba(168,133,247,0.1)" : "rgba(16,185,129,0.1)",
-              color: inTrial ? "var(--glow-purple)" : "var(--glow-green)",
-              fontSize: "0.6875rem",
-              fontWeight: 600,
-            }}>
-              {inTrial ? <Clock size={10} /> : <Crown size={10} />}
-              {getPlanName(store.plan)}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: productLimit > 0 ? "0.625rem" : 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: "0.375rem",
+                padding: "0.25rem 0.625rem", borderRadius: "9999px",
+                background: inTrial ? "rgba(168,133,247,0.1)" : "rgba(16,185,129,0.1)",
+                color: inTrial ? "var(--glow-purple)" : "var(--glow-green)",
+                fontSize: "0.6875rem", fontWeight: 600,
+              }}>
+                {inTrial ? <Clock size={10} /> : <Crown size={10} />}
+                {getPlanName(store.plan)}
+              </div>
+              {daysLeft !== null && (
+                <span style={{ fontSize: "0.6875rem", color: daysLeft <= 3 ? "var(--glow-red)" : "var(--text-muted)" }}>
+                  {inTrial ? `${daysLeft}d trial left` : `Expires in ${daysLeft}d`}
+                </span>
+              )}
             </div>
-            {productLimit > 0 && (
-              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                {products.length}/{productLimit} products
-              </span>
-            )}
-            {productLimit === 0 && (
-              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                {products.length} products (unlimited)
-              </span>
-            )}
-            {daysLeft !== null && (
-              <span style={{ fontSize: "0.6875rem", color: daysLeft <= 3 ? "var(--glow-red)" : "var(--text-muted)" }}>
-                {inTrial ? `${daysLeft}d left` : `Expires in ${daysLeft}d`}
-              </span>
-            )}
-          </div>
-          {inTrial && (
             <a
               href="/upgrade"
               style={{
-                fontSize: "0.6875rem",
-                fontWeight: 600,
-                color: "var(--glow-purple)",
-                textDecoration: "none",
+                fontSize: "0.6875rem", fontWeight: 600,
+                color: "var(--glow-purple)", textDecoration: "none",
+                display: "flex", alignItems: "center", gap: "0.25rem",
               }}
             >
-              View Plans →
+              {inTrial ? "Upgrade" : "View Plans"} →
             </a>
+          </div>
+
+          {/* Product usage progress bar */}
+          {productLimit > 0 && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.375rem" }}>
+                <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                  Products
+                </span>
+                <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                  {products.length}/{productLimit}
+                </span>
+              </div>
+              <div style={{ height: "0.375rem", borderRadius: "9999px", background: "var(--bg-secondary)", overflow: "hidden" }}>
+                <div style={{
+                  height: "100%", borderRadius: "9999px",
+                  width: `${getPlanUsagePercent(store, products.length)}%`,
+                  background: hasReachedProductLimit(store, products.length)
+                    ? "var(--glow-red)"
+                    : getPlanUsagePercent(store, products.length) > 80
+                    ? "var(--glow-amber)"
+                    : "var(--glow-green)",
+                  transition: "width 0.3s",
+                }} />
+              </div>
+            </div>
+          )}
+          {productLimit === 0 && (
+            <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+              {products.length} products — unlimited
+            </p>
           )}
         </div>
 

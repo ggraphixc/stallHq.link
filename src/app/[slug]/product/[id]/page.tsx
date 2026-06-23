@@ -44,7 +44,46 @@ export default async function ProductRoute({ params }: PageProps) {
 
   try {
     const product = await getProductById(id);
-    return <ProductDetail product={product} />;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
+
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: product.name,
+      description: product.description,
+      image: product.image_url,
+      url: `${baseUrl}/${product.stores.slug}/product/${product.id}`,
+      offers: {
+        "@type": "Offer",
+        price: product.price,
+        priceCurrency: "NGN",
+        availability: product.in_stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        seller: {
+          "@type": "Organization",
+          name: product.stores.name,
+        },
+      },
+      brand: {
+        "@type": "Organization",
+        name: product.stores.name,
+      },
+      category: product.category,
+      aggregateRating: product.avg_rating ? {
+        "@type": "AggregateRating",
+        ratingValue: product.avg_rating,
+        reviewCount: product.review_count || 0,
+      } : undefined,
+    };
+
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+        <ProductDetail product={product} />
+      </>
+    );
   } catch {
     notFound();
   }

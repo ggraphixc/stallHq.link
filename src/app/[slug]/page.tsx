@@ -83,16 +83,32 @@ export default async function StoreRoute({ params }: PageProps) {
     const products = await getProductsByStoreId(store.id);
 
     // Generate structured data for SEO
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://stallhq.link";
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Store",
       name: store.name,
       description: store.description,
-      url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://stallhq.link"}/${store.slug}`,
+      url: `${baseUrl}/${store.slug}`,
       logo: store.logo_url,
       image: store.banner_url,
       category: store.category,
       sameAs: [],
+      address: store.location ? {
+        "@type": "PostalAddress",
+        addressLocality: store.location,
+        addressCountry: "NG",
+      } : undefined,
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer service",
+        availableLanguage: "English",
+      },
+      aggregateRating: store.avg_rating ? {
+        "@type": "AggregateRating",
+        ratingValue: store.avg_rating,
+        reviewCount: store.review_count || 0,
+      } : undefined,
     };
 
     return (
