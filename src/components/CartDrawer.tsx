@@ -33,6 +33,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
 
   const handleCheckout = async () => {
     trackWhatsAppClick(store.id);
+    let orderId = "";
     try {
       const orderItems = items.map((item) => ({
         product_id: item.product.id,
@@ -42,7 +43,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
         price: item.variant?.price ?? item.product.price,
         quantity: item.quantity,
       }));
-      await fetch("/api/orders", {
+      const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -56,12 +57,17 @@ export function CartDrawer({ store }: CartDrawerProps) {
           total,
         }),
       });
+      const data = await res.json();
+      orderId = data.id || "";
     } catch (error) {
       console.error("Error creating order:", error);
     }
     const url = generateWhatsAppUrl(store.whatsapp_number, store.name, items);
     window.open(url, "_blank");
     clearCart();
+    if (orderId) {
+      window.location.href = `/order/${orderId}`;
+    }
   };
 
   return (

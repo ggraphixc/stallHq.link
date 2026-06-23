@@ -1,4 +1,4 @@
-import { CartItem } from "@/types";
+import { CartItem, OrderItem } from "@/types";
 
 export function generateWhatsAppUrl(
   whatsappNumber: string,
@@ -10,6 +10,42 @@ export function generateWhatsAppUrl(
 
   const cleanNumber = whatsappNumber.replace(/[^0-9]/g, "");
 
+  return `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+}
+
+export function generateFollowUpUrl(
+  whatsappNumber: string,
+  storeName: string,
+  orderId: string,
+  items: OrderItem[],
+  total: number
+): string {
+  const shortId = orderId.slice(0, 8).toUpperCase();
+  const lines: string[] = [];
+
+  lines.push(`*Follow-up: Order #${shortId} from ${storeName}*`);
+  lines.push("");
+  lines.push("------");
+  lines.push("");
+
+  items.forEach((item, index) => {
+    lines.push(`${index + 1}. ${item.product_name}`);
+    if (item.variant_name) {
+      lines.push(`   ${item.variant_name}`);
+    }
+    lines.push(`   Qty: ${item.quantity} x ₦${item.price.toLocaleString()}`);
+    lines.push("");
+  });
+
+  lines.push("------");
+  lines.push(`*TOTAL: ₦${total.toLocaleString()}*`);
+  lines.push("");
+  lines.push("------");
+  lines.push("");
+  lines.push("Hi, I'm following up on my order above. Thank you!");
+
+  const encodedMessage = encodeURIComponent(lines.join("\n"));
+  const cleanNumber = whatsappNumber.replace(/[^0-9]/g, "");
   return `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
 }
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Order } from "@/types";
 import {
   ShoppingCart, Search, RefreshCw, ChevronDown, Loader2, CheckCircle2,
-  XCircle, Clock, Truck, Package
+  XCircle, Clock, Truck, Package, ExternalLink
 } from "lucide-react";
 
 interface OrderWithStore extends Order {
@@ -216,6 +216,10 @@ export function AdminOrders() {
 
                     {/* Status Update */}
                     <div style={{ marginTop: "1rem", display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+                      <a href={`/order/${order.id}`} target="_blank" rel="noopener noreferrer"
+                        style={{ display: "flex", alignItems: "center", gap: "0.25rem", padding: "0.375rem 0.625rem", fontSize: "0.6875rem", fontWeight: 600, background: "rgba(168,133,247,0.1)", border: "1px solid rgba(168,133,247,0.2)", borderRadius: "0.25rem", color: "var(--glow-purple)", textDecoration: "none", minHeight: "44px" }}>
+                        <ExternalLink size={10} /> View Order Page
+                      </a>
                       {STATUS_OPTIONS.map((s) => {
                         const sCfg = STATUS_CONFIG[s];
                         const isCurrent = order.status === s;

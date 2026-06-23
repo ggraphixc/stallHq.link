@@ -47,6 +47,8 @@ export function OrderManager({ storeId }: OrderManagerProps) {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
+  const [vendorNote, setVendorNote] = useState("");
 
   useEffect(() => { fetchOrders(); }, [storeId]);
 
@@ -61,19 +63,24 @@ export function OrderManager({ storeId }: OrderManagerProps) {
     }
   };
 
-  const updateStatus = async (orderId: string, status: Order["status"]) => {
+  const updateStatus = async (orderId: string, status: Order["status"], notes?: string) => {
     setUpdatingId(orderId);
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, vendor_notes: notes || undefined }),
       });
-      if (response.ok) setOrders(orders.map((o) => (o.id === orderId ? { ...o, status } : o)));
+      if (response.ok) {
+        const updated = await response.json();
+        setOrders(orders.map((o) => (o.id === orderId ? { ...o, status, vendor_notes: updated.vendor_notes || o.vendor_notes } : o)));
+      }
     } catch (error) {
       console.error("Error updating order:", error);
     } finally {
       setUpdatingId(null);
+      setEditingNotesId(null);
+      setVendorNote("");
     }
   };
 
@@ -227,25 +234,64 @@ export function OrderManager({ storeId }: OrderManagerProps) {
                       </p>
                     )}
 
+                    {order.vendor_notes && (
+                      <div style={{ marginTop: "0.5rem", padding: "0.5rem 0.75rem", background: "rgba(168,133,247,0.05)", borderRadius: "0.375rem", borderLeft: "3px solid var(--glow-purple)" }}>
+                        <p style={{ fontSize: "0.625rem", fontWeight: 600, color: "var(--glow-purple)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.125rem" }}>Vendor Note</p>
+                        <p style={{ fontSize: "0.6875rem", color: "var(--text-secondary)" }}>{order.vendor_notes}</p>
+                      </div>
+                    )}
+
                     <p style={{ marginTop: "0.5rem", fontSize: "0.625rem", color: "var(--text-muted)" }}>
                       {new Date(order.created_at).toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
 
                   {/* Status Update */}
-                  <div style={{ position: "relative", flexShrink: 0 }}>
-                    <select
-                      value={order.status}
-                      onChange={(e) => updateStatus(order.id, e.target.value as Order["status"])}
-                      disabled={updatingId === order.id}
-                      className="ambient-input"
-                      style={inputStyle}
-                    >
-                      {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                        <option key={key} value={key}>{config.label}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={14} style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
+                  <div style={{ position: "relative", flexShrink: 0, display: "flex", flexDirection: "column", gap: "0.375rem", alignItems: "flex-end" }}>
+                    <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
+                      <select
+                        value={order.status}
+                        onChange={(e) => {
+                          const newStatus = e.target.value as Order["status"];
+                          if (newStatus !== order.status) {
+                            setEditingNotesId(order.id);
+                            setVendorNote(order.vendor_notes || "");
+                          }
+                        }}
+                        disabled={updatingId === order.id}
+                        className="ambient-input"
+                        style={inputStyle}
+                      >
+                        {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                          <option key={key} value={key}>{config.label}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={14} style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
+                    </div>
+
+                    {/* Inline notes editor */}
+                    {editingNotesId === order.id && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", minWidth: "200px" }}>
+                        <textarea
+                          value={vendorNote}
+                          onChange={(e) => setVendorNote(e.target.value)}
+                          placeholder="Add a note for the customer (optional)..."
+                          rows={2}
+                          style={{ width: "100%", padding: "0.5rem 0.75rem", fontSize: "0.75rem", background: "var(--bg-primary)", border: "1px solid var(--border-subtle)", borderRadius: "0.375rem", color: "var(--text-primary)", outline: "none", resize: "vertical", fontFamily: "inherit" }}
+                        />
+                        <div style={{ display: "flex", gap: "0.375rem", justifyContent: "flex-end" }}>
+                          <button onClick={() => { setEditingNotesId(null); setVendorNote(""); }}
+                            style={{ padding: "0.375rem 0.625rem", fontSize: "0.6875rem", background: "transparent", border: "1px solid var(--border-subtle)", borderRadius: "0.25rem", color: "var(--text-muted)", cursor: "pointer" }}>
+                            Cancel
+                          </button>
+                          <button onClick={() => updateStatus(order.id, order.status, vendorNote)}
+                            disabled={updatingId === order.id}
+                            style={{ padding: "0.375rem 0.625rem", fontSize: "0.6875rem", background: "var(--glow-purple)", border: "none", borderRadius: "0.25rem", color: "white", cursor: "pointer", fontWeight: 600, opacity: updatingId === order.id ? 0.5 : 1 }}>
+                            {updatingId === order.id ? "Saving..." : "Save"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

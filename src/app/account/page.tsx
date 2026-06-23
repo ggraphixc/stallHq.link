@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Mail, ArrowRight, Package, Clock, CheckCircle, XCircle, Truck, ShoppingBag } from "lucide-react";
+import { Mail, ArrowRight, Package, Clock, CheckCircle, XCircle, Truck, ShoppingBag, ExternalLink, ShoppingCart } from "lucide-react";
 
 interface OrderItem {
   product_name: string;
@@ -190,6 +190,14 @@ export default function AccountPage() {
                           <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--glow-green)" }}>
                             ₦{order.total.toLocaleString()}
                           </span>
+                        </div>
+                        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border-subtle)" }}>
+                          <Link href={`/order/${order.id}`} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem", padding: "0.5rem", fontSize: "0.75rem", fontWeight: 600, color: "var(--glow-purple)", background: "rgba(168,133,247,0.08)", border: "1px solid rgba(168,133,247,0.15)", borderRadius: "0.375rem", textDecoration: "none", transition: "all 0.2s", minHeight: "36px" }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(168,133,247,0.12)"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(168,133,247,0.08)"; }}
+                          >
+                            <ExternalLink size={12} /> View Details
+                          </Link>
                         </div>
                       </div>
                     </div>

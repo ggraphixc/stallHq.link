@@ -45,7 +45,7 @@ export async function PATCH(
 
     const { data: updatedOrder, error: updateError } = await authSupabase
       .from("orders")
-      .update({ status: body.status, updated_at: new Date().toISOString() })
+      .update({ status: body.status, vendor_notes: body.vendor_notes || null, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select("*, stores(name)")
       .single();

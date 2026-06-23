@@ -97,6 +97,7 @@ export interface Order {
   total: number;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   notes: string | null;
+  vendor_notes: string | null;
   created_at: string;
   updated_at: string;
 }
