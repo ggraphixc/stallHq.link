@@ -95,8 +95,15 @@ export default function LoginPage() {
       return;
     }
 
-    // Cookies are set on the JSON response — now navigate to dashboard
-    window.location.href = "/dashboard";
+    // Cookies are set on the JSON response — now check if user has a store
+    const storeCheck = await fetch("/api/stores");
+    const storeData = await storeCheck.json();
+    
+    if (storeData.store) {
+      window.location.href = "/dashboard";
+    } else {
+      window.location.href = "/explore";
+    }
   };
 
   return (

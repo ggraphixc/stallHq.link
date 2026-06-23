@@ -106,14 +106,14 @@ export default function Home() {
               </div>
               <span style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--text-primary)" }}>StallHq</span>
             </Link>
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-              <Link href="/explore" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", textDecoration: "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <Link href="/explore" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", textDecoration: "none", padding: "0.5rem" }}>
                 Explore
               </Link>
-              <Link href="/auth/login" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", textDecoration: "none" }}>
+              <Link href="/auth/login" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", textDecoration: "none", padding: "0.5rem" }}>
                 Login
               </Link>
-              <Link href="/auth/signup" className="glow-button" style={{ fontSize: "0.75rem", padding: "0.5rem 1rem" }}>
+              <Link href="/auth/signup" className="glow-button" style={{ fontSize: "0.75rem", padding: "0.5rem 0.875rem" }}>
                 Get Started
               </Link>
             </div>
@@ -137,12 +137,15 @@ export default function Home() {
             </p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center", paddingTop: 8, flexWrap: "wrap" }}>
               <Link href="/auth/signup" className="glow-button" style={{ fontSize: 13, padding: "12px 28px", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                Get Started Free <ArrowRight size={14} />
+                Start Selling Free <ArrowRight size={14} />
               </Link>
               <Link href="/explore" className="glow-button-secondary" style={{ fontSize: 13, padding: "12px 28px" }}>
                 Browse Stores
               </Link>
             </div>
+            <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", textAlign: "center" }}>
+              No account needed to browse stores
+            </p>
             <div style={{ display: "flex", justifyContent: "center", gap: 24, paddingTop: 8, fontSize: 12, color: "var(--text-muted)", flexWrap: "wrap" }}>
               <span>No hosting fees</span>
               <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--border-medium)", alignSelf: "center" }} />

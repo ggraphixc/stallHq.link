@@ -602,3 +602,57 @@ input[type="number"] {
     display: none !important;
   }
 }
+
+/* ============================================
+   OPERA MINI / PROXY BROWSER COMPATIBILITY
+   Opera Mini strips CSS variables, backdrop-filter,
+   and canvas. Provide direct fallback values.
+   ============================================ */
+body {
+  background-color: #06060b;
+  color: #f1f5f9;
+}
+
+.ambient-card {
+  background: #13131d;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-card {
+  background: #13131d;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.glow-button {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: white;
+}
+
+.glow-button-secondary {
+  background: #13131d;
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ambient-input {
+  background: #0e0e16;
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ambient-input::placeholder {
+  color: #4b5563;
+}
+
+/* Header fallback */
+header {
+  background: rgba(6, 6, 11, 0.95);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Hero glow fallback */
+body::before {
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(168, 85, 247, 0.15), transparent);
+}

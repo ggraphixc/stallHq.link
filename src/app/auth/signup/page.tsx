@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight, MessageCircle, Store, ShoppingCart } from "lucide-react";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -62,6 +62,7 @@ function Particles() {
 }
 
 export default function SignupPage() {
+  const [role, setRole] = useState<"choose" | "vendor" | "customer">("choose");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -113,12 +114,59 @@ export default function SignupPage() {
 
           {/* Header */}
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-            <h1 style={{ fontSize: "1.25rem", fontWeight: 700 }}>Create account</h1>
+            <h1 style={{ fontSize: "1.25rem", fontWeight: 700 }}>
+              {role === "choose" ? "Join StallHq" : role === "vendor" ? "Create Vendor Account" : "Create Customer Account"}
+            </h1>
             <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
               Already have an account?{" "}
               <Link href="/auth/login" style={{ color: "var(--glow-purple)", textDecoration: "none", fontWeight: 500 }}>Sign in</Link>
             </p>
           </div>
+
+          {/* Role Selection */}
+          {role === "choose" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <button
+                onClick={() => setRole("vendor")}
+                style={{
+                  width: "100%", padding: "1.25rem", borderRadius: "0.75rem",
+                  background: "rgba(168,133,247,0.06)", border: "1px solid rgba(168,133,247,0.2)",
+                  cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: "1rem",
+                  minHeight: "44px", color: "var(--text-primary)",
+                }}
+              >
+                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.5rem", background: "linear-gradient(135deg, rgba(168,133,247,0.2), rgba(124,58,237,0.15))", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Store size={18} style={{ color: "var(--glow-purple)" }} />
+                </div>
+                <div>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.125rem" }}>I want to sell</p>
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Create a store, add products, reach customers</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setRole("customer")}
+                style={{
+                  width: "100%", padding: "1.25rem", borderRadius: "0.75rem",
+                  background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)",
+                  cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: "1rem",
+                  minHeight: "44px", color: "var(--text-primary)",
+                }}
+              >
+                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.5rem", background: "linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.15))", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <ShoppingCart size={18} style={{ color: "var(--glow-green)" }} />
+                </div>
+                <div>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.125rem" }}>I want to shop</p>
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Browse stores, place orders, track purchases</p>
+                </div>
+              </button>
+
+              <Link href="/explore" style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--text-muted)", textDecoration: "none", marginTop: "0.25rem" }}>
+                or just browse stores without an account →
+              </Link>
+            </div>
+          )}
 
           {/* Error */}
           {error && (
@@ -127,7 +175,8 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* Form */}
+          {/* Form - only show when role is selected */}
+          {role !== "choose" && (
           <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <input
@@ -169,12 +218,20 @@ export default function SignupPage() {
                 <span style={{ width: "1rem", height: "1rem", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} />
               ) : (
                 <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
-                  Create Account
+                  {role === "vendor" ? "Create Vendor Account" : "Create Customer Account"}
                   <ArrowRight style={{ width: "1rem", height: "1rem" }} />
                 </span>
               )}
             </button>
+            <button
+              type="button"
+              onClick={() => setRole("choose")}
+              style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.75rem", cursor: "pointer", padding: "0.5rem", textAlign: "center" }}
+            >
+              ← Back to role selection
+            </button>
           </form>
+          )}
 
           <p style={{ textAlign: "center", fontSize: "0.625rem", color: "var(--text-muted)" }}>
             By creating an account, you agree to our Terms of Service and Privacy Policy

@@ -36,8 +36,20 @@ export async function updateSession(request: NextRequest) {
 
     const isAuthRoute = request.nextUrl.pathname.startsWith("/auth");
     const isApiRoute = request.nextUrl.pathname.startsWith("/api");
-    const isPublicPage = request.nextUrl.pathname === "/" || request.nextUrl.pathname === "/demo-store";
-    const needsAuth = !isAuthRoute && !isApiRoute && !isPublicPage;
+    const isPublicPage = 
+      request.nextUrl.pathname === "/" || 
+      request.nextUrl.pathname === "/demo-store" ||
+      request.nextUrl.pathname === "/explore" ||
+      request.nextUrl.pathname === "/favorites" ||
+      request.nextUrl.pathname === "/account" ||
+      request.nextUrl.pathname === "/offline";
+    
+    // Store pages are public: /{slug} and /{slug}/product/{id}
+    const pathParts = request.nextUrl.pathname.split("/").filter(Boolean);
+    const isStorePage = pathParts.length === 1 || 
+      (pathParts.length === 3 && pathParts[1] === "product");
+    
+    const needsAuth = !isAuthRoute && !isApiRoute && !isPublicPage && !isStorePage;
 
     if (!user && needsAuth) {
       console.log("[Middleware] No user, redirecting to login. Path:", request.nextUrl.pathname, "Cookies:", request.cookies.getAll().map(c => c.name));

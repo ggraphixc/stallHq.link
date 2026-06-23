@@ -76,7 +76,7 @@ function Particles() {
 
 export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(existingStore ? 1 : 0);
-  const [store, setStore] = useState<Store | null>(null);
+  const [store, setStore] = useState<Store | null>(existingStore ? (existingStore as unknown as Store) : null);
   const [isComplete, setIsComplete] = useState(false);
 
   const handleStoreCreated = (newStore: Store) => {
