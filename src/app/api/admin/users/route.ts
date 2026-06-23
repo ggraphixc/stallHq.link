@@ -7,7 +7,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const ADMIN_IDS = [process.env.ADMIN_USER_ID].filter(Boolean);
+const ADMIN_IDS = (process.env.ADMIN_USER_ID || "").split(",").map(s => s.trim()).filter(Boolean);
 
 async function verifyAdmin() {
   const supabase = await createAuthClient();

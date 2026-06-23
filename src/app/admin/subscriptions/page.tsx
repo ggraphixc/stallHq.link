@@ -3,10 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SubscriptionsClient } from "./SubscriptionsClient";
 
 // Admin user IDs — only these users can access subscription management
-const ADMIN_USER_IDS = [
-  process.env.ADMIN_USER_ID,
-  // Add more admin IDs here as needed
-].filter(Boolean);
+const ADMIN_USER_IDS = (process.env.ADMIN_USER_ID || "").split(",").map(s => s.trim()).filter(Boolean);
 
 export default async function AdminSubscriptionsPage() {
   const supabase = await createClient();
