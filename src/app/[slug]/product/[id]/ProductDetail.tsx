@@ -2,13 +2,13 @@
 
 import { Product, ProductVariant } from "@/types";
 import { useCart } from "@/hooks/useCart";
-import { ShoppingBag, ArrowLeft, Check, Package, Heart } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Check, Package, Heart, Share2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ReviewForm } from "@/components/ReviewForm";
 import { ReviewList } from "@/components/ReviewList";
 import { useFavorites } from "@/hooks/useFavorites";
-import { ShareCard } from "@/components/ShareCard";
+import { ProductShareModal } from "@/components/ProductShareModal";
 
 interface ProductDetailProps {
   product: Product & {
@@ -25,6 +25,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
     Record<string, string>
   >({});
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const variants = product.product_variants || [];
 
@@ -191,7 +192,40 @@ export function ProductDetail({ product }: ProductDetailProps) {
             </div>
 
             {/* Share */}
-            <ShareCard storeSlug={product.stores.slug} storeName={product.stores.name} productName={product.name} productId={product.id} />
+            <button
+              onClick={() => setShowShareModal(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.625rem 1rem",
+                borderRadius: "0.5rem",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-subtle)",
+                color: "var(--text-secondary)",
+                fontSize: "0.8125rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                transition: "all 0.15s",
+                width: "fit-content",
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.borderColor = "var(--glow-purple)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+              onMouseOut={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+            >
+              <Share2 size={16} />
+              Share Product
+            </button>
+
+            <ProductShareModal
+              isOpen={showShareModal}
+              onClose={() => setShowShareModal(false)}
+              storeSlug={product.stores.slug}
+              storeName={product.stores.name}
+              productId={product.id}
+              productName={product.name}
+              productImage={product.image_url || undefined}
+              productPrice={product.price}
+            />
 
             {/* Variant Selection */}
             {Object.entries(variantGroups).map(([groupName, options]) => (

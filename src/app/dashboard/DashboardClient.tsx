@@ -558,6 +558,8 @@ export function DashboardClient({
               onEdit={(product) => { router.push(`/dashboard/products/${product.id}`); }}
               onToggleStock={handleToggleStock}
               togglingId={togglingId}
+              storeSlug={store.slug}
+              storeName={store.name}
             />
           ) : (
             <div style={{ ...glassCard, padding: "3rem 1.5rem", textAlign: "center" }}>

@@ -24,11 +24,11 @@ export async function GET(request: Request) {
       .from("stores")
       .select("*")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (storeError) throw storeError;
+    if (storeError && storeError.code !== "PGRST116") throw storeError;
 
-    return addRateLimitHeaders(NextResponse.json(store), rateLimitResult.headers);
+    return addRateLimitHeaders(NextResponse.json(store || null), rateLimitResult.headers);
   } catch (error) {
     console.error("Error fetching store:", error);
     return NextResponse.json(

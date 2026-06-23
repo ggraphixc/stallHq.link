@@ -34,7 +34,7 @@ export default function FavoritesPage() {
   useEffect(() => {
     if (!loaded) return;
     fetchFavorites();
-  }, [loaded]);
+  }, [loaded, favoritesCount]);
 
   const fetchFavorites = async () => {
     try {

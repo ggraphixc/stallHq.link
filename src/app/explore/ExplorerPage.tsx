@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Store as StoreIcon, ArrowRight } from "lucide-react";
+import { Store as StoreIcon, ArrowRight, Package, ShieldCheck } from "lucide-react";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { FilterPills } from "@/components/ui/FilterPills";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
@@ -18,6 +18,9 @@ interface ExplorerPageProps {
     banner_url: string | null;
     category: string | null;
     created_at: string;
+    plan?: string;
+    verified?: boolean;
+    productCount?: number;
   }>;
   categories: string[];
 }
@@ -297,12 +300,25 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
                   )}
 
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    {store.category && (
-                      <span className="category-tag">{store.category}</span>
-                    )}
-                    <span style={{ fontSize: "0.75rem", color: "var(--glow-purple)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                      Visit <ArrowRight style={{ width: "0.75rem", height: "0.75rem" }} />
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      {store.category && (
+                        <span className="category-tag">{store.category}</span>
+                      )}
+                      {store.productCount !== undefined && store.productCount > 0 && (
+                        <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                          <Package size={10} />
+                          {store.productCount}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                      {store.verified && (
+                        <ShieldCheck size={14} style={{ color: "var(--glow-green)" }} />
+                      )}
+                      <span style={{ fontSize: "0.75rem", color: "var(--glow-purple)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                        Visit <ArrowRight style={{ width: "0.75rem", height: "0.75rem" }} />
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Link>

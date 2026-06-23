@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShoppingBag, Heart, User, Store, Package, Clock, CheckCircle, ArrowRight, Truck, LogOut } from "lucide-react";
+import { ShoppingBag, Heart, User, Store, Package, Clock, CheckCircle, ArrowRight, Truck, LogOut, Trash2, ExternalLink } from "lucide-react";
 
 interface Order {
   id: string;
@@ -11,6 +11,19 @@ interface Order {
   items: { name: string; price: number; quantity: number }[];
   created_at: string;
   stores?: { name: string; slug: string } | null;
+}
+
+interface FavoriteItem {
+  id: string;
+  product_id: string;
+  products: {
+    id: string;
+    name: string;
+    price: number;
+    image_url: string | null;
+    in_stock: boolean;
+    stores: { slug: string; name: string };
+  };
 }
 
 interface CustomerDashboardProps {
@@ -35,6 +48,47 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
 
 export function CustomerDashboard({ user, orders, existingStore }: CustomerDashboardProps) {
   const [tab, setTab] = useState<"orders" | "favorites" | "profile">("orders");
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [favCount, setFavCount] = useState(0);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
+
+  const fetchFavorites = async () => {
+    try {
+      let deviceId = localStorage.getItem("stallhq_device_id");
+      if (!deviceId) {
+        deviceId = crypto.randomUUID().replace(/-/g, "").slice(0, 32);
+        localStorage.setItem("stallhq_device_id", deviceId);
+      }
+      const res = await fetch(`/api/favorites?device_id=${deviceId}`);
+      const data = await res.json();
+      setFavorites(data.favorites || []);
+      setFavCount(data.favorites?.length || 0);
+    } catch {
+      // silent
+    }
+  };
+
+  const removeFavorite = async (productId: string) => {
+    setRemovingId(productId);
+    try {
+      const deviceId = localStorage.getItem("stallhq_device_id");
+      await fetch("/api/favorites", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id: deviceId, product_id: productId }),
+      });
+      setFavorites((prev) => prev.filter((f) => f.product_id !== productId));
+      setFavCount((prev) => prev - 1);
+    } catch {
+      // silent
+    } finally {
+      setRemovingId(null);
+    }
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
@@ -51,8 +105,20 @@ export function CustomerDashboard({ user, orders, existingStore }: CustomerDashb
             <Link href="/explore" style={{ fontSize: "0.75rem", color: "var(--text-muted)", textDecoration: "none", padding: "0.5rem" }}>
               Browse Stores
             </Link>
-            <Link href="/favorites" style={{ fontSize: "0.75rem", color: "var(--text-muted)", textDecoration: "none", padding: "0.5rem" }}>
+            <Link href="/favorites" style={{ position: "relative", fontSize: "0.75rem", color: "var(--text-muted)", textDecoration: "none", padding: "0.5rem" }}>
               <Heart size={16} />
+              {favCount > 0 && (
+                <span style={{
+                  position: "absolute", top: 0, right: 0,
+                  minWidth: "1rem", height: "1rem",
+                  borderRadius: "9999px", background: "#ef4444",
+                  color: "white", fontSize: "0.5625rem", fontWeight: 700,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: "0 0.1875rem",
+                }}>
+                  {favCount > 99 ? "99+" : favCount}
+                </span>
+              )}
             </Link>
           </div>
         </div>
@@ -181,13 +247,68 @@ export function CustomerDashboard({ user, orders, existingStore }: CustomerDashb
 
         {/* Favorites Tab */}
         {tab === "favorites" && (
-          <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--text-muted)" }}>
-            <Heart size={32} style={{ margin: "0 auto 0.75rem", opacity: 0.4 }} />
-            <p style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.25rem" }}>Your Favorites</p>
-            <p style={{ fontSize: "0.75rem", marginBottom: "1rem" }}>Products you&apos;ve saved for later</p>
-            <Link href="/favorites" className="glow-button-secondary" style={{ display: "inline-flex", padding: "0.625rem 1.25rem", fontSize: "0.8125rem", textDecoration: "none" }}>
-              View Favorites
-            </Link>
+          <div>
+            {favorites.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--text-muted)" }}>
+                <Heart size={32} style={{ margin: "0 auto 0.75rem", opacity: 0.4 }} />
+                <p style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.25rem" }}>No favorites yet</p>
+                <p style={{ fontSize: "0.75rem", marginBottom: "1rem" }}>Tap the heart on any product to save it</p>
+                <Link href="/explore" className="glow-button-secondary" style={{ display: "inline-flex", padding: "0.625rem 1.25rem", fontSize: "0.8125rem", textDecoration: "none" }}>
+                  Browse Stores
+                </Link>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {favorites.map((fav) => {
+                  const product = fav.products;
+                  if (!product) return null;
+                  const store = product.stores;
+                  return (
+                    <div
+                      key={fav.id}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "0.75rem",
+                        padding: "0.75rem",
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border-subtle)",
+                        borderRadius: "0.75rem",
+                      }}
+                    >
+                      {product.image_url ? (
+                        <img src={product.image_url} alt={product.name} style={{ width: "3rem", height: "3rem", borderRadius: "0.5rem", objectFit: "cover", flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: "3rem", height: "3rem", borderRadius: "0.5rem", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <ShoppingBag size={16} style={{ color: "var(--text-muted)" }} />
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Link href={`/${store?.slug}/product/${product.id}`} style={{ textDecoration: "none", color: "var(--text-primary)" }}>
+                          <p style={{ fontSize: "0.8125rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{product.name}</p>
+                        </Link>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.125rem" }}>
+                          <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--glow-green)" }}>₦{product.price.toLocaleString()}</span>
+                          {!product.in_stock && (
+                            <span style={{ fontSize: "0.5625rem", padding: "0.0625rem 0.25rem", borderRadius: "0.25rem", background: "rgba(239,68,68,0.15)", color: "#ef4444" }}>Out</span>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: "0.375rem", flexShrink: 0 }}>
+                        <Link href={`/${store?.slug}/product/${product.id}`} style={{ width: "2rem", height: "2rem", borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "transparent", color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+                          <ExternalLink size={12} />
+                        </Link>
+                        <button
+                          onClick={() => removeFavorite(product.id)}
+                          disabled={removingId === product.id}
+                          style={{ width: "2rem", height: "2rem", borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "transparent", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

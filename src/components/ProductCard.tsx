@@ -3,13 +3,16 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Product, ProductWithRating } from "@/types";
-import { ShoppingBag, Plus, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { ShoppingBag, Plus, ChevronLeft, ChevronRight, Heart, Share2 } from "lucide-react";
 import { RatingDisplay } from "./RatingDisplay";
+import { ProductShareModal } from "./ProductShareModal";
 
 interface ProductCardProps {
   product: ProductWithRating;
   onAddToCart: (product: Product) => void;
   storeId?: string;
+  storeSlug?: string;
+  storeName?: string;
   isFavorite?: boolean;
   onToggleFavorite?: (productId: string, storeId: string) => void;
 }
@@ -31,9 +34,10 @@ const navBtn: React.CSSProperties = {
   padding: 0,
 };
 
-export function ProductCard({ product, onAddToCart, storeId, isFavorite, onToggleFavorite }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart, storeId, storeSlug, storeName, isFavorite, onToggleFavorite }: ProductCardProps) {
   const [imgIndex, setImgIndex] = useState(0);
   const [hovering, setHovering] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const allImages = useMemo(() => {
@@ -68,10 +72,12 @@ export function ProductCard({ product, onAddToCart, storeId, isFavorite, onToggl
     setImgIndex((i) => (i === allImages.length - 1 ? 0 : i + 1));
   };
 
+  const productLink = storeSlug ? `/${storeSlug}/product/${product.id}` : "#";
+
   return (
     <div style={{ position: "relative", borderRadius: "0.75rem", overflow: "hidden", border: "1px solid var(--border-subtle)", background: "var(--bg-card)", transition: "border-color 0.2s" }}>
       <Link
-        href={storeId ? `/${storeId}/product/${product.id}` : "#"}
+        href={productLink}
         style={{ display: "block", aspectRatio: "1", background: "var(--bg-secondary)", position: "relative", overflow: "hidden" }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
@@ -167,7 +173,7 @@ export function ProductCard({ product, onAddToCart, storeId, isFavorite, onToggl
 
       {/* Content */}
       <div style={{ padding: "0.75rem 1rem" }}>
-        <Link href={storeId ? `/${storeId}/product/${product.id}` : "#"} style={{ textDecoration: "none" }}>
+        <Link href={productLink} style={{ textDecoration: "none" }}>
           <h3 style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: "0.25rem" }}>
             {product.name}
           </h3>
@@ -181,16 +187,47 @@ export function ProductCard({ product, onAddToCart, storeId, isFavorite, onToggl
           <span className="price-display" style={{ fontSize: "1rem", fontWeight: 700 }}>
             ₦{product.price.toLocaleString()}
           </span>
-          <button
-            onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-            className="glow-button"
-            style={{ padding: "0.5rem 0.75rem", fontSize: "0.75rem", minHeight: "2.25rem", borderRadius: "0.5rem", display: "flex", alignItems: "center", gap: "0.25rem" }}
-          >
-            <Plus size={14} />
-            <span>Add</span>
-          </button>
+          <div style={{ display: "flex", gap: "0.375rem" }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowShareModal(true); }}
+              style={{
+                width: "2.25rem", height: "2.25rem",
+                borderRadius: "0.5rem", border: "1px solid var(--border-subtle)",
+                background: "var(--bg-card)",
+                color: "var(--text-muted)",
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.15s",
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.borderColor = "var(--glow-cyan)"; e.currentTarget.style.color = "var(--glow-cyan)"; }}
+              onMouseOut={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+              aria-label="Share product"
+            >
+              <Share2 size={14} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+              className="glow-button"
+              style={{ padding: "0.5rem 0.75rem", fontSize: "0.75rem", minHeight: "2.25rem", borderRadius: "0.5rem", display: "flex", alignItems: "center", gap: "0.25rem" }}
+            >
+              <Plus size={14} />
+              <span>Add</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {storeSlug && storeName && (
+        <ProductShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          storeSlug={storeSlug}
+          storeName={storeName}
+          productId={product.id}
+          productName={product.name}
+          productImage={product.image_url || undefined}
+          productPrice={product.price}
+        />
+      )}
     </div>
   );
 }

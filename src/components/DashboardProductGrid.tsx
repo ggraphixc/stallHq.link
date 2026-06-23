@@ -3,13 +3,16 @@
 import { useState, useMemo } from "react";
 import { Product } from "@/types";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { Pencil, ShoppingBag, ToggleLeft, ToggleRight, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Pencil, ShoppingBag, ToggleLeft, ToggleRight, Loader2, ChevronLeft, ChevronRight, Share2 } from "lucide-react";
+import { ProductShareModal } from "./ProductShareModal";
 
 interface DashboardProductGridProps {
   products: Product[];
   onEdit: (product: Product) => void;
   onToggleStock: (productId: string, currentInStock: boolean) => void;
   togglingId: string | null;
+  storeSlug?: string;
+  storeName?: string;
 }
 
 function CardImage({ product }: { product: Product }) {
@@ -108,7 +111,10 @@ export function DashboardProductGrid({
   onEdit,
   onToggleStock,
   togglingId,
+  storeSlug,
+  storeName,
 }: DashboardProductGridProps) {
+  const [shareProduct, setShareProduct] = useState<Product | null>(null);
   const isDesktop = useMediaQuery("(min-width: 640px)");
   return (
     <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "repeat(2, 1fr)" : "1fr", gap: "0.75rem" }}>
@@ -200,6 +206,31 @@ export function DashboardProductGrid({
                 <Pencil size={16} />
               </button>
 
+              {storeSlug && storeName && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShareProduct(product); }}
+                  style={{
+                    width: "2.75rem",
+                    height: "2.75rem",
+                    borderRadius: "0.75rem",
+                    background: "rgba(6,182,212,0.25)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(6,182,212,0.5)",
+                    color: "white",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.2s",
+                  }}
+                  aria-label={`Share ${product.name}`}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(6,182,212,0.5)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(6,182,212,0.25)"; }}
+                >
+                  <Share2 size={16} />
+                </button>
+              )}
+
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleStock(product.id, product.in_stock); }}
                 disabled={togglingId === product.id}
@@ -251,6 +282,19 @@ export function DashboardProductGrid({
           </div>
         </div>
       ))}
+
+      {shareProduct && storeSlug && storeName && (
+        <ProductShareModal
+          isOpen={!!shareProduct}
+          onClose={() => setShareProduct(null)}
+          storeSlug={storeSlug}
+          storeName={storeName}
+          productId={shareProduct.id}
+          productName={shareProduct.name}
+          productImage={shareProduct.image_url || undefined}
+          productPrice={shareProduct.price}
+        />
+      )}
     </div>
   );
 }

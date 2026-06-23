@@ -413,6 +413,8 @@ export function StorePage({ store, products }: StorePageProps) {
               <ProductGrid
                 products={filteredProducts}
                 storeId={store.id}
+                storeSlug={store.slug}
+                storeName={store.name}
                 isFavorite={isFavorite}
                 onToggleFavorite={toggleFavorite}
               />
