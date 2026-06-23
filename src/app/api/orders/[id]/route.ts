@@ -20,9 +20,10 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    if (!body.status) {
+    const VALID_STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+    if (!body.status || !VALID_STATUSES.includes(body.status)) {
       return NextResponse.json(
-        { error: "status is required" },
+        { error: `status is required and must be one of: ${VALID_STATUSES.join(", ")}` },
         { status: 400 }
       );
     }

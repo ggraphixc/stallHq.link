@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   try {
     const store = await getStoreBySlug(slug);
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://stallhq.link";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
     const ogImageUrl = `${baseUrl}/api/og?slug=${slug}`;
 
     return {
@@ -83,7 +83,7 @@ export default async function StoreRoute({ params }: PageProps) {
     const products = await getProductsByStoreId(store.id);
 
     // Generate structured data for SEO
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://stallhq.link";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Store",

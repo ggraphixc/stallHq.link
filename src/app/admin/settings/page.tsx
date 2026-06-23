@@ -8,10 +8,10 @@ interface Setting {
 }
 
 const DEFAULT_SETTINGS: Record<string, any> = {
-  app_name: "StallHq", app_url: "https://hqlink.vercel.app",
-  brevo_sender_email: "ggraphixc@gmail.com", brevo_sender_name: "StallHq",
+  app_name: "StallHq", app_url: process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app",
+  brevo_sender_email: process.env.BREVO_SENDER_EMAIL || "", brevo_sender_name: "StallHq",
   maintenance_mode: false, allow_signup: true,
-  max_free_products: 10, trial_days: 5, support_email: "support@stallhq.link",
+  max_free_products: 10, trial_days: 5, support_email: "",
 };
 
 export default function AdminSettings() {
@@ -23,6 +23,8 @@ export default function AdminSettings() {
 
   useEffect(() => { fetchSettings(); }, []);
 
+  const [error, setError] = useState("");
+
   const fetchSettings = async () => {
     setLoading(true);
     try {
@@ -33,21 +35,23 @@ export default function AdminSettings() {
         data.forEach(s => { map[s.key] = s.value; });
         setSettings(map);
       }
-    } catch {}
+    } catch { setError("Failed to load settings"); }
     setLoading(false);
   };
 
   const saveSettings = async () => {
     setSaving(true);
     setSaved(false);
+    setError("");
     try {
-      await fetch("/api/admin/settings", {
+      const res = await fetch("/api/admin/settings", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ settings }),
       });
+      if (!res.ok) throw new Error("Failed to save");
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch {}
+    } catch { setError("Failed to save settings"); }
     setSaving(false);
   };
 

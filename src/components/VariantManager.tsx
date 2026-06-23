@@ -62,7 +62,7 @@ export function VariantManager({ variants, onChange, basePrice }: VariantManager
 
   const updateDraft = (index: number, field: keyof VariantDraft, value: string) => {
     const updated = [...drafts];
-    updated[index][field] = value;
+    updated[index] = { ...updated[index], [field]: value };
     setDrafts(updated);
   };
 

@@ -263,7 +263,7 @@ export function DashboardClient({
                 {store.name}
               </h1>
               <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                stallhq.link/{store.slug}
+                {new URL(window.location.origin).host}/{store.slug}
               </p>
             </div>
           </div>

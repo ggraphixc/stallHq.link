@@ -16,8 +16,11 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    // Find user by email
-    const { data: users, error: listError } = await supabase.auth.admin.listUsers();
+    // Find user by email — Supabase admin API has no getUserByEmail, so listUsers is the only option
+    // For 10k+ users, create an RPC function: CREATE FUNCTION find_user_by_email(p_email text) ...
+    const { data: users, error: listError } = await supabase.auth.admin.listUsers({
+      perPage: 1000,
+    });
     if (listError) {
       return NextResponse.json({ error: "Failed to look up user" }, { status: 500 });
     }

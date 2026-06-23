@@ -16,9 +16,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { id } = await params;
     const body = await request.json();
-    const { message, sender_role } = body;
+    const { message } = body;
 
     if (!message) return NextResponse.json({ error: "Message is required" }, { status: 400 });
+
+    // Derive sender_role server-side — never trust client input
+    const adminIds = (process.env.ADMIN_USER_ID || "").split(",").map(s => s.trim()).filter(Boolean);
+    const sender_role = adminIds.includes(user.id) ? "admin" : "vendor";
+
+    // Verify ticket ownership (non-admin must own the ticket)
+    if (sender_role !== "admin") {
+      const { data: ticket } = await supabaseAdmin
+        .from("support_tickets")
+        .select("user_id")
+        .eq("id", id)
+        .single();
+
+      if (!ticket || ticket.user_id !== user.id) {
+        return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+      }
+    }
 
     // Use service role for inserts (bypasses RLS — needed for admin replies to vendor tickets)
     const { data: msg, error } = await supabaseAdmin
@@ -26,7 +43,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .insert({
         ticket_id: id,
         sender_id: user.id,
-        sender_role: sender_role || "vendor",
+        sender_role,
         message,
       })
       .select()

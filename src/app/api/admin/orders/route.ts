@@ -55,24 +55,30 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/admin/orders — update order status
 export async function PATCH(request: NextRequest) {
-  const user = await verifyAdmin();
-  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  try {
+    const user = await verifyAdmin();
+    if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const body = await request.json();
-  const { id, status } = body;
+    const body = await request.json();
+    const { id, status } = body;
 
-  if (!id || !status) {
-    return NextResponse.json({ error: "id and status required" }, { status: 400 });
-  }
+    const VALID_STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+    if (!id || !status || !VALID_STATUSES.includes(status)) {
+      return NextResponse.json({ error: "id and valid status required" }, { status: 400 });
+    }
 
-  const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
     .from("orders")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json(data);
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error updating order:", error);
+    return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
+  }
 }

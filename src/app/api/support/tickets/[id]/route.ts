@@ -56,18 +56,40 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json();
     const userIsAdmin = isAdmin(user.id);
 
+    // Non-admin: verify ticket ownership before update
+    if (!userIsAdmin) {
+      const { data: ticket } = await supabase
+        .from("support_tickets")
+        .select("user_id")
+        .eq("id", id)
+        .single();
+
+      if (!ticket || ticket.user_id !== user.id) {
+        return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+      }
+    }
+
     // Admin: use service role to bypass RLS; Vendor: use auth client
     const client = userIsAdmin ? supabaseAdmin : supabase;
 
-    const { data: ticket, error } = await client
+    // Validate status if provided
+    const VALID_STATUSES = ["open", "replied", "resolved", "closed"];
+    if (body.status && !VALID_STATUSES.includes(body.status)) {
+      return NextResponse.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` }, { status: 400 });
+    }
+
+    // Only allow status updates from non-admin users
+    const safeBody = userIsAdmin ? body : { status: body.status };
+
+    const { data: updatedTicket, error } = await client
       .from("support_tickets")
-      .update({ ...body, updated_at: new Date().toISOString() })
+      .update({ ...safeBody, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select()
       .single();
 
     if (error) throw error;
-    return NextResponse.json(ticket);
+    return NextResponse.json(updatedTicket);
   } catch (error) {
     console.error("Error updating ticket:", error);
     return NextResponse.json({ error: "Failed to update ticket" }, { status: 500 });

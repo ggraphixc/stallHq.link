@@ -50,7 +50,7 @@ export function ProductEntryStep({ store, onProductsAdded, onSkip }: ProductEntr
 
   const updateProduct = (index: number, field: keyof ProductDraft, value: string) => {
     const updated = [...products];
-    updated[index][field] = value;
+    updated[index] = { ...updated[index], [field]: value };
     setProducts(updated);
   };
 

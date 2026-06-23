@@ -31,8 +31,11 @@ export function CartDrawer({ store }: CartDrawerProps) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
 
+  const [checkoutError, setCheckoutError] = useState("");
+
   const handleCheckout = async () => {
     trackWhatsAppClick(store.id);
+    setCheckoutError("");
     let orderId = "";
     try {
       const orderItems = items.map((item) => ({
@@ -49,7 +52,6 @@ export function CartDrawer({ store }: CartDrawerProps) {
         body: JSON.stringify({
           store_id: store.id,
           store_name: store.name,
-          store_email: store.email,
           customer_name: customerName || undefined,
           customer_phone: customerPhone || undefined,
           customer_email: customerEmail || undefined,
@@ -58,9 +60,15 @@ export function CartDrawer({ store }: CartDrawerProps) {
         }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        setCheckoutError(data.error || "Failed to create order. Please try again.");
+        return;
+      }
       orderId = data.id || "";
     } catch (error) {
       console.error("Error creating order:", error);
+      setCheckoutError("Network error. Please try again.");
+      return;
     }
     const url = generateWhatsAppUrl(store.whatsapp_number, store.name, items);
     window.open(url, "_blank");
@@ -319,6 +327,13 @@ export function CartDrawer({ store }: CartDrawerProps) {
                 <span style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>Total</span>
                 <span className="price-display" style={{ fontSize: "1.125rem", fontWeight: 700 }}>₦{total.toLocaleString()}</span>
               </div>
+
+              {/* Checkout error */}
+              {checkoutError && (
+                <div style={{ padding: "0.625rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "var(--glow-red)", fontSize: "0.75rem" }}>
+                  {checkoutError}
+                </div>
+              )}
 
               {/* Checkout */}
               <button onClick={handleCheckout} className="glow-button whatsapp-button" style={{

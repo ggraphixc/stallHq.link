@@ -10,8 +10,10 @@ export async function generateMetadata({ params }: PageProps) {
   const { id } = await params;
   try {
     const product = await getProductById(id);
-    const storeName = product.stores.name;
-    const ogImage = `${process.env.NEXT_PUBLIC_APP_URL}/api/og?slug=${product.stores.slug}`;
+    const storeData = Array.isArray(product.stores) ? product.stores[0] : product.stores;
+    const storeName = storeData?.name || "Store";
+    const storeSlug = storeData?.slug || "";
+    const ogImage = `${process.env.NEXT_PUBLIC_APP_URL}/api/og?slug=${storeSlug}`;
     const productImage = product.image_url || ogImage;
 
     return {
@@ -20,7 +22,7 @@ export async function generateMetadata({ params }: PageProps) {
       openGraph: {
         title: `${product.name} — ${storeName}`,
         description: product.description || `Shop ${product.name} from ${storeName} on StallHq`,
-        url: `${process.env.NEXT_PUBLIC_APP_URL}/${product.stores.slug}/product/${product.id}`,
+        url: `${process.env.NEXT_PUBLIC_APP_URL}/${storeSlug}/product/${product.id}`,
         images: [
           { url: productImage, width: 1200, height: 630, alt: product.name },
         ],
@@ -46,13 +48,17 @@ export default async function ProductRoute({ params }: PageProps) {
     const product = await getProductById(id);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
 
+    const storeData = Array.isArray(product.stores) ? product.stores[0] : product.stores;
+    const storeName = storeData?.name || "Store";
+    const storeSlug = storeData?.slug || "";
+
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Product",
       name: product.name,
       description: product.description,
       image: product.image_url,
-      url: `${baseUrl}/${product.stores.slug}/product/${product.id}`,
+      url: `${baseUrl}/${storeSlug}/product/${product.id}`,
       offers: {
         "@type": "Offer",
         price: product.price,
@@ -60,12 +66,12 @@ export default async function ProductRoute({ params }: PageProps) {
         availability: product.in_stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
         seller: {
           "@type": "Organization",
-          name: product.stores.name,
+          name: storeName,
         },
       },
       brand: {
         "@type": "Organization",
-        name: product.stores.name,
+        name: storeName,
       },
       category: product.category,
       aggregateRating: product.avg_rating ? {

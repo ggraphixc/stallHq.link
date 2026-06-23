@@ -15,9 +15,10 @@ interface BrevoEmail {
 }
 
 async function sendBrevoEmail({ to, subject, htmlContent, textContent, tags }: BrevoEmail) {
-  console.log("[Brevo] Sending email to:", to.map(t => t.email).join(","));
-  console.log("[Brevo] API key exists:", !!BREVO_API_KEY);
-  console.log("[Brevo] Sender:", BREVO_SENDER_EMAIL);
+  if (!BREVO_API_KEY) {
+    console.error("[Brevo] BREVO_API_KEY not configured");
+    return false;
+  }
 
   try {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -38,17 +39,12 @@ async function sendBrevoEmail({ to, subject, htmlContent, textContent, tags }: B
     });
 
     const resBody = await response.json();
-    console.log("[Brevo] Response status:", response.status);
-    console.log("[Brevo] Response body:", JSON.stringify(resBody));
 
     if (!response.ok) {
-      console.error("[Brevo] API error:", resBody);
       return false;
     }
-    console.log("[Brevo] Email sent successfully, messageId:", resBody.messageId);
     return true;
-  } catch (error) {
-    console.error("[Brevo] Fetch error:", error);
+  } catch {
     return false;
   }
 }

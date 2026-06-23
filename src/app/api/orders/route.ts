@@ -59,6 +59,22 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    // Validate required fields
+    if (!body.store_id || !body.items || body.items.length === 0) {
+      return NextResponse.json({ error: "store_id and items are required" }, { status: 400 });
+    }
+
+    // Validate store exists
+    const { data: store } = await supabase
+      .from("stores")
+      .select("id, name, email")
+      .eq("id", body.store_id)
+      .single();
+
+    if (!store) {
+      return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    }
+
     // Orders are placed by anonymous customers — use plain client (permissive RLS)
     const { data: order, error: insertError } = await supabase
       .from("orders")
@@ -77,10 +93,10 @@ export async function POST(request: NextRequest) {
     if (insertError) throw insertError;
 
     // Send vendor notification email (non-blocking)
-    if (body.store_email) {
+    if (store.email) {
       sendOrderNotification({
-        storeEmail: body.store_email,
-        storeName: body.store_name || "Your Store",
+        storeEmail: store.email,
+        storeName: store.name,
         orderId: order.id,
         customerName: body.customer_name,
         customerPhone: body.customer_phone,

@@ -18,8 +18,9 @@ async function verifyAdmin() {
 
 // GET /api/admin/stores — list all stores with product counts
 export async function GET(request: NextRequest) {
-  const user = await verifyAdmin();
-  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  try {
+    const user = await verifyAdmin();
+    if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || "";
@@ -79,10 +80,14 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  return NextResponse.json({
-    stores: filtered,
-    total: count || 0,
-    page,
-    limit,
-  });
+    return NextResponse.json({
+      stores: filtered,
+      total: count || 0,
+      page,
+      limit,
+    });
+  } catch (error) {
+    console.error("Error fetching stores:", error);
+    return NextResponse.json({ error: "Failed to fetch stores" }, { status: 500 });
+  }
 }

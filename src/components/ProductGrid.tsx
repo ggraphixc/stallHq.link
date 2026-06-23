@@ -34,31 +34,25 @@ export function ProductGrid({ products, storeId, storeSlug, storeName, isFavorit
   );
 
   useEffect(() => {
-    const fetchRatings = async () => {
-      const ratingPromises = products.map(async (product) => {
-        try {
-          const response = await fetch(`/api/reviews?product_id=${product.id}`);
-          if (response.ok) {
-            const data = await response.json();
-            return { id: product.id, ...data.summary };
-          }
-        } catch {
-          // Silent fail
-        }
-        return { id: product.id, count: 0, average: 0 };
-      });
+    if (products.length === 0) return;
 
-      const results = await Promise.all(ratingPromises);
-      const ratingsMap: Record<string, { count: number; average: number }> = {};
-      results.forEach((r) => {
-        ratingsMap[r.id] = { count: r.count, average: r.average };
-      });
-      setRatings(ratingsMap);
+    const controller = new AbortController();
+
+    const fetchRatings = async () => {
+      try {
+        const ids = products.map((p) => p.id).join(",");
+        const response = await fetch(`/api/reviews/batch?product_ids=${ids}`, { signal: controller.signal });
+        if (response.ok) {
+          const data = await response.json();
+          setRatings(data.ratings || {});
+        }
+      } catch {
+        // Silent fail on abort or network error
+      }
     };
 
-    if (products.length > 0) {
-      fetchRatings();
-    }
+    fetchRatings();
+    return () => controller.abort();
   }, [products]);
 
   const productsWithRatings: ProductWithRating[] = useMemo(

@@ -18,8 +18,9 @@ async function verifyAdmin() {
 
 // GET /api/admin/users — list all users with their stores
 export async function GET(request: NextRequest) {
-  const user = await verifyAdmin();
-  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  try {
+    const user = await verifyAdmin();
+    if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
@@ -70,10 +71,14 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return NextResponse.json({
-    users: usersWithStores,
-    total: usersData.total || 0,
-    page,
-    limit,
-  });
+    return NextResponse.json({
+      users: usersWithStores,
+      total: usersData.total || 0,
+      page,
+      limit,
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+  }
 }

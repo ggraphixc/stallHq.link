@@ -32,6 +32,7 @@ export default function AdminSupport() {
   const [loadingTicket, setLoadingTicket] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => { fetchTickets(); }, []);
 
@@ -40,7 +41,7 @@ export default function AdminSupport() {
     try {
       const res = await fetch("/api/support/tickets?admin=true");
       if (res.ok) setTickets(await res.json());
-    } catch {}
+    } catch { setError("Failed to load tickets"); }
     setLoading(false);
   };
 
@@ -50,7 +51,7 @@ export default function AdminSupport() {
     try {
       const res = await fetch(`/api/support/tickets/${ticket.id}`);
       if (res.ok) setSelectedTicket(await res.json());
-    } catch {}
+    } catch { setError("Failed to load ticket"); }
     setLoadingTicket(false);
   };
 
@@ -62,12 +63,13 @@ export default function AdminSupport() {
       });
       setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));
       if (selectedTicket?.id === ticketId) setSelectedTicket(prev => prev ? { ...prev, status } : null);
-    } catch {}
+    } catch { setError("Failed to update status"); }
   };
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedTicket) return;
     setSending(true);
+    setError("");
     try {
       const res = await fetch(`/api/support/tickets/${selectedTicket.id}/messages`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -78,8 +80,8 @@ export default function AdminSupport() {
         setSelectedTicket(prev => prev ? { ...prev, messages: [...(prev.messages || []), msg], status: "replied" } : null);
         setNewMessage("");
         setTickets(prev => prev.map(t => t.id === selectedTicket.id ? { ...t, status: "replied", updated_at: new Date().toISOString() } : t));
-      }
-    } catch {}
+      } else { setError("Failed to send reply"); }
+    } catch { setError("Failed to send reply"); }
     setSending(false);
   };
 

@@ -52,15 +52,12 @@ export async function updateSession(request: NextRequest) {
     const needsAuth = !isAuthRoute && !isApiRoute && !isPublicPage && !isStorePage;
 
     if (!user && needsAuth) {
-      console.log("[Middleware] No user, redirecting to login. Path:", request.nextUrl.pathname, "Cookies:", request.cookies.getAll().map(c => c.name));
       const url = request.nextUrl.clone();
       url.pathname = "/auth/login";
       return NextResponse.redirect(url);
     }
 
-    if (user) {
-      console.log("[Middleware] User authenticated:", user.email, "Path:", request.nextUrl.pathname);
-    }
+
   } catch (e) {
     console.error("[Middleware] error:", e);
   }

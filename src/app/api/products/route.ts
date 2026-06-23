@@ -47,6 +47,14 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
+    // Validate required fields
+    if (!body.name || !body.store_id) {
+      return NextResponse.json({ error: "name and store_id are required" }, { status: 400 });
+    }
+    if (body.price !== undefined && (typeof body.price !== "number" || body.price < 0)) {
+      return NextResponse.json({ error: "Price must be a non-negative number" }, { status: 400 });
+    }
+
     // Verify user owns this store
     const { data: store } = await authSupabase
       .from("stores")

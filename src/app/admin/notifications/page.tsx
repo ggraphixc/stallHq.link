@@ -43,7 +43,7 @@ export default function AdminNotifications() {
     try {
       const res = await fetch("/api/admin/notifications");
       if (res.ok) setNotifications(await res.json());
-    } catch {}
+    } catch { setError("Failed to load notifications"); }
     setLoading(false);
   };
 

@@ -8,10 +8,10 @@ const supabaseAdmin = createServiceClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-function isAdmin(userEmail: string | undefined): boolean {
-  if (!userEmail) return false;
+function isAdmin(userId: string | undefined): boolean {
+  if (!userId) return false;
   const adminIds = (process.env.ADMIN_USER_ID || "").split(",").map(s => s.trim()).filter(Boolean);
-  return adminIds.length > 0 && adminIds.some(id => id === userEmail);
+  return adminIds.length > 0 && adminIds.includes(userId);
 }
 
 export async function GET(request: NextRequest) {
@@ -58,6 +58,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Subject and message are required" }, { status: 400 });
     }
 
+    const VALID_CATEGORIES = ["general", "technical", "billing", "bug_report", "feature_request"];
+    const VALID_PRIORITIES = ["low", "normal", "high", "urgent"];
+    if (category && !VALID_CATEGORIES.includes(category)) {
+      return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+    }
+    if (priority && !VALID_PRIORITIES.includes(priority)) {
+      return NextResponse.json({ error: "Invalid priority" }, { status: 400 });
+    }
+
     // Create ticket
     const { data: ticket, error: ticketError } = await supabase
       .from("support_tickets")
@@ -87,7 +96,7 @@ export async function POST(request: NextRequest) {
     if (msgError) throw msgError;
 
     // Send email notification to admin (non-blocking)
-    const adminEmail = "ggraphixc@gmail.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "ggraphixc@gmail.com";
     sendSupportTicketCreated({
       adminEmail,
       vendorEmail: user.email || "",

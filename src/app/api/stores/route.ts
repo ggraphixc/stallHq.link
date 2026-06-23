@@ -57,6 +57,15 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
+    // Validate slug format
+    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    if (!body.slug || !slugRegex.test(body.slug) || body.slug.length < 3 || body.slug.length > 50) {
+      return NextResponse.json(
+        { error: "Store URL must be 3-50 characters, lowercase letters, numbers, and hyphens only" },
+        { status: 400 }
+      );
+    }
+
     // Check slug uniqueness
     const { data: existingStore } = await supabase
       .from("stores")

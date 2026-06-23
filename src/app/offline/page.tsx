@@ -14,21 +14,21 @@ export default function OfflinePage() {
   }, []);
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4">
-      <div className="text-center max-w-sm space-y-6 fade-in">
-        <div className="w-16 h-16 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto">
+    <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 1rem" }}>
+      <div style={{ textAlign: "center", maxWidth: "24rem", display: "flex", flexDirection: "column", gap: "1.5rem" }} className="fade-in">
+        <div style={{ width: "4rem", height: "4rem", borderRadius: "1rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--glow-amber)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 20h.01" /><path d="M8.5 16.429a5 5 0 0 1 7 0" /><path d="M5 12.859a10 10 0 0 1 5.17-2.69" /><path d="M13.83 10.17A10 10 0 0 1 19 12.86" /><path d="M2 8.82a15 15 0 0 1 4.17-2.65" /><path d="M22 8.82a15 15 0 0 0-4.17-2.65" /><path d="M12 2v2" />
           </svg>
         </div>
         <div>
-          <h1 className="text-xl font-bold mb-2">You&apos;re Offline</h1>
-          <p className="text-sm text-[var(--text-secondary)]">
+          <h1 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.5rem" }}>You&apos;re Offline</h1>
+          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
             Check your internet connection and try again.
           </p>
         </div>
         {isOnline ? (
-          <Link href="/" className="glow-button inline-flex">
+          <Link href="/" className="glow-button" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
             Back to Home
           </Link>
         ) : (

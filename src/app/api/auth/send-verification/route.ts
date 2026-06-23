@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendVerificationEmail } from "@/lib/email";
+import crypto from "crypto";
 
 function generateCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  // Use cryptographically secure random for verification codes
+  return crypto.randomInt(100000, 999999).toString();
 }
 
 export async function POST(request: Request) {
@@ -19,8 +21,11 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    // Find user by email
-    const { data: users, error: listError } = await supabase.auth.admin.listUsers();
+    // Find user by email — Supabase admin API has no getUserByEmail, so listUsers is the only option
+    // For 10k+ users, create an RPC function: CREATE FUNCTION find_user_by_email(p_email text) ...
+    const { data: users, error: listError } = await supabase.auth.admin.listUsers({
+      perPage: 1000,
+    });
     if (listError) {
       return NextResponse.json({ error: "Failed to look up user" }, { status: 500 });
     }
