@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/api";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { sendSupportReplyNotification } from "@/lib/email";
+
+const supabaseAdmin = createServiceClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -14,7 +20,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (!message) return NextResponse.json({ error: "Message is required" }, { status: 400 });
 
-    const { data: msg, error } = await supabase
+    // Use service role for inserts (bypasses RLS — needed for admin replies to vendor tickets)
+    const { data: msg, error } = await supabaseAdmin
       .from("support_messages")
       .insert({
         ticket_id: id,
@@ -28,21 +35,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (error) throw error;
 
     // Update ticket status
-    await supabase
+    await supabaseAdmin
       .from("support_tickets")
       .update({ status: sender_role === "admin" ? "replied" : "open", updated_at: new Date().toISOString() })
       .eq("id", id);
 
     // Send email notification for admin replies (non-blocking)
     if (sender_role === "admin") {
-      const { data: ticket } = await supabase
+      const { data: ticket } = await supabaseAdmin
         .from("support_tickets")
         .select("subject, user_id")
         .eq("id", id)
         .single();
 
       if (ticket) {
-        const { data: vendor } = await supabase.auth.admin.getUserById(ticket.user_id);
+        const { data: vendor } = await supabaseAdmin.auth.admin.getUserById(ticket.user_id);
         if (vendor?.user?.email) {
           sendSupportReplyNotification({
             vendorEmail: vendor.user.email,
