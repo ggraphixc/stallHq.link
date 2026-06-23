@@ -194,6 +194,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           .admin-grid-2col { grid-template-columns: 1fr !important; }
           .admin-support-detail { grid-template-columns: 1fr !important; }
           .admin-flex-wrap { flex-wrap: wrap !important; }
+          .admin-user-row { grid-template-columns: 1fr auto !important; }
+          .admin-store-row { grid-template-columns: 1fr auto auto !important; }
+          .admin-order-row { grid-template-columns: 1fr auto auto !important; }
         }
         @media (max-width: 480px) {
           .admin-hide-small { display: none !important; }

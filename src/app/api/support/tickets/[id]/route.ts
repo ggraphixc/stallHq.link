@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/api";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
+
+const supabaseAdmin = createServiceClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+function isAdmin(userId: string | undefined): boolean {
+  if (!userId) return false;
+  const adminIds = (process.env.ADMIN_USER_ID || "").split(",").map(s => s.trim()).filter(Boolean);
+  return adminIds.length > 0 && adminIds.includes(userId);
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -8,8 +20,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
+    const userIsAdmin = isAdmin(user.id);
 
-    const { data: ticket, error } = await supabase
+    // Admin: use service role to bypass RLS; Vendor: use auth client
+    const client = userIsAdmin ? supabaseAdmin : supabase;
+
+    const { data: ticket, error } = await client
       .from("support_tickets")
       .select("*, store:stores(name, slug), messages:support_messages(*)")
       .eq("id", id)
@@ -38,8 +54,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const { id } = await params;
     const body = await request.json();
+    const userIsAdmin = isAdmin(user.id);
 
-    const { data: ticket, error } = await supabase
+    // Admin: use service role to bypass RLS; Vendor: use auth client
+    const client = userIsAdmin ? supabaseAdmin : supabase;
+
+    const { data: ticket, error } = await client
       .from("support_tickets")
       .update({ ...body, updated_at: new Date().toISOString() })
       .eq("id", id)

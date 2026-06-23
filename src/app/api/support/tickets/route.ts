@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/api";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { sendSupportTicketCreated } from "@/lib/email";
+
+const supabaseAdmin = createServiceClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+function isAdmin(userEmail: string | undefined): boolean {
+  if (!userEmail) return false;
+  const adminIds = (process.env.ADMIN_USER_ID || "").split(",").map(s => s.trim()).filter(Boolean);
+  return adminIds.length > 0 && adminIds.some(id => id === userEmail);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,14 +21,18 @@ export async function GET(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(request.url);
-    const isAdmin = searchParams.get("admin") === "true";
+    const is_admin = searchParams.get("admin") === "true";
+    const userIsAdmin = isAdmin(user.id);
 
-    let query = supabase
+    // Admin: use service role to bypass RLS; Vendor: use auth client with user_id filter
+    const client = is_admin && userIsAdmin ? supabaseAdmin : supabase;
+
+    let query = client
       .from("support_tickets")
       .select("*, store:stores(name, slug)")
       .order("created_at", { ascending: false });
 
-    if (!isAdmin) {
+    if (!is_admin || !userIsAdmin) {
       query = query.eq("user_id", user.id);
     }
 
