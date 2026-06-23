@@ -16,7 +16,7 @@ export default async function OnboardingPage() {
   // Check if user already has a completed store
   const { data: store } = await supabase
     .from("stores")
-    .select("id, setup_complete")
+    .select("*")
     .eq("user_id", user.id)
     .single();
 
@@ -24,5 +24,15 @@ export default async function OnboardingPage() {
     redirect("/dashboard");
   }
 
-  return <OnboardingWizard existingStore={store} />;
+  // Count products to determine onboarding step
+  let productCount = 0;
+  if (store) {
+    const { count } = await supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", store.id);
+    productCount = count || 0;
+  }
+
+  return <OnboardingWizard existingStore={store} productCount={productCount} />;
 }

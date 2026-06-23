@@ -12,7 +12,8 @@ import { MessageCircle } from "lucide-react";
 import Link from "next/link";
 
 interface OnboardingWizardProps {
-  existingStore: { id: string; setup_complete: boolean } | null;
+  existingStore: { id: string; setup_complete: boolean; plan?: string; name?: string; slug?: string } | null;
+  productCount: number;
 }
 
 const STEPS = ["Store Details", "Choose Plan", "Add Products", "WhatsApp"];
@@ -74,8 +75,23 @@ function Particles() {
   return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0.5 }} />;
 }
 
-export function OnboardingWizard({ existingStore }: OnboardingWizardProps) {
-  const [currentStep, setCurrentStep] = useState(existingStore ? 1 : 0);
+export function OnboardingWizard({ existingStore, productCount }: OnboardingWizardProps) {
+  // Determine starting step based on what's already completed
+  let initialStep = 0;
+  if (existingStore) {
+    if (productCount > 0) {
+      // Store created + products added → go to WhatsApp step
+      initialStep = 3;
+    } else if (existingStore.plan && existingStore.plan !== "trial") {
+      // Store created + plan selected → go to products step
+      initialStep = 2;
+    } else {
+      // Store created but no plan → go to plan selection
+      initialStep = 1;
+    }
+  }
+
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const [store, setStore] = useState<Store | null>(existingStore ? (existingStore as unknown as Store) : null);
   const [isComplete, setIsComplete] = useState(false);
 

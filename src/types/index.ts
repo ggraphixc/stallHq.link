@@ -109,6 +109,7 @@ export interface Review {
   rating: number;
   comment: string | null;
   created_at: string;
+  user_id?: string;
 }
 
 export interface ProductWithRating extends Product {

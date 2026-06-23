@@ -103,7 +103,7 @@ export default function LoginPage() {
     if (storeData.store) {
       window.location.href = "/dashboard";
     } else {
-      window.location.href = "/explore";
+      window.location.href = "/dashboard/customer";
     }
   };
 

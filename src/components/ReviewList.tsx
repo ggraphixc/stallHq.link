@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Star, Trash2 } from "lucide-react";
 import { Review } from "@/types";
+import { createClient } from "@/lib/supabase/client";
 
 interface ReviewListProps {
   productId: string;
@@ -24,7 +25,7 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function ReviewCard({ review, onDelete }: { review: Review; onDelete?: (id: string) => void }) {
+function ReviewCard({ review, onDelete, canDelete }: { review: Review; onDelete?: (id: string) => void; canDelete?: boolean }) {
   const [deleting, setDeleting] = useState(false);
 
   const handleDelete = async () => {
@@ -50,7 +51,7 @@ function ReviewCard({ review, onDelete }: { review: Review; onDelete?: (id: stri
             {new Date(review.created_at).toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric" })}
           </p>
         </div>
-        {onDelete && (
+        {canDelete && onDelete && (
           <button
             onClick={handleDelete}
             disabled={deleting}
@@ -74,6 +75,21 @@ export function ReviewList({ productId, storeId }: ReviewListProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [summary, setSummary] = useState({ count: 0, average: 0 });
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isStoreOwner, setIsStoreOwner] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setCurrentUserId(user.id);
+        // Check if user owns this store
+        supabase.from("stores").select("id").eq("id", storeId).eq("user_id", user.id).single().then(({ data }) => {
+          setIsStoreOwner(!!data);
+        });
+      }
+    });
+  }, [storeId]);
 
   const fetchReviews = async () => {
     try {
@@ -128,7 +144,12 @@ export function ReviewList({ productId, storeId }: ReviewListProps) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {reviews.map((review) => (
-            <ReviewCard key={review.id} review={review} onDelete={handleReviewDeleted} />
+            <ReviewCard
+              key={review.id}
+              review={review}
+              onDelete={handleReviewDeleted}
+              canDelete={isStoreOwner || (currentUserId !== null && review.user_id === currentUserId)}
+            />
           ))}
         </div>
       )}

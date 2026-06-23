@@ -89,6 +89,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Try to get user_id if logged in
+    let userId: string | null = null;
+    try {
+      const authSupabase = await createClient();
+      const { data: { user } } = await authSupabase.auth.getUser();
+      if (user) userId = user.id;
+    } catch { /* Not logged in */ }
+
     const { data, error } = await supabase
       .from("reviews")
       .insert({
@@ -97,6 +105,7 @@ export async function POST(request: NextRequest) {
         reviewer_name,
         rating,
         comment: comment || null,
+        user_id: userId,
       })
       .select()
       .single();
@@ -134,10 +143,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "id required" }, { status: 400 });
     }
 
-    // Verify user owns the store this review belongs to
+    // Fetch review with store owner info
     const { data: review } = await authSupabase
       .from("reviews")
-      .select("id, stores(user_id)")
+      .select("id, user_id, stores(user_id)")
       .eq("id", id)
       .single();
 
@@ -146,7 +155,11 @@ export async function DELETE(request: NextRequest) {
     }
 
     const storeData = Array.isArray(review.stores) ? review.stores[0] : review.stores;
-    if (!storeData || storeData.user_id !== user.id) {
+    const isStoreOwner = storeData && storeData.user_id === user.id;
+    const isReviewAuthor = review.user_id === user.id;
+
+    // Only store owner OR review author can delete
+    if (!isStoreOwner && !isReviewAuthor) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
