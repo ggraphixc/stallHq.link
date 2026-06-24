@@ -30,6 +30,7 @@ export interface Store {
   name: string;
   description: string | null;
   whatsapp_number: string;
+  instagram_handle: string | null;
   logo_url: string | null;
   banner_url: string | null;
   category: string | null;

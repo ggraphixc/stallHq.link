@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Store } from "@/types";
-import { Store as StoreIcon, Loader2, ArrowRight, Link as LinkIcon, MessageCircle } from "lucide-react";
+import { Store as StoreIcon, Loader2, ArrowRight, Link as LinkIcon, MessageCircle, Instagram } from "lucide-react";
 
 interface StoreDetailsStepProps {
   existingStore: Store | null;
@@ -56,6 +56,7 @@ export function StoreDetailsStep({ existingStore, onStoreCreated }: StoreDetails
   const [name, setName] = useState(existingStore?.name || "");
   const [slug, setSlug] = useState(existingStore?.slug || "");
   const [whatsappNumber, setWhatsappNumber] = useState(existingStore?.whatsapp_number || "");
+  const [instagramHandle, setInstagramHandle] = useState(existingStore?.instagram_handle || "");
   const [email, setEmail] = useState(existingStore?.email || "");
   const [description, setDescription] = useState(existingStore?.description || "");
   const [category, setCategory] = useState(existingStore?.category || "");
@@ -69,6 +70,15 @@ export function StoreDetailsStep({ existingStore, onStoreCreated }: StoreDetails
     setLoading(true);
     setError("");
 
+    // Validate at least one channel
+    const hasWA = whatsappNumber.replace(/[^0-9]/g, "").length >= 8;
+    const hasIG = instagramHandle.trim().length > 0;
+    if (!hasWA && !hasIG) {
+      setError("Please provide at least a WhatsApp number or Instagram handle");
+      setLoading(false);
+      return;
+    }
+
     try {
       const method = existingStore ? "PATCH" : "POST";
       const res = await fetch("/api/stores", {
@@ -77,7 +87,8 @@ export function StoreDetailsStep({ existingStore, onStoreCreated }: StoreDetails
         body: JSON.stringify({
           name,
           slug,
-          whatsapp_number: whatsappNumber,
+          whatsapp_number: whatsappNumber || undefined,
+          instagram_handle: instagramHandle || undefined,
           email: email || undefined,
           description: description || undefined,
           category: category || undefined,
@@ -150,7 +161,7 @@ export function StoreDetailsStep({ existingStore, onStoreCreated }: StoreDetails
 
         {/* WhatsApp Number */}
         <div>
-          <label style={labelStyle}>WhatsApp Number</label>
+          <label style={labelStyle}>WhatsApp Number <span style={{ fontWeight: 400, textTransform: "none", color: "var(--text-muted)" }}>(at least one channel required)</span></label>
           <input
             type="tel"
             className="ambient-input"
@@ -158,9 +169,28 @@ export function StoreDetailsStep({ existingStore, onStoreCreated }: StoreDetails
             placeholder="+234 800 000 0000"
             value={whatsappNumber}
             onChange={(e) => setWhatsappNumber(e.target.value)}
-            required
           />
           <p style={hintStyle}>Customers will chat with you on this number</p>
+        </div>
+
+        {/* Instagram Handle */}
+        <div>
+          <label style={labelStyle}>Instagram Handle <span style={{ fontWeight: 400, textTransform: "none", color: "var(--text-muted)" }}>(optional)</span></label>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span style={{ padding: "0.625rem 0.5rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRight: "none", borderRadius: "0.5rem 0 0 0.5rem", color: "var(--text-muted)", fontSize: "0.75rem", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+              <Instagram size={12} />
+              <span>@</span>
+            </span>
+            <input
+              type="text"
+              className="ambient-input"
+              style={{ ...inputStyle, borderRadius: "0 0.5rem 0.5rem 0" }}
+              placeholder="your_store"
+              value={instagramHandle}
+              onChange={(e) => setInstagramHandle(e.target.value)}
+            />
+          </div>
+          <p style={hintStyle}>Customers can also reach you on Instagram</p>
         </div>
 
         {/* Email */}

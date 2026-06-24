@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAlert } from "@/contexts/AlertContext";
 import { Store, StoreHours } from "@/types";
-import { X, Loader2, Camera } from "lucide-react";
+import { X, Loader2, Camera, Instagram } from "lucide-react";
 import { StoreHoursManager } from "./StoreHoursManager";
 
 interface StoreSettingsProps {
@@ -73,6 +73,7 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
   const [name, setName] = useState(store.name);
   const [slug, setSlug] = useState(store.slug);
   const [whatsappNumber, setWhatsappNumber] = useState(store.whatsapp_number);
+  const [instagramHandle, setInstagramHandle] = useState(store.instagram_handle || "");
   const [email, setEmail] = useState(store.email || "");
   const [description, setDescription] = useState(store.description || "");
   const [storeHours, setStoreHours] = useState<StoreHours | null>(store.store_hours || null);
@@ -112,6 +113,7 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name, slug, whatsapp_number: whatsappNumber,
+          instagram_handle: instagramHandle || null,
           email: email || undefined, description: description || undefined,
           store_hours: storeHours,
           logo_url: logoUrl || null, banner_url: bannerUrl || null,
@@ -199,8 +201,20 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
 
           <div>
             <label style={labelStyle}>WhatsApp Number</label>
-            <input type="tel" className="ambient-input" style={inputStyle} placeholder="+234 800 000 0000" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} required />
+            <input type="tel" className="ambient-input" style={inputStyle} placeholder="+234 800 000 0000" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} />
             <p style={hintStyle}>Customers will chat with you on this number</p>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Instagram Handle <span style={{ fontWeight: 400, textTransform: "none", color: "var(--text-muted)" }}>(optional)</span></label>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <span style={{ padding: "0.625rem 0.5rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRight: "none", borderRadius: "0.5rem 0 0 0.5rem", color: "var(--text-muted)", fontSize: "0.75rem", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                <Instagram size={12} />
+                <span>@</span>
+              </span>
+              <input type="text" className="ambient-input" style={{ ...inputStyle, borderRadius: "0 0.5rem 0.5rem 0" }} placeholder="your_store" value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} />
+            </div>
+            <p style={hintStyle}>Customers can also reach you on Instagram</p>
           </div>
 
           <div>

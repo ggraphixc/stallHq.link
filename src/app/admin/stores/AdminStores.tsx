@@ -189,6 +189,10 @@ export function AdminStores() {
                         <p style={{ fontSize: "0.8125rem" }}>{store.whatsapp_number || "Not set"}</p>
                       </div>
                       <div>
+                        <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>Instagram</p>
+                        <p style={{ fontSize: "0.8125rem" }}>{store.instagram_handle ? `@${store.instagram_handle.replace(/^@/, "")}` : "Not set"}</p>
+                      </div>
+                      <div>
                         <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>Email</p>
                         <p style={{ fontSize: "0.8125rem" }}>{store.email || "Not set"}</p>
                       </div>

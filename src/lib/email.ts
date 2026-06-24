@@ -618,7 +618,7 @@ export async function sendStatusUpdateEmail({
       </tr>
       <tr>
         <td style="padding:8px 32px 32px;text-align:center;">
-          <a href="https://wa.me/" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Contact on WhatsApp</a>
+          <a href="${APP_URL}/order/${orderId}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Order</a>
         </td>
       </tr>
   `);

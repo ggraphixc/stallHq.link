@@ -14,8 +14,10 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useAlert } from "@/contexts/AlertContext";
 import { ShareCard } from "@/components/ShareCard";
 import { createClient } from "@/lib/supabase/client";
+import { hasWhatsApp, hasInstagram, generateInstagramUrl } from "@/lib/channel";
 import {
   MessageCircle,
+  Instagram,
   Clock,
   MapPin,
   Mail,
@@ -285,24 +287,49 @@ export function StorePage({ store, products }: StorePageProps) {
                 </div>
               </div>
 
-              {/* WhatsApp CTA */}
-              <a
-                href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="glow-button whatsapp-button"
-                style={{
-                  padding: "0.625rem 1.25rem",
-                  fontSize: "0.8125rem",
-                  flexShrink: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}
-              >
-                <MessageCircle size={16} />
-                <span className="hidden sm:inline">Chat on WhatsApp</span>
-              </a>
+              {/* Channel CTAs */}
+              <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0, flexWrap: "wrap" }}>
+                {hasWhatsApp(store.whatsapp_number) && (
+                  <a
+                    href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="glow-button whatsapp-button"
+                    style={{
+                      padding: "0.625rem 1.25rem",
+                      fontSize: "0.8125rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      minHeight: "44px",
+                    }}
+                  >
+                    <MessageCircle size={16} />
+                    WhatsApp
+                  </a>
+                )}
+                {hasInstagram(store.instagram_handle) && (
+                  <a
+                    href={generateInstagramUrl(store.instagram_handle!)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="glow-button"
+                    style={{
+                      padding: "0.625rem 1.25rem",
+                      fontSize: "0.8125rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      background: "linear-gradient(135deg, #E1306C, #833AB4)",
+                      color: "white",
+                      minHeight: "44px",
+                    }}
+                  >
+                    <Instagram size={16} />
+                    Instagram
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -499,31 +526,60 @@ export function StorePage({ store, products }: StorePageProps) {
                 Contact
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <a
-                  href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    padding: "0.75rem",
-                    borderRadius: "0.5rem",
-                    background: "rgba(37,211,102,0.06)",
-                    border: "1px solid rgba(37,211,102,0.15)",
-                    textDecoration: "none",
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(37,211,102,0.12)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(37,211,102,0.06)"; }}
-                >
-                  <MessageCircle size={18} style={{ color: "#25D366", flexShrink: 0 }} />
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-primary)" }}>WhatsApp</p>
-                    <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>{store.whatsapp_number}</p>
-                  </div>
-                  <ChevronRight size={14} style={{ marginLeft: "auto", color: "var(--text-muted)" }} />
-                </a>
+                {hasWhatsApp(store.whatsapp_number) && (
+                  <a
+                    href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                      padding: "0.75rem",
+                      borderRadius: "0.5rem",
+                      background: "rgba(37,211,102,0.06)",
+                      border: "1px solid rgba(37,211,102,0.15)",
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(37,211,102,0.12)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(37,211,102,0.06)"; }}
+                  >
+                    <MessageCircle size={18} style={{ color: "#25D366", flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-primary)" }}>WhatsApp</p>
+                      <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>{store.whatsapp_number}</p>
+                    </div>
+                    <ChevronRight size={14} style={{ marginLeft: "auto", color: "var(--text-muted)" }} />
+                  </a>
+                )}
+                {hasInstagram(store.instagram_handle) && (
+                  <a
+                    href={generateInstagramUrl(store.instagram_handle!)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                      padding: "0.75rem",
+                      borderRadius: "0.5rem",
+                      background: "rgba(225,48,108,0.06)",
+                      border: "1px solid rgba(225,48,108,0.15)",
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(225,48,108,0.12)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(225,48,108,0.06)"; }}
+                  >
+                    <Instagram size={18} style={{ color: "#E1306C", flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-primary)" }}>Instagram</p>
+                      <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>@{store.instagram_handle!.replace(/^@/, "")}</p>
+                    </div>
+                    <ChevronRight size={14} style={{ marginLeft: "auto", color: "var(--text-muted)" }} />
+                  </a>
+                )}
                 {store.email && (
                   <a
                     href={`mailto:${store.email}`}
@@ -559,7 +615,7 @@ export function StorePage({ store, products }: StorePageProps) {
               </div>
               <div>
                 <p style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Powered by stallHq</p>
-                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Secure checkout via WhatsApp</p>
+                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Secure checkout via WhatsApp / Instagram</p>
               </div>
             </div>
           </div>

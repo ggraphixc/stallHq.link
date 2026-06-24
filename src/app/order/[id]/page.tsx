@@ -19,7 +19,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
 
   const { data: order, error } = await supabase
     .from("orders")
-    .select("*, stores(name, slug, whatsapp_number, email)")
+    .select("*, stores(name, slug, whatsapp_number, instagram_handle, email)")
     .eq("id", id)
     .single();
 

@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Plus, Minus, Trash2, MessageCircle, ShoppingBag } from "lucide-react";
+import { X, Plus, Minus, Trash2, MessageCircle, ShoppingBag, Instagram } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
-import { generateWhatsAppUrl } from "@/lib/whatsapp";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useAlert } from "@/contexts/AlertContext";
+import { generateWhatsAppUrl, generateInstagramUrl, copyOrderToClipboard, hasWhatsApp, hasInstagram } from "@/lib/channel";
 import { Store } from "@/types";
 
 interface CartDrawerProps {
@@ -28,12 +28,12 @@ const inputStyle: React.CSSProperties = {
 export function CartDrawer({ store }: CartDrawerProps) {
   const { items, updateQuantity, removeItem, clearCart, total, itemCount } = useCart();
   const { trackWhatsAppClick } = useAnalytics();
-  const { error: showError } = useAlert();
+  const { error: showError, success: showSuccess } = useAlert();
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
 
-  const handleCheckout = async () => {
+  const handleCheckoutWhatsApp = async () => {
     trackWhatsAppClick(store.id);
     let orderId = "";
     try {
@@ -65,12 +65,58 @@ export function CartDrawer({ store }: CartDrawerProps) {
       }
       orderId = data.id || "";
     } catch (error) {
-      console.error("Error creating order:", error);
       showError("Network error. Please try again.");
       return;
     }
     const url = generateWhatsAppUrl(store.whatsapp_number, store.name, items);
     window.open(url, "_blank");
+    clearCart();
+    if (orderId) {
+      window.location.href = `/order/${orderId}`;
+    }
+  };
+
+  const handleCheckoutInstagram = async () => {
+    trackWhatsAppClick(store.id);
+    let orderId = "";
+    try {
+      const orderItems = items.map((item) => ({
+        product_id: item.product.id,
+        product_name: item.product.name,
+        variant_id: item.variant?.id,
+        variant_name: item.variant ? `${item.variant.option_name}: ${item.variant.option_value}` : undefined,
+        price: item.variant?.price ?? item.product.price,
+        quantity: item.quantity,
+      }));
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          store_id: store.id,
+          store_name: store.name,
+          customer_name: customerName || undefined,
+          customer_phone: customerPhone || undefined,
+          customer_email: customerEmail || undefined,
+          items: orderItems,
+          total,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showError(data.error || "Failed to create order. Please try again.");
+        return;
+      }
+      orderId = data.id || "";
+    } catch (error) {
+      showError("Network error. Please try again.");
+      return;
+    }
+    // Instagram doesn't support pre-filled DMs — copy order to clipboard and open profile
+    const copied = await copyOrderToClipboard(store.name, items);
+    if (copied) {
+      showSuccess("Order copied to clipboard! Paste it in your Instagram DM.");
+    }
+    window.open(generateInstagramUrl(store.instagram_handle!), "_blank");
     clearCart();
     if (orderId) {
       window.location.href = `/order/${orderId}`;
@@ -328,18 +374,36 @@ export function CartDrawer({ store }: CartDrawerProps) {
               </div>
 
               {/* Checkout */}
-              <button onClick={handleCheckout} className="glow-button whatsapp-button" style={{
-                width: "100%",
-                padding: "0.75rem",
-                fontSize: "0.875rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.5rem",
-              }}>
-                <MessageCircle size={18} />
-                Checkout via WhatsApp
-              </button>
+              {hasWhatsApp(store.whatsapp_number) && (
+                <button onClick={handleCheckoutWhatsApp} className="glow-button whatsapp-button" style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  fontSize: "0.875rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.5rem",
+                }}>
+                  <MessageCircle size={18} />
+                  Checkout via WhatsApp
+                </button>
+              )}
+              {hasInstagram(store.instagram_handle) && (
+                <button onClick={handleCheckoutInstagram} className="glow-button" style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  fontSize: "0.875rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.5rem",
+                  background: "linear-gradient(135deg, #E1306C, #833AB4)",
+                  color: "white",
+                }}>
+                  <Instagram size={18} />
+                  Checkout via Instagram
+                </button>
+              )}
 
               <button onClick={clearCart} style={{
                 width: "100%",

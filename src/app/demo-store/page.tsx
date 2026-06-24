@@ -10,6 +10,7 @@ const DEMO_STORE: Store = {
   name: "Shivam's Fashion Hub",
   description: "Premium fashion items for the modern lifestyle",
   whatsapp_number: "+2348000000000",
+  instagram_handle: null,
   logo_url: null,
   banner_url: null,
   category: "Fashion",

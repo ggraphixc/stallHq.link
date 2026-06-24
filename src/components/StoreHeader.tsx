@@ -3,7 +3,8 @@
 import { Store } from "@/types";
 import { CartDrawer } from "./CartDrawer";
 import { StoreAvatar } from "./ui/StoreAvatar";
-import { MessageCircle, ShieldCheck } from "lucide-react";
+import { MessageCircle, Instagram, ShieldCheck } from "lucide-react";
+import { hasWhatsApp, hasInstagram, generateInstagramUrl } from "@/lib/channel";
 
 interface StoreHeaderProps {
   store: Store;
@@ -65,15 +66,30 @@ export function StoreHeader({ store }: StoreHeaderProps) {
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           {/* WhatsApp Chat — icon only */}
-          <a
-            href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ ...iconBtn, background: "linear-gradient(135deg, #25d366, #128c7e)" }}
-            title="Chat on WhatsApp"
-          >
-            <MessageCircle size={18} />
-          </a>
+          {hasWhatsApp(store.whatsapp_number) && (
+            <a
+              href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ ...iconBtn, background: "linear-gradient(135deg, #25d366, #128c7e)" }}
+              title="Chat on WhatsApp"
+            >
+              <MessageCircle size={18} />
+            </a>
+          )}
+
+          {/* Instagram — icon only */}
+          {hasInstagram(store.instagram_handle) && (
+            <a
+              href={generateInstagramUrl(store.instagram_handle!)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ ...iconBtn, background: "linear-gradient(135deg, #E1306C, #833AB4)" }}
+              title="Open Instagram"
+            >
+              <Instagram size={18} />
+            </a>
+          )}
 
           {/* Cart — icon only */}
           <CartDrawer store={store} />

@@ -7,12 +7,12 @@ import {
   ShoppingCart, ArrowLeft, Copy, Check, Store, Phone, Mail, StickyNote
 } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
-import { generateFollowUpUrl } from "@/lib/whatsapp";
+import { generateFollowUpUrl } from "@/lib/channel";
 import { Order, Store as StoreType } from "@/types";
 
 interface OrderDetailProps {
   order: Order;
-  store: { name: string; slug: string; whatsapp_number?: string; email?: string } | null;
+  store: { name: string; slug: string; whatsapp_number?: string; instagram_handle?: string | null; email?: string } | null;
 }
 
 const STATUS_STEPS = [

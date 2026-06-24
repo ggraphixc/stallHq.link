@@ -55,7 +55,8 @@ export async function createStore(store: {
   slug: string;
   name: string;
   description?: string;
-  whatsapp_number: string;
+  whatsapp_number?: string;
+  instagram_handle?: string | null;
   category?: string;
   email?: string;
   setup_complete?: boolean;
