@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
         description: body.description,
         price: body.price,
         image_url: body.image_url,
+        images: body.images || [],
         category: body.category,
         has_variants: body.has_variants,
       })

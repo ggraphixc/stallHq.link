@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAlert } from "@/contexts/AlertContext";
-import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw } from "lucide-react";
+import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw, Sparkles, Eye, EyeOff } from "lucide-react";
 
 interface Setting {
   key: string; value: any; updated_at: string;
@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS: Record<string, any> = {
   brevo_sender_email: process.env.BREVO_SENDER_EMAIL || "", brevo_sender_name: "StallHq",
   maintenance_mode: false, allow_signup: true,
   max_free_products: 10, trial_days: 5, support_email: "",
+  ai_enabled: false, ai_provider: "openrouter", ai_model: "", ai_api_key: "", ai_base_url: "",
 };
 
 export default function AdminSettings() {
@@ -21,6 +22,7 @@ export default function AdminSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
+  const [showAIKey, setShowAIKey] = useState(false);
 
   useEffect(() => { fetchSettings(); }, []);
 
@@ -59,6 +61,7 @@ export default function AdminSettings() {
     { id: "general", label: "General", icon: Globe },
     { id: "email", label: "Email", icon: Mail },
     { id: "payments", label: "Payments", icon: CreditCard },
+    { id: "ai", label: "AI", icon: Sparkles },
     { id: "security", label: "Security", icon: Shield },
   ];
 
@@ -152,6 +155,128 @@ export default function AdminSettings() {
                   <p style={{ fontSize: "1.25rem", fontWeight: 700 }}>₦12,000</p>
                 </div>
               </div>
+            </div>
+          ) : activeTab === "ai" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <Sparkles size={18} style={{ color: "var(--glow-purple)" }} /> AI Provider Configuration
+              </h3>
+              <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+                Configure AI provider for product description generation and other smart features.
+              </p>
+
+              {/* Enable/Disable */}
+              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", cursor: "pointer" }}>
+                <input type="checkbox" checked={!!settings.ai_enabled} onChange={(e) => updateSetting("ai_enabled", e.target.checked)} style={{ width: "1rem", height: "1rem", accentColor: "var(--glow-purple)" }} />
+                <div>
+                  <p style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Enable AI Features</p>
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Turn on AI-powered product description generation</p>
+                </div>
+              </label>
+
+              {settings.ai_enabled && (
+                <>
+                  {/* Provider */}
+                  <div>
+                    <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Provider</label>
+                    <select
+                      className="ambient-input"
+                      style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", background: "var(--bg-primary)" }}
+                      value={settings.ai_provider || "openrouter"}
+                      onChange={(e) => updateSetting("ai_provider", e.target.value)}
+                    >
+                      <option value="openrouter">OpenRouter</option>
+                      <option value="opencodezen">OpenCode Zen</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="custom">Custom (OpenAI-compatible)</option>
+                    </select>
+                  </div>
+
+                  {/* Model */}
+                  <div>
+                    <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Model</label>
+                    <input
+                      className="ambient-input"
+                      style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }}
+                      value={settings.ai_model || ""}
+                      onChange={(e) => updateSetting("ai_model", e.target.value)}
+                      placeholder={
+                        settings.ai_provider === "openrouter" ? "e.g. google/gemini-2.0-flash-exp:free" :
+                        settings.ai_provider === "opencodezen" ? "e.g. gemini-2.0-flash" :
+                        settings.ai_provider === "openai" ? "e.g. gpt-4o-mini" :
+                        "e.g. model-name"
+                      }
+                    />
+                    <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                      {settings.ai_provider === "openrouter" && "Browse free models at openrouter.ai/models?fmt=free"}
+                      {settings.ai_provider === "opencodezen" && "Use any available model from OpenCode Zen"}
+                      {settings.ai_provider === "openai" && "e.g. gpt-4o-mini, gpt-4o"}
+                      {settings.ai_provider === "custom" && "Enter the model name for your API"}
+                    </p>
+                  </div>
+
+                  {/* API Key */}
+                  <div>
+                    <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>API Key</label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        className="ambient-input"
+                        type={showAIKey ? "text" : "password"}
+                        style={{ width: "100%", padding: "0.625rem 0.875rem", paddingRight: "2.5rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }}
+                        value={settings.ai_api_key || ""}
+                        onChange={(e) => updateSetting("ai_api_key", e.target.value)}
+                        placeholder="sk-... or your API key"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAIKey(!showAIKey)}
+                        style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "0.25rem" }}
+                      >
+                        {showAIKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                      {settings.ai_provider === "openrouter" && "Get your key at openrouter.ai/keys"}
+                      {settings.ai_provider === "opencodezen" && "Enter your OpenCode Zen API key"}
+                      {settings.ai_provider === "openai" && "Enter your OpenAI API key"}
+                      {settings.ai_provider === "custom" && "Enter your API key"}
+                    </p>
+                  </div>
+
+                  {/* Base URL (for custom provider) */}
+                  {(settings.ai_provider === "custom" || settings.ai_provider === "opencodezen") && (
+                    <div>
+                      <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Base URL</label>
+                      <input
+                        className="ambient-input"
+                        style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }}
+                        value={settings.ai_base_url || ""}
+                        onChange={(e) => updateSetting("ai_base_url", e.target.value)}
+                        placeholder={
+                          settings.ai_provider === "opencodezen" ? "https://api.opencodezen.com/v1" :
+                          "https://api.example.com/v1"
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {/* Provider Info */}
+                  <div style={{ padding: "1rem", background: "rgba(168,133,247,0.05)", border: "1px solid rgba(168,133,247,0.15)", borderRadius: "0.5rem" }}>
+                    <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", fontWeight: 600, marginBottom: "0.5rem" }}>
+                      {settings.ai_provider === "openrouter" && "OpenRouter"}
+                      {settings.ai_provider === "opencodezen" && "OpenCode Zen"}
+                      {settings.ai_provider === "openai" && "OpenAI"}
+                      {settings.ai_provider === "custom" && "Custom Provider"}
+                    </p>
+                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                      {settings.ai_provider === "openrouter" && "Access free and paid AI models. Many free models support image input (multimodal). No credit card required for free models."}
+                      {settings.ai_provider === "opencodezen" && "OpenCode Zen provides access to various AI models. Configure your base URL and API key above."}
+                      {settings.ai_provider === "openai" && "Direct OpenAI API access. Requires a paid API key."}
+                      {settings.ai_provider === "custom" && "Use any OpenAI-compatible API endpoint. Configure the base URL and API key above."}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>

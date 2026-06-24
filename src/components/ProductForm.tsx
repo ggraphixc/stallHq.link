@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Store, Product, ProductVariant } from "@/types";
-import { X, Upload, Loader2, Image as ImageIcon } from "lucide-react";
+import { X, Upload, Loader2, Image as ImageIcon, Sparkles } from "lucide-react";
 import { VariantManager } from "./VariantManager";
 
 interface ProductFormProps {
@@ -49,6 +49,7 @@ export function ProductForm({
 }: ProductFormProps) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [generatingAI, setGeneratingAI] = useState(false);
   const [name, setName] = useState(product?.name || "");
   const [description, setDescription] = useState(product?.description || "");
   const [price, setPrice] = useState(product?.price.toString() || "");
@@ -156,6 +157,35 @@ export function ProductForm({
 
   const removeAdditionalImage = (index: number) => {
     setAdditionalImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleGenerateDescription = async () => {
+    if (!name.trim()) {
+      alert("Please enter a product name first");
+      return;
+    }
+    setGeneratingAI(true);
+    try {
+      const response = await fetch("/api/ai/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          category: category.trim() || undefined,
+          price: price || undefined,
+          imageUrl: imageUrl || undefined,
+        }),
+      });
+      if (!response.ok) throw new Error("Generation failed");
+      const data = await response.json();
+      if (data.description) setDescription(data.description);
+      if (data.suggestedCategory && !category) setCategory(data.suggestedCategory);
+    } catch (error) {
+      console.error("AI generation error:", error);
+      alert("Failed to generate description. Please try again.");
+    } finally {
+      setGeneratingAI(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -290,7 +320,38 @@ export function ProductForm({
 
           {/* Description */}
           <div>
-            <label style={labelStyle}>Description <span style={{ fontWeight: 400, textTransform: "none", color: "var(--text-muted)" }}>(optional)</span></label>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.375rem" }}>
+              <label style={{ ...labelStyle, marginBottom: 0 }}>Description <span style={{ fontWeight: 400, textTransform: "none", color: "var(--text-muted)" }}>(optional)</span></label>
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={generatingAI || !name.trim()}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.375rem",
+                  padding: "0.25rem 0.625rem",
+                  fontSize: "0.6875rem",
+                  fontWeight: 600,
+                  color: generatingAI ? "var(--text-muted)" : "var(--glow-purple)",
+                  background: generatingAI ? "rgba(168,85,247,0.05)" : "rgba(168,85,247,0.1)",
+                  border: "1px solid rgba(168,85,247,0.2)",
+                  borderRadius: "0.375rem",
+                  cursor: generatingAI || !name.trim() ? "not-allowed" : "pointer",
+                  transition: "all 0.2s",
+                  opacity: !name.trim() ? 0.5 : 1,
+                }}
+                onMouseEnter={(e) => { if (!generatingAI && name.trim()) { e.currentTarget.style.background = "rgba(168,85,247,0.15)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.4)"; }}}
+                onMouseLeave={(e) => { e.currentTarget.style.background = generatingAI ? "rgba(168,85,247,0.05)" : "rgba(168,85,247,0.1)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.2)"; }}
+              >
+                {generatingAI ? (
+                  <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+                ) : (
+                  <Sparkles size={12} />
+                )}
+                {generatingAI ? "Generating..." : "Generate with AI"}
+              </button>
+            </div>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="ambient-input" style={{ ...inputStyle, resize: "none" }} rows={3} placeholder="Product description" />
           </div>
 
