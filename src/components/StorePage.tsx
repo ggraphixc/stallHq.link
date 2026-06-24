@@ -615,7 +615,15 @@ export function StorePage({ store, products }: StorePageProps) {
               </div>
               <div>
                 <p style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Powered by stallHq</p>
-                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Secure checkout via WhatsApp / Instagram</p>
+                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                  {hasWhatsApp(store.whatsapp_number) && hasInstagram(store.instagram_handle)
+                    ? "Secure checkout via WhatsApp & Instagram"
+                    : hasWhatsApp(store.whatsapp_number)
+                      ? "Secure checkout via WhatsApp"
+                      : hasInstagram(store.instagram_handle)
+                        ? "Secure checkout via Instagram"
+                        : "Secure checkout via stallHq"}
+                </p>
               </div>
             </div>
           </div>

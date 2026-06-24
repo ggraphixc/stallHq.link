@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAlert } from "@/contexts/AlertContext";
 import { Order } from "@/types";
-import { Package, Clock, CheckCircle, Truck, XCircle, ChevronDown, Loader2, Download } from "lucide-react";
+import { Package, Clock, CheckCircle, Truck, XCircle, ChevronDown, Loader2, Download, StickyNote } from "lucide-react";
 
 interface OrderManagerProps {
   storeId: string;
@@ -51,6 +51,7 @@ export function OrderManager({ storeId }: OrderManagerProps) {
   const [filter, setFilter] = useState<string>("all");
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [vendorNote, setVendorNote] = useState("");
+  const [noteMode, setNoteMode] = useState<"status" | "standalone">("status");
 
   useEffect(() => { fetchOrders(); }, [storeId]);
 
@@ -76,9 +77,10 @@ export function OrderManager({ storeId }: OrderManagerProps) {
       if (response.ok) {
         const updated = await response.json();
         setOrders(orders.map((o) => (o.id === orderId ? { ...o, status, vendor_notes: updated.vendor_notes || o.vendor_notes } : o)));
+        showSuccess(noteMode === "standalone" ? "Note saved" : "Status updated");
       }
     } catch (error) {
-      console.error("Error updating order:", error);
+      showError("Failed to update");
     } finally {
       setUpdatingId(null);
       setEditingNotesId(null);
@@ -94,7 +96,7 @@ export function OrderManager({ storeId }: OrderManagerProps) {
   );
 
   const exportCSV = () => {
-    const headers = ["Order ID", "Date", "Customer", "Phone", "Items", "Total", "Status", "Notes"];
+    const headers = ["Order ID", "Date", "Customer", "Phone", "Items", "Total", "Status", "Notes", "Vendor Note"];
     const rows = filteredOrders.map((order) => [
       order.id.slice(0, 8),
       new Date(order.created_at).toLocaleDateString("en-NG"),
@@ -104,6 +106,7 @@ export function OrderManager({ storeId }: OrderManagerProps) {
       order.total.toString(),
       order.status,
       order.notes || "",
+      order.vendor_notes || "",
     ]);
     const csvContent = [headers.join(","), ...rows.map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -248,7 +251,7 @@ export function OrderManager({ storeId }: OrderManagerProps) {
                     </p>
                   </div>
 
-                  {/* Status Update */}
+                  {/* Status Update + Notes */}
                   <div style={{ position: "relative", flexShrink: 0, display: "flex", flexDirection: "column", gap: "0.375rem", alignItems: "flex-end" }}>
                     <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
                       <select
@@ -258,6 +261,7 @@ export function OrderManager({ storeId }: OrderManagerProps) {
                           if (newStatus !== order.status) {
                             setEditingNotesId(order.id);
                             setVendorNote(order.vendor_notes || "");
+                            setNoteMode("status");
                           }
                         }}
                         disabled={updatingId === order.id}
@@ -270,6 +274,29 @@ export function OrderManager({ storeId }: OrderManagerProps) {
                       </select>
                       <ChevronDown size={14} style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
                     </div>
+
+                    {/* Add Note button */}
+                    {editingNotesId !== order.id && (
+                      <button
+                        onClick={() => {
+                          setEditingNotesId(order.id);
+                          setVendorNote(order.vendor_notes || "");
+                          setNoteMode("standalone");
+                        }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: "0.25rem",
+                          padding: "0.375rem 0.625rem", fontSize: "0.6875rem", fontWeight: 500,
+                          color: "var(--glow-purple)", background: "rgba(168,133,247,0.08)",
+                          border: "1px solid rgba(168,133,247,0.2)", borderRadius: "0.25rem",
+                          cursor: "pointer", transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.15)"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(168,133,247,0.08)"; }}
+                      >
+                        <StickyNote size={12} />
+                        {order.vendor_notes ? "Edit Note" : "Add Note"}
+                      </button>
+                    )}
 
                     {/* Inline notes editor */}
                     {editingNotesId === order.id && (

@@ -14,14 +14,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
     const ogImageUrl = `${baseUrl}/api/og?slug=${slug}`;
 
+    const channelKeywords = [
+      store.whatsapp_number ? "WhatsApp shopping" : null,
+      store.instagram_handle ? "Instagram shopping" : null,
+    ].filter(Boolean);
+
     return {
       title: `${store.name} | StallHq`,
-      description: store.description || `Shop from ${store.name} on StallHq. Browse products and order via WhatsApp.`,
+      description: store.description || `Shop from ${store.name} on StallHq. Browse products and order online.`,
       keywords: [
         store.name,
         "stallhq",
         "digital store",
-        "WhatsApp shopping",
+        ...channelKeywords,
         store.category,
         "online store",
         "Nigeria",

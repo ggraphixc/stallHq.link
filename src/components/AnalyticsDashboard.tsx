@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Store } from "@/types";
+import { hasWhatsApp, hasInstagram } from "@/lib/channel";
 import { BarChart3, Users, MessageCircle, Eye, TrendingUp, Calendar } from "lucide-react";
 
 interface AnalyticsDashboardProps {
@@ -53,7 +54,7 @@ export function AnalyticsDashboard({ store }: AnalyticsDashboardProps) {
 
   const stats = [
     { label: "Total Visits", value: data?.totalVisits || 0, icon: Users, color: "var(--glow-purple)" },
-    { label: "WhatsApp Clicks", value: data?.whatsappClicks || 0, icon: MessageCircle, color: "var(--glow-green)" },
+    { label: hasWhatsApp(store.whatsapp_number) && hasInstagram(store.instagram_handle) ? "Channel Clicks" : hasWhatsApp(store.whatsapp_number) ? "WhatsApp Clicks" : "Instagram Clicks", value: data?.whatsappClicks || 0, icon: MessageCircle, color: "var(--glow-green)" },
     { label: "Product Views", value: data?.productViews || 0, icon: Eye, color: "var(--glow-cyan)" },
     { label: "Conversion", value: `${data?.conversionRate || 0}%`, icon: TrendingUp, color: "var(--glow-green)" },
   ];
