@@ -44,7 +44,7 @@ export function PlanSelectionStep({ store, onPlanSelected, onSkip }: PlanSelecti
     }
   };
 
-  const paidPlans: SubscriptionPlan[] = ["monthly", "quarterly", "annual"];
+  const allPlans: SubscriptionPlan[] = ["trial", "monthly", "quarterly", "annual"];
 
   return (
     <div>
@@ -64,18 +64,19 @@ export function PlanSelectionStep({ store, onPlanSelected, onSkip }: PlanSelecti
 
       {/* Plan Cards */}
       <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-        {paidPlans.map((planKey) => {
+        {allPlans.map((planKey) => {
           const plan = PLANS[planKey];
           const isPopular = plan.popular;
+          const isTrial = planKey === "trial";
           const isLoading = loadingPlan === planKey;
-          const monthlyPrice = Math.round(plan.price / (planKey === "monthly" ? 1 : planKey === "quarterly" ? 3 : 6));
+          const monthlyPrice = planKey === "monthly" ? plan.price : planKey === "quarterly" ? Math.round(plan.price / 3) : planKey === "annual" ? Math.round(plan.price / 6) : 0;
 
           return (
             <div
               key={planKey}
               style={{
-                background: isPopular ? "rgba(16,185,129,0.04)" : "rgba(255,255,255,0.02)",
-                border: isPopular ? "1.5px solid rgba(16,185,129,0.3)" : "1px solid var(--border-subtle)",
+                background: isPopular ? "rgba(16,185,129,0.04)" : isTrial ? "rgba(168,133,247,0.04)" : "rgba(255,255,255,0.02)",
+                border: isPopular ? "1.5px solid rgba(16,185,129,0.3)" : isTrial ? "1.5px solid rgba(168,133,247,0.2)" : "1px solid var(--border-subtle)",
                 borderRadius: "0.75rem",
                 padding: "1rem",
                 position: "relative",
@@ -90,6 +91,16 @@ export function PlanSelectionStep({ store, onPlanSelected, onSkip }: PlanSelecti
                   fontSize: "0.5625rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
                 }}>
                   Best Value
+                </div>
+              )}
+              {isTrial && (
+                <div style={{
+                  position: "absolute", top: "-0.5rem", right: "0.75rem",
+                  padding: "0.125rem 0.5rem", borderRadius: "0.25rem",
+                  background: "var(--glow-purple)", color: "white",
+                  fontSize: "0.5625rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
+                }}>
+                  Free
                 </div>
               )}
 
@@ -108,10 +119,19 @@ export function PlanSelectionStep({ store, onPlanSelected, onSkip }: PlanSelecti
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <span style={{ fontSize: "1rem", fontWeight: 700 }}>{formatNaira(plan.price)}</span>
-                  <span style={{ display: "block", fontSize: "0.5625rem", color: "var(--text-muted)" }}>
-                    {formatNaira(monthlyPrice)}/mo
+                  <span style={{ fontSize: "1rem", fontWeight: 700 }}>
+                    {isTrial ? "Free" : formatNaira(plan.price)}
                   </span>
+                  {!isTrial && (
+                    <span style={{ display: "block", fontSize: "0.5625rem", color: "var(--text-muted)" }}>
+                      {formatNaira(monthlyPrice)}/mo
+                    </span>
+                  )}
+                  {isTrial && (
+                    <span style={{ display: "block", fontSize: "0.5625rem", color: "var(--text-muted)" }}>
+                      5 days
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -132,7 +152,7 @@ export function PlanSelectionStep({ store, onPlanSelected, onSkip }: PlanSelecti
 
               {/* CTA */}
               <button
-                className={isPopular ? "glow-button" : "glow-button-secondary"}
+                className={isPopular || isTrial ? "glow-button" : "glow-button-secondary"}
                 style={{
                   width: "100%", padding: "0.625rem", fontSize: "0.8125rem", fontWeight: 600,
                   opacity: loadingPlan && loadingPlan !== planKey ? 0.5 : 1,
@@ -145,7 +165,7 @@ export function PlanSelectionStep({ store, onPlanSelected, onSkip }: PlanSelecti
                   <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
                 ) : (
                   <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem" }}>
-                    Pay {formatNaira(plan.price)}
+                    {isTrial ? "Start Free Trial" : `Pay ${formatNaira(plan.price)}`}
                     <ArrowRight size={13} />
                   </span>
                 )}
@@ -154,21 +174,6 @@ export function PlanSelectionStep({ store, onPlanSelected, onSkip }: PlanSelecti
           );
         })}
       </div>
-
-      {/* Free trial */}
-      <button
-        onClick={onSkip}
-        disabled={!!loadingPlan}
-        style={{
-          width: "100%", padding: "0.75rem", marginTop: "0.75rem",
-          fontSize: "0.8125rem", color: "var(--text-muted)",
-          background: "transparent", border: "1px solid var(--border-subtle)",
-          borderRadius: "0.5rem", cursor: loadingPlan ? "not-allowed" : "pointer",
-          opacity: loadingPlan ? 0.5 : 1, minHeight: "44px",
-        }}
-      >
-        Start with free trial instead
-      </button>
     </div>
   );
 }
