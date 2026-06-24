@@ -5,16 +5,44 @@ import { createClient } from "@supabase/supabase-js";
 // Provider base URLs
 const PROVIDER_URLS: Record<string, string> = {
   openrouter: "https://openrouter.ai/api/v1/chat/completions",
-  opencodezen: "", // configured via ai_base_url setting
+  opencodezen: "",
   openai: "https://api.openai.com/v1/chat/completions",
-  custom: "", // configured via ai_base_url setting
+  custom: "",
 };
+
+// Simple in-memory rate limit: 10 requests per user per 5 minutes
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW = 5 * 60 * 1000;
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
+
+// Fetch with timeout
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 30000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
     const { name, category, price, imageUrl } = await req.json();
 
-    if (!name) {
+    if (!name || !name.trim()) {
       return NextResponse.json({ error: "Product name is required" }, { status: 400 });
     }
 
@@ -27,6 +55,14 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limit
+    if (!checkRateLimit(user.id)) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait a few minutes before trying again." },
+        { status: 429 }
+      );
     }
 
     // Plan check — AI is only for paid plans
@@ -56,10 +92,13 @@ export async function POST(req: NextRequest) {
     settingsRows?.forEach((r) => { settings[r.key] = r.value; });
 
     if (!settings.ai_enabled) {
-      return NextResponse.json({ error: "AI features are not enabled" }, { status: 400 });
+      return NextResponse.json({ error: "AI features are not enabled by the platform admin" }, { status: 400 });
     }
-    if (!settings.ai_api_key || !settings.ai_model) {
-      return NextResponse.json({ error: "AI provider not configured" }, { status: 400 });
+    if (!settings.ai_api_key) {
+      return NextResponse.json({ error: "AI not configured — no API key set" }, { status: 400 });
+    }
+    if (!settings.ai_model) {
+      return NextResponse.json({ error: "AI not configured — no model set" }, { status: 400 });
     }
 
     const provider = settings.ai_provider || "openrouter";
@@ -67,38 +106,38 @@ export async function POST(req: NextRequest) {
     const apiKey = settings.ai_api_key;
 
     // Determine base URL
-    let baseURL = settings.ai_base_url || PROVIDER_URLS[provider] || "";
+    const baseURL = settings.ai_base_url || PROVIDER_URLS[provider] || "";
     if (!baseURL) {
-      return NextResponse.json({ error: "No base URL configured for this provider" }, { status: 400 });
+      return NextResponse.json({ error: `No base URL configured for ${provider}` }, { status: 400 });
     }
 
-    // Build messages for multimodal support
-    const systemMessage = {
-      role: "system",
-      content: "You are a product copywriter for a Nigerian online store. Generate compelling, concise product descriptions. Use persuasive, sales-oriented language appropriate for a Nigerian audience. Mention Naira pricing if relevant. Be professional but friendly.",
-    };
-
-    // Build user message content (text + optional image)
-    const contentParts: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
-
+    // Build prompt — single call for description + category
     let promptText = `Generate a 2-3 sentence product description for:
 
-Product Name: ${name}`;
-    if (category) promptText += `\nCategory: ${category}`;
+Product Name: ${name.trim()}`;
+    if (category) promptText += `\nCategory: ${category.trim()}`;
     if (price) promptText += `\nPrice: ₦${price}`;
-    promptText += `\n\nHighlight key features and benefits. Focus on what makes this product valuable. Only return the description text, nothing else.`;
+    promptText += `\n\nHighlight key features and benefits. Focus on what makes this product valuable.`;
 
+    if (!category) {
+      promptText += `\n\nAlso suggest ONE short category name (e.g., "Electronics", "Fashion", "Beauty", "Food").`;
+      promptText += `\nReturn your response in this exact format:
+DESCRIPTION: <the description>
+CATEGORY: <the category>`;
+    } else {
+      promptText += `\n\nOnly return the description text, nothing else.`;
+    }
+
+    // Build message content (text + optional image)
+    const contentParts: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
     contentParts.push({ type: "text", text: promptText });
 
-    // Add image if provided (multimodal)
-    if (imageUrl && (imageUrl.startsWith("data:image") || imageUrl.startsWith("http"))) {
-      const imageContent = imageUrl.startsWith("data:")
-        ? imageUrl // already base64 data URL
-        : imageUrl; // HTTP URL
-
+    // Only send image if it's an HTTP URL (already uploaded to Supabase)
+    // Skip base64 data URLs — they're too large and the upload may not be complete
+    if (imageUrl && imageUrl.startsWith("http") && !imageUrl.includes("data:")) {
       contentParts.push({
         type: "image_url",
-        image_url: { url: imageContent },
+        image_url: { url: imageUrl },
       });
     }
 
@@ -107,71 +146,101 @@ Product Name: ${name}`;
       content: contentParts.length === 1 ? contentParts[0].text : contentParts,
     };
 
-    // Call the AI provider
-    const response = await fetch(baseURL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        ...(provider === "openrouter" ? { "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app" } : {}),
-      },
-      body: JSON.stringify({
-        model,
-        messages: [systemMessage, userMessage],
-        max_tokens: 200,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI provider error:", response.status, errorText);
+    // Call the AI provider with timeout
+    let response: Response;
+    try {
+      response = await fetchWithTimeout(baseURL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          ...(provider === "openrouter" ? {
+            "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app",
+            "X-Title": "stallHq",
+          } : {}),
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: "You are a product copywriter for a Nigerian online store. Generate compelling, concise product descriptions. Use persuasive, sales-oriented language appropriate for a Nigerian audience. Mention Naira pricing if relevant. Be professional but friendly." },
+            userMessage,
+          ],
+          max_tokens: 200,
+        }),
+      }, 30000);
+    } catch (fetchError: any) {
+      if (fetchError.name === "AbortError") {
+        return NextResponse.json(
+          { error: "AI request timed out. The service may be slow — try again." },
+          { status: 504 }
+        );
+      }
       return NextResponse.json(
-        { error: "AI provider request failed" },
+        { error: "Could not connect to AI provider. Check your network." },
+        { status: 502 }
+      );
+    }
+
+    // Handle provider errors
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "unknown");
+      console.error("AI provider error:", response.status, errorText.slice(0, 200));
+
+      if (response.status === 429) {
+        return NextResponse.json(
+          { error: "AI provider rate limit hit. Try again in a minute." },
+          { status: 429 }
+        );
+      }
+      if (response.status === 401 || response.status === 403) {
+        return NextResponse.json(
+          { error: "Invalid AI API key. Check your settings." },
+          { status: 401 }
+        );
+      }
+      if (response.status === 404) {
+        return NextResponse.json(
+          { error: `Model "${model}" not found. Check your model name.` },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(
+        { error: "AI provider error. Try again later." },
         { status: 502 }
       );
     }
 
     const data = await response.json();
-    const description = data.choices?.[0]?.message?.content?.trim();
+    const content = data.choices?.[0]?.message?.content?.trim();
 
-    if (!description) {
-      return NextResponse.json({ error: "No description generated" }, { status: 500 });
+    if (!content) {
+      return NextResponse.json({ error: "AI returned empty response" }, { status: 500 });
     }
 
-    // Suggest category if not provided
-    let suggestedCategory = null;
-    if (!category) {
-      try {
-        const catResponse = await fetch(baseURL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-            ...(provider === "openrouter" ? { "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app" } : {}),
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: "Return only a single category name, nothing else." },
-              { role: "user", content: `Based on this product name "${name}", suggest ONE short category name (e.g., "Electronics", "Fashion", "Beauty", "Food", "Home & Garden"). Return ONLY the category name.` },
-            ],
-            max_tokens: 20,
-          }),
-        });
-        if (catResponse.ok) {
-          const catData = await catResponse.json();
-          suggestedCategory = catData.choices?.[0]?.message?.content?.trim() || null;
-        }
-      } catch {
-        // Category suggestion is optional, ignore errors
-      }
+    // Parse response
+    let description: string;
+    let suggestedCategory: string | null = null;
+
+    if (!category && content.includes("DESCRIPTION:") && content.includes("CATEGORY:")) {
+      // Parse structured response: "DESCRIPTION: ...\nCATEGORY: ..."
+      const descStart = content.indexOf("DESCRIPTION:") + "DESCRIPTION:".length;
+      const catStart = content.indexOf("CATEGORY:");
+      description = content.slice(descStart, catStart).trim();
+      suggestedCategory = content.slice(catStart + "CATEGORY:".length).trim() || null;
+    } else {
+      description = content;
+    }
+
+    // Trim to reasonable length (max ~500 chars for product descriptions)
+    if (description.length > 500) {
+      description = description.slice(0, 497) + "...";
     }
 
     return NextResponse.json({ description, suggestedCategory });
   } catch (error: any) {
     console.error("AI generation error:", error?.message || error);
     return NextResponse.json(
-      { error: "Failed to generate description" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }

@@ -165,8 +165,15 @@ export function ProductForm({
       alert("Please enter a product name first");
       return;
     }
+    // Confirm before overwriting existing description
+    if (description.trim()) {
+      const confirmed = window.confirm("This will replace your current description. Continue?");
+      if (!confirmed) return;
+    }
     setGeneratingAI(true);
     try {
+      // Only send imageUrl if upload is complete (starts with http, not data:)
+      const readyImage = imageUrl && !imageUrl.startsWith("data:") ? imageUrl : undefined;
       const response = await fetch("/api/ai/generate-description", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -174,16 +181,24 @@ export function ProductForm({
           name: name.trim(),
           category: category.trim() || undefined,
           price: price || undefined,
-          imageUrl: imageUrl || undefined,
+          imageUrl: readyImage,
         }),
       });
-      if (!response.ok) throw new Error("Generation failed");
       const data = await response.json();
+      if (!response.ok) {
+        // Show specific error from API
+        alert(data.error || "Failed to generate description");
+        return;
+      }
       if (data.description) setDescription(data.description);
-      if (data.suggestedCategory && !category) setCategory(data.suggestedCategory);
+      // Only suggest category if field is empty — don't auto-fill
+      if (data.suggestedCategory && !category.trim()) {
+        const useSuggestion = window.confirm(`Suggested category: "${data.suggestedCategory}". Use it?`);
+        if (useSuggestion) setCategory(data.suggestedCategory);
+      }
     } catch (error) {
       console.error("AI generation error:", error);
-      alert("Failed to generate description. Please try again.");
+      alert("Network error. Check your connection and try again.");
     } finally {
       setGeneratingAI(false);
     }
@@ -377,7 +392,7 @@ export function ProductForm({
                 </span>
               )}
             </div>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="ambient-input" style={{ ...inputStyle, resize: "none" }} rows={3} placeholder="Product description" />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="ambient-input" style={{ ...inputStyle, resize: "none", opacity: generatingAI ? 0.5 : 1 }} rows={3} placeholder={generatingAI ? "AI is generating..." : "Product description"} disabled={generatingAI} />
           </div>
 
           {/* Price & Category */}
