@@ -2,8 +2,9 @@
 
 import { useState, useRef } from "react";
 import { Store, Product, ProductVariant } from "@/types";
-import { X, Upload, Loader2, Image as ImageIcon, Sparkles } from "lucide-react";
+import { X, Upload, Loader2, Image as ImageIcon, Sparkles, Lock } from "lucide-react";
 import { VariantManager } from "./VariantManager";
+import { hasAIAccess } from "@/lib/subscription";
 
 interface ProductFormProps {
   store: Store;
@@ -322,35 +323,59 @@ export function ProductForm({
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.375rem" }}>
               <label style={{ ...labelStyle, marginBottom: 0 }}>Description <span style={{ fontWeight: 400, textTransform: "none", color: "var(--text-muted)" }}>(optional)</span></label>
-              <button
-                type="button"
-                onClick={handleGenerateDescription}
-                disabled={generatingAI || !name.trim()}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.375rem",
-                  padding: "0.25rem 0.625rem",
-                  fontSize: "0.6875rem",
-                  fontWeight: 600,
-                  color: generatingAI ? "var(--text-muted)" : "var(--glow-purple)",
-                  background: generatingAI ? "rgba(168,85,247,0.05)" : "rgba(168,85,247,0.1)",
-                  border: "1px solid rgba(168,85,247,0.2)",
-                  borderRadius: "0.375rem",
-                  cursor: generatingAI || !name.trim() ? "not-allowed" : "pointer",
-                  transition: "all 0.2s",
-                  opacity: !name.trim() ? 0.5 : 1,
-                }}
-                onMouseEnter={(e) => { if (!generatingAI && name.trim()) { e.currentTarget.style.background = "rgba(168,85,247,0.15)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.4)"; }}}
-                onMouseLeave={(e) => { e.currentTarget.style.background = generatingAI ? "rgba(168,85,247,0.05)" : "rgba(168,85,247,0.1)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.2)"; }}
-              >
-                {generatingAI ? (
-                  <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
-                ) : (
-                  <Sparkles size={12} />
-                )}
-                {generatingAI ? "Generating..." : "Generate with AI"}
-              </button>
+              {hasAIAccess(store) ? (
+                <button
+                  type="button"
+                  onClick={handleGenerateDescription}
+                  disabled={generatingAI || !name.trim()}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.375rem",
+                    padding: "0.25rem 0.625rem",
+                    fontSize: "0.6875rem",
+                    fontWeight: 600,
+                    color: generatingAI ? "var(--text-muted)" : "var(--glow-purple)",
+                    background: generatingAI ? "rgba(168,85,247,0.05)" : "rgba(168,85,247,0.1)",
+                    border: "1px solid rgba(168,85,247,0.2)",
+                    borderRadius: "0.375rem",
+                    cursor: generatingAI || !name.trim() ? "not-allowed" : "pointer",
+                    transition: "all 0.2s",
+                    opacity: !name.trim() ? 0.5 : 1,
+                  }}
+                  onMouseEnter={(e) => { if (!generatingAI && name.trim()) { e.currentTarget.style.background = "rgba(168,85,247,0.15)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.4)"; }}}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = generatingAI ? "rgba(168,85,247,0.05)" : "rgba(168,85,247,0.1)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.2)"; }}
+                >
+                  {generatingAI ? (
+                    <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+                  ) : (
+                    <Sparkles size={12} />
+                  )}
+                  {generatingAI ? "Generating..." : "Generate with AI"}
+                </button>
+              ) : (
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.375rem",
+                    padding: "0.25rem 0.625rem",
+                    fontSize: "0.6875rem",
+                    fontWeight: 600,
+                    color: "var(--text-muted)",
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: "0.375rem",
+                    cursor: "not-allowed",
+                    opacity: 0.6,
+                  }}
+                  title="Upgrade to a paid plan to use AI"
+                >
+                  <Lock size={10} />
+                  <Sparkles size={10} />
+                  Pro only
+                </span>
+              )}
             </div>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="ambient-input" style={{ ...inputStyle, resize: "none" }} rows={3} placeholder="Product description" />
           </div>

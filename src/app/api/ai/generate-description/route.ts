@@ -29,11 +29,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Load AI settings from platform_settings
+    // Plan check — AI is only for paid plans
     const adminSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
+    const { data: store } = await adminSupabase
+      .from("stores")
+      .select("plan")
+      .eq("user_id", user.id)
+      .single();
+    if (!store || store.plan === "trial") {
+      return NextResponse.json(
+        { error: "AI features require a paid plan", upgradeRequired: true },
+        { status: 403 }
+      );
+    }
+
+    // Load AI settings from platform_settings
     const { data: settingsRows } = await adminSupabase
       .from("platform_settings")
       .select("key, value")

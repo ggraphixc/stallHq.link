@@ -48,6 +48,7 @@ export const PLANS: Record<SubscriptionPlan, PlanInfo> = {
       "Custom store URL",
       "Order tracking",
       "Basic analytics",
+      "AI product descriptions",
     ],
   },
   quarterly: {
@@ -68,6 +69,7 @@ export const PLANS: Record<SubscriptionPlan, PlanInfo> = {
       "Order tracking",
       "Advanced analytics",
       "Custom brand colors",
+      "AI product descriptions",
     ],
   },
   annual: {
@@ -89,6 +91,7 @@ export const PLANS: Record<SubscriptionPlan, PlanInfo> = {
       "Custom brand colors",
       "Verified vendor badge",
       "Priority support",
+      "AI product descriptions",
     ],
   },
 };
@@ -109,6 +112,7 @@ export const COMPARISON_FEATURES: ComparisonFeature[] = [
   { name: "Custom store URL", trial: true, monthly: true, quarterly: true, annual: true },
   { name: "Order tracking", trial: false, monthly: true, quarterly: true, annual: true },
   { name: "Analytics dashboard", trial: false, monthly: "Basic", quarterly: "Advanced", annual: "Advanced" },
+  { name: "AI product descriptions", trial: false, monthly: true, quarterly: true, annual: true },
   { name: "Custom brand colors", trial: false, monthly: false, quarterly: true, annual: true },
   { name: "Verified badge", trial: false, monthly: false, quarterly: false, annual: true },
   { name: "Priority support", trial: false, monthly: false, quarterly: false, annual: true },
@@ -155,6 +159,10 @@ export function getRemainingProducts(store: Store, currentProductCount: number):
 
 export function canCustomizeTheme(store: Store): boolean {
   return store.plan === "annual" || store.plan === "quarterly";
+}
+
+export function hasAIAccess(store: Store): boolean {
+  return store.plan !== "trial";
 }
 
 export function getVerifiedBadge(store: Store): boolean {
