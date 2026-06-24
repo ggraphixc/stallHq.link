@@ -28,7 +28,7 @@ interface SubscriptionsClientProps {
 }
 
 export function SubscriptionsClient({ stores, payments, currentUserId }: SubscriptionsClientProps) {
-  const { error: showError } = useAlert();
+  const { error: showError, success: showSuccess, confirm: showConfirm } = useAlert();
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState<SubscriptionPlan | "all">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "expired" | "trial">("all");
@@ -64,6 +64,11 @@ export function SubscriptionsClient({ stores, payments, currentUserId }: Subscri
   }, [stores, search, planFilter, statusFilter]);
 
   const handleUpdatePlan = async (storeId: string) => {
+    const confirmed = await showConfirm({
+      title: `Update subscription plan`,
+      message: `Change plan to "${updatePlan}"? Expiry will be set to ${new Date(now.getTime() + parseInt(updateDays || "30") * 24 * 60 * 60 * 1000).toLocaleDateString()}.`,
+    });
+    if (!confirmed) return;
     setUpdatingId(storeId);
     try {
       const days = parseInt(updateDays) || 30;
@@ -80,8 +85,13 @@ export function SubscriptionsClient({ stores, payments, currentUserId }: Subscri
       });
 
       if (!res.ok) throw new Error("Failed to update");
+      showSuccess("Subscription updated");
+      setShowUpdateModal(null);
+      setUpdatingId(null);
+      // Refresh data by reloading
       window.location.reload();
     } catch {
+      showError("Failed to update subscription");
       setUpdatingId(null);
     }
   };
@@ -122,7 +132,7 @@ export function SubscriptionsClient({ stores, payments, currentUserId }: Subscri
           { label: "Trials", value: stats.trials, icon: <Zap size={14} />, color: "var(--glow-cyan)" },
           { label: "Paid", value: stats.paid, icon: <CreditCard size={14} />, color: "var(--glow-amber)" },
           { label: "Expired", value: stats.expired, icon: <XCircle size={14} />, color: "var(--glow-red)" },
-          { label: "Revenue", value: formatNaira(stats.totalRevenue / 100), icon: <TrendingUp size={14} />, color: "var(--glow-green)" },
+          { label: "Revenue", value: formatNaira(stats.totalRevenue), icon: <TrendingUp size={14} />, color: "var(--glow-green)" },
         ].map((stat) => (
           <div key={stat.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-subtle)", borderRadius: "0.625rem", padding: "0.875rem" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.375rem" }}>

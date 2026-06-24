@@ -27,7 +27,7 @@ export function AdminSystem() {
       setData(json);
       setLastChecked(new Date());
     } catch {
-      // silent
+      showError("Failed to load system data");
     } finally {
       setLoading(false);
     }

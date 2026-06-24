@@ -35,7 +35,7 @@ export function AdminUsers() {
       setUsers(data.users || []);
       setTotal(data.total || 0);
     } catch {
-      // silent
+      showError("Failed to load users");
     } finally {
       setLoading(false);
     }

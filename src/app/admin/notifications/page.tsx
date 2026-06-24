@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAlert } from "@/contexts/AlertContext";
-import { Bell, Send, Info, AlertTriangle, CheckCircle, XCircle, Megaphone, Users } from "lucide-react";
+import { Bell, Send, Info, AlertTriangle, CheckCircle, XCircle, Megaphone, Users, RefreshCw } from "lucide-react";
 
 const TYPE_OPTIONS = [
   { value: "info", label: "Info", icon: Info, color: "var(--glow-cyan)" },
@@ -27,7 +27,7 @@ interface Notification {
 }
 
 export default function AdminNotifications() {
-  const { error: showError } = useAlert();
+  const { error: showError, success: showSuccess, confirm: showConfirm } = useAlert();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCompose, setShowCompose] = useState(false);
@@ -51,6 +51,12 @@ export default function AdminNotifications() {
   const sendNotification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
+    const targetLabel = TARGET_OPTIONS.find(t => t.value === target)?.label || target;
+    const confirmed = await showConfirm({
+      title: "Send notification",
+      message: `Send "${title}" to ${targetLabel}? This notification will be sent immediately.`,
+    });
+    if (!confirmed) return;
     setSending(true);
     try {
       const res = await fetch("/api/admin/notifications", {
@@ -59,6 +65,7 @@ export default function AdminNotifications() {
       });
       if (!res.ok) throw new Error("Failed to send");
       const notif = await res.json();
+      showSuccess("Notification sent successfully");
       setNotifications(prev => [notif, ...prev]);
       setShowCompose(false);
       setTitle(""); setBody(""); setType("info"); setTarget("all");
@@ -127,7 +134,9 @@ export default function AdminNotifications() {
       {/* Notification List */}
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         {loading ? (
-          <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)" }}>Loading...</div>
+          <div style={{ textAlign: "center", padding: "3rem" }}>
+            <RefreshCw size={20} style={{ animation: "spin 1s linear infinite", color: "var(--glow-purple)" }} />
+          </div>
         ) : notifications.length === 0 ? (
           <div style={{ textAlign: "center", padding: "3rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem" }}>
             <Bell size={32} style={{ color: "var(--text-muted)", margin: "0 auto 0.75rem" }} />

@@ -15,7 +15,7 @@ interface StoreWithCount extends Store {
 }
 
 export function AdminStores() {
-  const { error: showError } = useAlert();
+  const { error: showError, success: showSuccess } = useAlert();
   const [stores, setStores] = useState<StoreWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -39,7 +39,7 @@ export function AdminStores() {
       setStores(data.stores || []);
       setTotal(data.total || 0);
     } catch {
-      // silent
+      showError("Failed to load stores");
     } finally {
       setLoading(false);
     }
@@ -61,7 +61,14 @@ export function AdminStores() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
-      if (res.ok) fetchStores();
+      if (res.ok) {
+        showSuccess("Store updated");
+        fetchStores();
+      } else {
+        showError("Failed to update store");
+      }
+    } catch {
+      showError("Failed to update store");
     } finally {
       setUpdatingId(null);
     }

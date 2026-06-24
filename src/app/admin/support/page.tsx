@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAlert } from "@/contexts/AlertContext";
-import { LifeBuoy, MessageCircle, Send, ChevronLeft, Clock, CheckCircle, AlertCircle, Filter, User } from "lucide-react";
+import { LifeBuoy, MessageCircle, Send, ChevronLeft, Clock, CheckCircle, AlertCircle, Filter, User, RefreshCw } from "lucide-react";
 
 const CATEGORY_OPTIONS: Record<string, string> = {
   general: "General", technical: "Technical", billing: "Billing", bug_report: "Bug Report", feature_request: "Feature Request",
@@ -113,7 +113,9 @@ export default function AdminSupport() {
             </div>
             <div style={{ padding: "1.25rem", maxHeight: "50vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "1rem" }}>
               {loadingTicket ? (
-                <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem" }}>Loading...</div>
+                <div style={{ textAlign: "center", padding: "2rem" }}>
+                  <RefreshCw size={16} style={{ animation: "spin 1s linear infinite", color: "var(--glow-purple)" }} />
+                </div>
               ) : (selectedTicket.messages || []).map((msg) => (
                 <div key={msg.id} style={{ display: "flex", flexDirection: msg.sender_role === "admin" ? "row-reverse" : "row" }}>
                   <div style={{ maxWidth: "75%" }}>
@@ -186,7 +188,9 @@ export default function AdminSupport() {
       {/* Tickets */}
       <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
         {loading ? (
-          <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)" }}>Loading...</div>
+          <div style={{ textAlign: "center", padding: "3rem" }}>
+            <RefreshCw size={20} style={{ animation: "spin 1s linear infinite", color: "var(--glow-purple)" }} />
+          </div>
         ) : filteredTickets.length === 0 ? (
           <div style={{ textAlign: "center", padding: "3rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem" }}>
             <LifeBuoy size={32} style={{ color: "var(--text-muted)", margin: "0 auto 0.75rem" }} />

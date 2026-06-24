@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAlert } from "@/contexts/AlertContext";
+import Link from "next/link";
 import {
   Store, Users, ShoppingCart, TrendingUp, Star, Activity,
   AlertTriangle, CheckCircle2, XCircle, Clock, Zap, Package,
@@ -203,14 +204,14 @@ export function AdminOverview() {
             { label: "Subscriptions", href: "/admin/subscriptions", color: "var(--glow-amber)" },
             { label: "Public Site", href: "/", color: "var(--text-muted)" },
           ].map(({ label, href, color }) => (
-            <a key={label} href={href} style={{
+            <Link key={label} href={href} style={{
               padding: "0.5rem 1rem", fontSize: "0.8125rem", fontWeight: 500,
               background: `${color}15`, border: `1px solid ${color}30`,
               borderRadius: "0.5rem", color, textDecoration: "none", minHeight: "44px",
               display: "flex", alignItems: "center",
             }}>
               {label}
-            </a>
+            </Link>
           ))}
         </div>
       </div>

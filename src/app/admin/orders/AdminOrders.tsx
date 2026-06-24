@@ -23,7 +23,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: React.Rea
 };
 
 export function AdminOrders() {
-  const { error: showError } = useAlert();
+  const { error: showError, success: showSuccess, confirm: showConfirm } = useAlert();
   const [orders, setOrders] = useState<OrderWithStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -45,7 +45,7 @@ export function AdminOrders() {
       setOrders(data.orders || []);
       setTotal(data.total || 0);
     } catch {
-      // silent
+      showError("Failed to load orders");
     } finally {
       setLoading(false);
     }
@@ -60,6 +60,11 @@ export function AdminOrders() {
   };
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
+    const confirmed = await showConfirm({
+      title: `Change order status`,
+      message: `Update this order to "${newStatus}"? This will update the order status immediately.`,
+    });
+    if (!confirmed) return;
     setUpdatingId(orderId);
     try {
       const res = await fetch("/api/admin/orders", {
@@ -67,7 +72,14 @@ export function AdminOrders() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: orderId, status: newStatus }),
       });
-      if (res.ok) fetchOrders();
+      if (res.ok) {
+        showSuccess(`Order status updated to ${newStatus}`);
+        fetchOrders();
+      } else {
+        showError("Failed to update order status");
+      }
+    } catch {
+      showError("Failed to update order status");
     } finally {
       setUpdatingId(null);
     }

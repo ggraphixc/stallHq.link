@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAlert } from "@/contexts/AlertContext";
-import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle } from "lucide-react";
+import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw } from "lucide-react";
 
 interface Setting {
   key: string; value: any; updated_at: string;
@@ -90,7 +90,9 @@ export default function AdminSettings() {
         {/* Content */}
         <div style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", padding: "1.5rem" }}>
           {loading ? (
-            <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>Loading settings...</div>
+            <div style={{ textAlign: "center", padding: "2rem" }}>
+              <RefreshCw size={20} style={{ animation: "spin 1s linear infinite", color: "var(--glow-purple)" }} />
+            </div>
           ) : activeTab === "general" ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
               <h3 style={{ fontSize: "0.9375rem", fontWeight: 700 }}>General</h3>
