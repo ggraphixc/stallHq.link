@@ -172,8 +172,8 @@ export function ProductForm({
     }
     setGeneratingAI(true);
     try {
-      // Only send imageUrl if upload is complete (starts with http, not data:)
-      const readyImage = imageUrl && !imageUrl.startsWith("data:") ? imageUrl : undefined;
+      // Send the uploaded image (base64 data URL or Supabase URL) for multimodal AI
+      const readyImage = imageUrl || undefined;
       const response = await fetch("/api/ai/generate-description", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

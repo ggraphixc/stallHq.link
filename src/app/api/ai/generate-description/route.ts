@@ -132,9 +132,9 @@ CATEGORY: <the category>`;
     const contentParts: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
     contentParts.push({ type: "text", text: promptText });
 
-    // Only send image if it's an HTTP URL (already uploaded to Supabase)
-    // Skip base64 data URLs — they're too large and the upload may not be complete
-    if (imageUrl && imageUrl.startsWith("http") && !imageUrl.includes("data:")) {
+    // Send product image for multimodal AI (base64 data URL or HTTP URL)
+    // Skip if image is too large (>1MB base64 text)
+    if (imageUrl && imageUrl.length < 1_500_000) {
       contentParts.push({
         type: "image_url",
         image_url: { url: imageUrl },
