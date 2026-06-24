@@ -348,7 +348,7 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
           <div className="glass-card" style={{ maxWidth: "36rem", margin: "0 auto", padding: "2rem" }}>
             <h2 style={{ fontSize: "clamp(1.25rem,3vw,1.5rem)", fontWeight: 700, marginBottom: "0.75rem" }}>Create Your Own Store</h2>
             <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: "2rem" }}>
-              Set up in minutes. Start selling on WhatsApp today.
+              Set up in minutes. Start selling on WhatsApp or Instagram today.
             </p>
             <Link href="/auth/signup" className="glow-button">
               Get Started — It&apos;s Free

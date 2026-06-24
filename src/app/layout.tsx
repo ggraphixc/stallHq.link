@@ -4,26 +4,28 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "stallHq - Digital Storefronts for WhatsApp Vendors",
+    default: "stallHq - Digital Storefronts for WhatsApp & Instagram Vendors",
     template: "%s | stallHq",
   },
   description:
-    "Turn your WhatsApp into a powerful storefront. Zero hosting costs, instant setup. Create your free digital store in minutes.",
+    "Turn your WhatsApp or Instagram into a powerful storefront. Zero hosting costs, instant setup. Create your free digital store in minutes.",
   keywords: [
     "WhatsApp store",
+    "Instagram store",
     "digital storefront",
     "online store",
     "Nigeria",
     "Africa",
     "e-commerce",
     "WhatsApp business",
+    "Instagram business",
     "sell online",
     "stallhq",
   ],
   openGraph: {
-    title: "stallHq - Digital Storefronts for WhatsApp Vendors",
+    title: "stallHq - Digital Storefronts for WhatsApp & Instagram Vendors",
     description:
-      "Turn your WhatsApp into a powerful storefront. Zero hosting costs, instant setup.",
+      "Turn your WhatsApp or Instagram into a powerful storefront. Zero hosting costs, instant setup.",
     url: "https://hqlink.vercel.app",
     siteName: "stallHq",
     locale: "en_NG",
@@ -33,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "stallHq - Digital Storefronts",
     description:
-      "Turn your WhatsApp into a powerful storefront. Zero hosting costs, instant setup.",
+      "Turn your WhatsApp or Instagram into a powerful storefront. Zero hosting costs, instant setup.",
   },
   manifest: "/manifest.json",
   metadataBase: new URL("https://hqlink.vercel.app"),

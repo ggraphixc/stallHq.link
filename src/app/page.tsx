@@ -62,22 +62,22 @@ function Particles() {
 }
 
 const features = [
-  { icon: Store, title: "Digital Storefront", desc: "A beautiful online store with your products, prices, and WhatsApp link — live in minutes." },
-  { icon: ShoppingCart, title: "WhatsApp Orders", desc: "Customers order on your store, you get the order details straight in WhatsApp. No app needed." },
+  { icon: Store, title: "Digital Storefront", desc: "A beautiful online store with your products, prices, and contact channels — live in minutes." },
+  { icon: ShoppingCart, title: "Orders via WhatsApp & Instagram", desc: "Customers order on your store, you get the order details straight in your preferred channel. No app needed." },
   { icon: BarChart3, title: "Order Tracking", desc: "Track every order from pending to delivered. Know what's moving and what's stuck." },
-  { icon: QrCode, title: "QR Code & Links", desc: "Get a shareable link and QR code. Print it on flyers, put it on your Instagram bio." },
+  { icon: QrCode, title: "QR Code & Links", desc: "Get a shareable link and QR code. Print it on flyers, put it on your social bio." },
   { icon: Zap, title: "Instant Setup", desc: "No hosting, no coding, no developers. Create your store, add products, start selling." },
   { icon: Shield, title: "Verified Badge", desc: "Build trust with customers. Verified stores get a green badge on their storefront." },
 ];
 
 const steps = [
-  { n: "01", title: "Create Your Store", desc: "Pick a name, add your WhatsApp number, choose a plan that fits." },
+  { n: "01", title: "Create Your Store", desc: "Pick a name, add your WhatsApp and/or Instagram, choose a plan that fits." },
   { n: "02", title: "Add Products", desc: "Upload photos, set prices, add variants. Done in minutes." },
-  { n: "03", title: "Share & Sell", desc: "Share your link. Customers browse, order, you get paid via WhatsApp." },
+  { n: "03", title: "Share & Sell", desc: "Share your link. Customers browse, order, you get notified via WhatsApp or Instagram." },
 ];
 
 const plans = [
-  { name: "Trial", price: "Free", period: "5 days", features: ["10 products", "Basic storefront", "WhatsApp orders", "Order tracking"], cta: "Start Free Trial", popular: false },
+  { name: "Trial", price: "Free", period: "5 days", features: ["10 products", "Basic storefront", "WhatsApp & Instagram", "Order tracking"], cta: "Start Free Trial", popular: false },
   { name: "Monthly", price: "₦3,500", period: "/month", features: ["20 products", "Custom themes", "Priority support", "Analytics dashboard"], cta: "Go Monthly", popular: false },
   { name: "Quarterly", price: "₦7,500", period: "every 3 months", features: ["50 products", "Custom themes", "Priority support", "Analytics dashboard"], cta: "Go Quarterly", popular: true },
   { name: "Annual", price: "₦12,000", period: "every 6 months", features: ["Unlimited products", "Custom themes", "Priority support", "Analytics dashboard"], cta: "Go Annual", popular: false },
@@ -158,10 +158,11 @@ export default function Home() {
             </div>
             <h1 style={{ fontSize: "clamp(1.75rem, 6vw, 3.75rem)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1, wordBreak: "break-word" }}>
               Your WhatsApp.<br />
+              Your Instagram.<br />
               <span className="text-gradient">Your Store.</span>
             </h1>
             <p style={{ fontSize: "clamp(0.8125rem, 2.5vw, 1rem)", color: "var(--text-secondary)", maxWidth: 440, margin: "0 auto", lineHeight: 1.6 }}>
-              Turn your WhatsApp into a full online store. Customers browse your products, place orders, and you get notified instantly — no app needed.
+              Turn your WhatsApp or Instagram into a full online store. Customers browse your products, place orders, and you get notified instantly — no app needed.
             </p>
             <div style={{ display: "flex", gap: 10, justifyContent: "center", paddingTop: 8, flexWrap: "wrap" }}>
               <Link href="/auth/signup" className="glow-button" style={{ fontSize: 13, padding: "12px 20px", display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -179,7 +180,7 @@ export default function Home() {
               <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--border-medium)", alignSelf: "center" }} />
               <span>Setup in 60 seconds</span>
               <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--border-medium)", alignSelf: "center" }} />
-              <span>WhatsApp native</span>
+              <span>WhatsApp & Instagram</span>
             </div>
           </div>
         </section>
@@ -335,7 +336,7 @@ export default function Home() {
                 </div>
                 <span style={{ fontWeight: 700, fontSize: "0.8125rem", color: "var(--text-primary)" }}>StallHq</span>
               </div>
-              <p style={{ lineHeight: 1.5 }}>Digital storefronts for WhatsApp vendors<br />across Africa.</p>
+              <p style={{ lineHeight: 1.5 }}>Digital storefronts for WhatsApp &amp; Instagram vendors<br />across Africa.</p>
             </div>
             <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
@@ -354,7 +355,7 @@ export default function Home() {
             </div>
           </div>
           <div style={{ maxWidth: 800, margin: "1.5rem auto 0", paddingTop: "1.5rem", borderTop: "1px solid var(--border-subtle)", textAlign: "center", fontSize: "0.6875rem", color: "var(--text-muted)" }}>
-            &copy; {new Date().getFullYear()} StallHq. Built for WhatsApp vendors across Africa.
+            &copy; {new Date().getFullYear()} StallHq. Built for WhatsApp &amp; Instagram vendors across Africa.
           </div>
         </footer>
       </main>
