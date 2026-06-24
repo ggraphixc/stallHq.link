@@ -29,6 +29,9 @@ interface SystemData {
     avgRating: number;
     newStoresLast7d: number;
     newOrdersLast7d: number;
+    whatsappStores: number;
+    instagramStores: number;
+    bothChannels: number;
   };
   environment: Record<string, string | boolean | undefined>;
 }
@@ -129,6 +132,9 @@ export function AdminOverview() {
           { label: "Avg Rating", value: o.avgRating, icon: <Star size={14} />, color: "var(--glow-amber)" },
           { label: "New Stores (7d)", value: o.newStoresLast7d, icon: <ArrowUpRight size={14} />, color: "var(--glow-cyan)" },
           { label: "New Orders (7d)", value: o.newOrdersLast7d, icon: <ArrowUpRight size={14} />, color: "var(--glow-green)" },
+          { label: "WhatsApp Stores", value: o.whatsappStores, icon: <Store size={14} />, color: "#25d366" },
+          { label: "Instagram Stores", value: o.instagramStores, icon: <Store size={14} />, color: "#e1306c" },
+          { label: "Both Channels", value: o.bothChannels, icon: <Store size={14} />, color: "var(--glow-purple)" },
         ].map((stat) => (
           <div key={stat.label} style={{ ...glassCard, padding: "1rem" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>

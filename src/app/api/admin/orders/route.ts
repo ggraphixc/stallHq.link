@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabaseAdmin
     .from("orders")
-    .select("*, stores!inner(id, name, slug)", { count: "exact" });
+    .select("*, stores!inner(id, name, slug, whatsapp_number, instagram_handle)", { count: "exact" });
 
   if (status && status !== "all") {
     query = query.eq("status", status);

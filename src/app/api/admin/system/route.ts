@@ -37,7 +37,7 @@ export async function GET() {
     recentStoresResult,
   ] = await Promise.all([
     // Total stores
-    supabaseAdmin.from("stores").select("id, plan, created_at, trial_ends_at, subscription_expires_at", { count: "exact" }),
+    supabaseAdmin.from("stores").select("id, plan, created_at, trial_ends_at, subscription_expires_at, whatsapp_number, instagram_handle", { count: "exact" }),
     // Total products
     supabaseAdmin.from("products").select("id, store_id, in_stock, created_at", { count: "exact" }),
     // Total orders
@@ -95,6 +95,11 @@ export async function GET() {
   const newStoresLast7d = recentStoresResult.data?.length || 0;
   const newOrdersLast7d = recentOrdersResult.data?.length || 0;
 
+  // Channel stats
+  const whatsappStores = stores.filter(s => s.whatsapp_number).length;
+  const instagramStores = stores.filter(s => s.instagram_handle).length;
+  const bothChannels = stores.filter(s => s.whatsapp_number && s.instagram_handle).length;
+
   // Orders by day (last 30 days)
   const ordersByDay: Record<string, number> = {};
   orders.forEach(o => {
@@ -129,6 +134,9 @@ export async function GET() {
       avgRating: Math.round(avgRating * 10) / 10,
       newStoresLast7d,
       newOrdersLast7d,
+      whatsappStores,
+      instagramStores,
+      bothChannels,
     },
     charts: {
       ordersByDay,

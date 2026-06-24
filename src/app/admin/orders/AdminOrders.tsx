@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 interface OrderWithStore extends Order {
-  stores: { id: string; name: string; slug: string } | null;
+  stores: { id: string; name: string; slug: string; whatsapp_number: string | null; instagram_handle: string | null } | null;
 }
 
 const STATUS_OPTIONS = ["pending", "confirmed", "shipped", "delivered", "cancelled"] as const;
@@ -197,6 +197,24 @@ export function AdminOrders() {
                       <div>
                         <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>Store</p>
                         <p style={{ fontSize: "0.8125rem" }}>{order.stores?.name || "Unknown"}</p>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>Channel</p>
+                        <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+                          {order.stores?.whatsapp_number && (
+                            <span style={{ fontSize: "0.6875rem", padding: "0.125rem 0.5rem", borderRadius: "1rem", background: "rgba(37,211,102,0.1)", color: "#25d366", border: "1px solid rgba(37,211,102,0.2)" }}>
+                              WhatsApp
+                            </span>
+                          )}
+                          {order.stores?.instagram_handle && (
+                            <span style={{ fontSize: "0.6875rem", padding: "0.125rem 0.5rem", borderRadius: "1rem", background: "rgba(225,48,108,0.1)", color: "#e1306c", border: "1px solid rgba(225,48,108,0.2)" }}>
+                              Instagram
+                            </span>
+                          )}
+                          {!order.stores?.whatsapp_number && !order.stores?.instagram_handle && (
+                            <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>None configured</span>
+                          )}
+                        </div>
                       </div>
                     </div>
 

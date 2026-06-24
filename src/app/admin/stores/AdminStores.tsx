@@ -166,7 +166,15 @@ export function AdminStores() {
                       <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>{store.name || "Unnamed"}</span>
                       {store.verified && <ShieldCheck size={14} style={{ color: "var(--glow-amber)" }} />}
                     </div>
-                    <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>/{store.slug} · {store.category || "Uncategorized"}</p>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", flexWrap: "wrap" }}>
+                      <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>/{store.slug} · {store.category || "Uncategorized"}</p>
+                      {store.whatsapp_number && (
+                        <span style={{ fontSize: "0.5625rem", padding: "0.0625rem 0.375rem", borderRadius: "1rem", background: "rgba(37,211,102,0.1)", color: "#25d366", border: "1px solid rgba(37,211,102,0.2)", whiteSpace: "nowrap" }}>WA</span>
+                      )}
+                      {store.instagram_handle && (
+                        <span style={{ fontSize: "0.5625rem", padding: "0.0625rem 0.375rem", borderRadius: "1rem", background: "rgba(225,48,108,0.1)", color: "#e1306c", border: "1px solid rgba(225,48,108,0.2)", whiteSpace: "nowrap" }}>IG</span>
+                      )}
+                    </div>
                   </div>
                   <span style={{
                     padding: "0.1875rem 0.5rem", borderRadius: "0.25rem", fontSize: "0.6875rem",

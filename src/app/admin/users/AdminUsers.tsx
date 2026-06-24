@@ -15,7 +15,7 @@ interface UserWithStores {
   name: string | null;
   created_at: string;
   last_sign_in: string | null;
-  stores: { id: string; name: string; slug: string; plan: SubscriptionPlan; created_at: string; order_count: number }[];
+  stores: { id: string; name: string; slug: string; plan: SubscriptionPlan; created_at: string; order_count: number; whatsapp_number: string | null; instagram_handle: string | null }[];
   total_orders: number;
 }
 
@@ -144,6 +144,12 @@ export function AdminUsers() {
                                   padding: "0.125rem 0.375rem", borderRadius: "0.25rem", fontSize: "0.625rem",
                                   fontWeight: 600, color: "var(--glow-purple)", background: "rgba(168,133,247,0.1)",
                                 }}>{getPlanName(store.plan)}</span>
+                                {store.whatsapp_number && (
+                                  <span style={{ fontSize: "0.5625rem", padding: "0.0625rem 0.375rem", borderRadius: "1rem", background: "rgba(37,211,102,0.1)", color: "#25d366", border: "1px solid rgba(37,211,102,0.2)" }}>WA</span>
+                                )}
+                                {store.instagram_handle && (
+                                  <span style={{ fontSize: "0.5625rem", padding: "0.0625rem 0.375rem", borderRadius: "1rem", background: "rgba(225,48,108,0.1)", color: "#e1306c", border: "1px solid rgba(225,48,108,0.2)" }}>IG</span>
+                                )}
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                                 <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>{store.order_count} orders</span>

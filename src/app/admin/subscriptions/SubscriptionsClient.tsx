@@ -241,6 +241,24 @@ export function SubscriptionsClient({ stores, payments, currentUserId }: Subscri
                         <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>Verified</p>
                         <p style={{ fontSize: "0.8125rem" }}>{store.verified ? "Yes" : "No"}</p>
                       </div>
+                      <div>
+                        <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>Channels</p>
+                        <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+                          {store.whatsapp_number && (
+                            <span style={{ fontSize: "0.6875rem", padding: "0.125rem 0.5rem", borderRadius: "1rem", background: "rgba(37,211,102,0.1)", color: "#25d366", border: "1px solid rgba(37,211,102,0.2)" }}>
+                              WhatsApp
+                            </span>
+                          )}
+                          {store.instagram_handle && (
+                            <span style={{ fontSize: "0.6875rem", padding: "0.125rem 0.5rem", borderRadius: "1rem", background: "rgba(225,48,108,0.1)", color: "#e1306c", border: "1px solid rgba(225,48,108,0.2)" }}>
+                              Instagram
+                            </span>
+                          )}
+                          {!store.whatsapp_number && !store.instagram_handle && (
+                            <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>None</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", flexWrap: "wrap" }}>
                       <a href={`/${store.slug}`} target="_blank" rel="noopener noreferrer" style={{

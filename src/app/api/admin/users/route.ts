@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
   const userIds = usersData.users.map(u => u.id);
   const { data: stores } = await supabaseAdmin
     .from("stores")
-    .select("id, name, slug, plan, created_at, user_id")
+    .select("id, name, slug, plan, created_at, user_id, whatsapp_number, instagram_handle")
     .in("user_id", userIds);
 
   // Get order counts per store
