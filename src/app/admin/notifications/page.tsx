@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAlert } from "@/contexts/AlertContext";
-import { Bell, Send, Info, AlertTriangle, CheckCircle, XCircle, Megaphone, Users, RefreshCw } from "lucide-react";
+import { Bell, Send, Info, AlertTriangle, CheckCircle, XCircle, Megaphone, Users, RefreshCw, Pencil, Trash2 } from "lucide-react";
 
 const TYPE_OPTIONS = [
   { value: "info", label: "Info", icon: Info, color: "var(--glow-cyan)" },
@@ -31,11 +31,13 @@ export default function AdminNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCompose, setShowCompose] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [type, setType] = useState("info");
   const [target, setTarget] = useState("all");
-  const [sending, setSending] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => { fetchNotifications(); }, []);
 
@@ -48,29 +50,65 @@ export default function AdminNotifications() {
     setLoading(false);
   };
 
-  const sendNotification = async (e: React.FormEvent) => {
+  const openCompose = (notif?: Notification) => {
+    if (notif) {
+      setEditingId(notif.id);
+      setTitle(notif.title);
+      setBody(notif.body);
+      setType(notif.type);
+      setTarget(notif.target);
+    } else {
+      setEditingId(null);
+      setTitle(""); setBody(""); setType("info"); setTarget("all");
+    }
+    setSendEmail(false);
+    setShowCompose(true);
+  };
+
+  const saveNotification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
     const targetLabel = TARGET_OPTIONS.find(t => t.value === target)?.label || target;
+    const isEdit = !!editingId;
     const confirmed = await showConfirm({
-      title: "Send notification",
-      message: `Send "${title}" to ${targetLabel}? This notification will be sent immediately.`,
+      title: isEdit ? "Update notification" : "Send notification",
+      message: isEdit
+        ? `Update "${title}"?`
+        : `Send "${title}" to ${targetLabel}?${sendEmail ? " Emails will also be sent to recipients." : ""}`,
     });
     if (!confirmed) return;
-    setSending(true);
+    setSaving(true);
     try {
-      const res = await fetch("/api/admin/notifications", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, body, type, target }),
+      const url = "/api/admin/notifications";
+      const method = isEdit ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method, headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editingId, title, body, type, target, sendEmail: !isEdit && sendEmail }),
       });
-      if (!res.ok) throw new Error("Failed to send");
+      if (!res.ok) throw new Error("Failed");
       const notif = await res.json();
-      showSuccess("Notification sent successfully");
-      setNotifications(prev => [notif, ...prev]);
+      if (isEdit) {
+        setNotifications(prev => prev.map(n => n.id === editingId ? notif : n));
+        showSuccess("Notification updated");
+      } else {
+        showSuccess(sendEmail ? "Notification sent with emails" : "Notification sent");
+        setNotifications(prev => [notif, ...prev]);
+      }
       setShowCompose(false);
-      setTitle(""); setBody(""); setType("info"); setTarget("all");
-    } catch { showError("Failed to send notification"); }
-    setSending(false);
+      setEditingId(null);
+    } catch { showError(isEdit ? "Failed to update" : "Failed to send"); }
+    setSaving(false);
+  };
+
+  const deleteNotification = async (id: string) => {
+    const confirmed = await showConfirm({ title: "Delete notification", message: "Permanently delete this notification?" });
+    if (!confirmed) return;
+    try {
+      const res = await fetch(`/api/admin/notifications?id=${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      showSuccess("Deleted");
+    } catch { showError("Failed to delete"); }
   };
 
   return (
@@ -80,24 +118,23 @@ export default function AdminNotifications() {
           <h1 style={{ fontSize: "clamp(1.25rem,3vw,1.5rem)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <Bell size={24} style={{ color: "var(--glow-purple)" }} /> Notifications
           </h1>
-          <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Send announcements and view system notifications</p>
+          <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Send announcements, emails, and manage notifications</p>
         </div>
-        <button onClick={() => setShowCompose(true)} className="glow-button" style={{ display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.625rem 1rem", fontSize: "0.8125rem" }}>
+        <button onClick={() => openCompose()} className="glow-button" style={{ display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.625rem 1rem", fontSize: "0.8125rem" }}>
           <Send size={16} /> Compose
         </button>
       </div>
 
-      {/* Compose Modal */}
+      {/* Compose/Edit Modal */}
       {showCompose && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setShowCompose(false)} />
           <div className="slide-up" style={{ position: "relative", width: "100%", maxWidth: "32rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)" }}>
-              <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Send Notification</h2>
+              <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>{editingId ? "Edit Notification" : "Send Notification"}</h2>
               <button onClick={() => setShowCompose(false)} style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>✕</button>
             </div>
-            <form onSubmit={sendNotification} style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-
+            <form onSubmit={saveNotification} style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div>
                 <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Title</label>
                 <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} placeholder="Notification title" value={title} onChange={(e) => setTitle(e.target.value)} required />
@@ -120,10 +157,21 @@ export default function AdminNotifications() {
                 <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Message</label>
                 <textarea className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", resize: "none" }} rows={4} placeholder="Notification content..." value={body} onChange={(e) => setBody(e.target.value)} required />
               </div>
+
+              {/* Email toggle */}
+              {!editingId && (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem", background: sendEmail ? "rgba(168,133,247,0.08)" : "var(--bg-primary)", border: `1px solid ${sendEmail ? "rgba(168,133,247,0.3)" : "var(--border-subtle)"}`, borderRadius: "0.5rem" }}>
+                  <input type="checkbox" id="send-email" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} style={{ accentColor: "var(--glow-purple)", width: "1rem", height: "1rem" }} />
+                  <label htmlFor="send-email" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", cursor: "pointer" }}>
+                    Also send email to {TARGET_OPTIONS.find(t => t.value === target)?.label}
+                  </label>
+                </div>
+              )}
+
               <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
                 <button type="button" onClick={() => setShowCompose(false)} style={{ padding: "0.625rem 1rem", fontSize: "0.8125rem", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" disabled={sending} className="glow-button" style={{ padding: "0.625rem 1.25rem", fontSize: "0.8125rem", opacity: sending ? 0.5 : 1 }}>
-                  {sending ? "Sending..." : "Send Now"}
+                <button type="submit" disabled={saving} className="glow-button" style={{ padding: "0.625rem 1.25rem", fontSize: "0.8125rem", opacity: saving ? 0.5 : 1 }}>
+                  {saving ? "Saving..." : editingId ? "Update" : "Send Now"}
                 </button>
               </div>
             </form>
@@ -159,6 +207,14 @@ export default function AdminNotifications() {
                     <span>·</span>
                     {new Date(n.sent_at).toLocaleString()}
                   </div>
+                </div>
+                <div style={{ display: "flex", gap: "0.25rem" }}>
+                  <button onClick={() => openCompose(n)} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }} title="Edit">
+                    <Pencil size={13} />
+                  </button>
+                  <button onClick={() => deleteNotification(n.id)} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--glow-red)", cursor: "pointer" }} title="Delete">
+                    <Trash2 size={13} />
+                  </button>
                 </div>
               </div>
               <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{n.body}</p>

@@ -34,6 +34,7 @@ import {
   Clock,
   Crown,
   LifeBuoy,
+  Users,
 } from "lucide-react";
 
 interface DashboardClientProps {
@@ -169,6 +170,7 @@ export function DashboardClient({
   const [showOrders, setShowOrders] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [visitorCount, setVisitorCount] = useState<number | null>(null);
 
   const supabase = createClient();
 
@@ -186,6 +188,22 @@ export function DashboardClient({
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Visitor count with polling
+  useEffect(() => {
+    const fetchVisitors = async () => {
+      try {
+        const res = await fetch(`/api/analytics/visitors?store_id=${store.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setVisitorCount(data.count);
+        }
+      } catch {}
+    };
+    fetchVisitors();
+    const interval = setInterval(fetchVisitors, 30000);
+    return () => clearInterval(interval);
+  }, [store.id]);
 
   const fetchProducts = async () => {
     try {
@@ -415,6 +433,19 @@ export function DashboardClient({
               </a>
             </div>
           </div>
+
+          {/* Visitor count */}
+          {visitorCount !== null && (
+            <div style={{ ...glassCard, padding: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{ width: "2.25rem", height: "2.25rem", borderRadius: "0.5rem", background: "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(239,68,68,0.1))", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Users size={16} style={{ color: "#f59e0b" }} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", ...labelStyle, marginBottom: 0 }}>Visitors</p>
+                <p style={{ fontSize: "1.125rem", fontWeight: 700 }}>{visitorCount.toLocaleString()}</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Subscription Banner ──────────────────────── */}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAlert } from "@/contexts/AlertContext";
-import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw, Sparkles, Eye, EyeOff } from "lucide-react";
+import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw, Sparkles, Eye, EyeOff, Palette } from "lucide-react";
 
 interface Setting {
   key: string; value: any; updated_at: string;
@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS: Record<string, any> = {
   maintenance_mode: false, allow_signup: true,
   max_free_products: 10, trial_days: 5, support_email: "",
   ai_enabled: false, ai_provider: "openrouter", ai_model: "", ai_api_key: "", ai_base_url: "",
+  logo_url: "", favicon_url: "",
 };
 
 export default function AdminSettings() {
@@ -59,6 +60,7 @@ export default function AdminSettings() {
 
   const tabs = [
     { id: "general", label: "General", icon: Globe },
+    { id: "branding", label: "Branding", icon: Palette },
     { id: "email", label: "Email", icon: Mail },
     { id: "payments", label: "Payments", icon: CreditCard },
     { id: "ai", label: "AI", icon: Sparkles },
@@ -120,6 +122,78 @@ export default function AdminSettings() {
                   <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Max Free Products</label>
                   <input className="ambient-input" type="number" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} value={settings.max_free_products || 10} onChange={(e) => updateSetting("max_free_products", parseInt(e.target.value) || 10)} />
                 </div>
+              </div>
+            </div>
+          ) : activeTab === "branding" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <Palette size={18} style={{ color: "var(--glow-purple)" }} /> Branding
+              </h3>
+              <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+                Configure logo and favicon displayed across the platform.
+              </p>
+
+              {/* Logo URL */}
+              <div>
+                <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Logo URL</label>
+                <input
+                  className="ambient-input"
+                  style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }}
+                  value={settings.logo_url || ""}
+                  onChange={(e) => updateSetting("logo_url", e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                />
+                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                  Full URL to your logo image. Used in headers, emails, and meta tags.
+                </p>
+              </div>
+
+              {/* Logo Preview */}
+              {settings.logo_url && (
+                <div style={{ padding: "1rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)" }}>
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.5rem" }}>Logo Preview</p>
+                  <img
+                    src={settings.logo_url}
+                    alt="Logo preview"
+                    style={{ maxHeight: "3rem", objectFit: "contain" }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                </div>
+              )}
+
+              {/* Favicon URL */}
+              <div>
+                <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Favicon URL</label>
+                <input
+                  className="ambient-input"
+                  style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }}
+                  value={settings.favicon_url || ""}
+                  onChange={(e) => updateSetting("favicon_url", e.target.value)}
+                  placeholder="https://example.com/favicon.ico"
+                />
+                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                  Full URL to your favicon. Recommended: 32x32 or 64x64 ICO/PNG.
+                </p>
+              </div>
+
+              {/* Favicon Preview */}
+              {settings.favicon_url && (
+                <div style={{ padding: "1rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)" }}>
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.5rem" }}>Favicon Preview</p>
+                  <img
+                    src={settings.favicon_url}
+                    alt="Favicon preview"
+                    style={{ width: "1.5rem", height: "1.5rem", objectFit: "contain" }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                </div>
+              )}
+
+              {/* Info */}
+              <div style={{ padding: "1rem", background: "rgba(168,133,247,0.05)", border: "1px solid rgba(168,133,247,0.15)", borderRadius: "0.5rem" }}>
+                <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
+                  Logo and favicon are stored in platform settings and applied site-wide. Upload images to any hosting service (Imgur, Cloudinary, etc.) and paste the direct URL.
+                </p>
               </div>
             </div>
           ) : activeTab === "email" ? (

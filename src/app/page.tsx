@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Store, ShoppingCart, BarChart3, QrCode, Zap, Shield, ArrowRight, Check, Star, Users, TrendingUp, Menu, X } from "lucide-react";
+import { PLANS, formatNaira } from "@/lib/subscription";
+import type { SubscriptionPlan } from "@/types";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -76,11 +78,11 @@ const steps = [
   { n: "03", title: "Share & Sell", desc: "Share your link. Customers browse, order, you get notified via WhatsApp or Instagram." },
 ];
 
-const plans = [
-  { name: "Trial", price: "Free", period: "5 days", features: ["10 products", "Basic storefront", "WhatsApp & Instagram", "Order tracking"], cta: "Start Free Trial", popular: false },
-  { name: "Monthly", price: "₦3,500", period: "/month", features: ["20 products", "Custom themes", "Priority support", "Analytics dashboard"], cta: "Go Monthly", popular: false },
-  { name: "Quarterly", price: "₦7,500", period: "every 3 months", features: ["50 products", "Custom themes", "Priority support", "Analytics dashboard"], cta: "Go Quarterly", popular: true },
-  { name: "Annual", price: "₦12,000", period: "every 6 months", features: ["Unlimited products", "Custom themes", "Priority support", "Analytics dashboard"], cta: "Go Annual", popular: false },
+const plans: Array<{ key: SubscriptionPlan; name: string; price: string; period: string; features: string[]; cta: string; popular: boolean }> = [
+  { key: "trial", name: PLANS.trial.name, price: "Free", period: PLANS.trial.billingLabel, features: PLANS.trial.features, cta: "Start Free Trial", popular: false },
+  { key: "monthly", name: PLANS.monthly.name, price: formatNaira(PLANS.monthly.price), period: PLANS.monthly.billingLabel, features: PLANS.monthly.features, cta: "Go Monthly", popular: false },
+  { key: "quarterly", name: PLANS.quarterly.name, price: formatNaira(PLANS.quarterly.price), period: PLANS.quarterly.billingLabel, features: PLANS.quarterly.features, cta: "Go Quarterly", popular: true },
+  { key: "annual", name: PLANS.annual.name, price: formatNaira(PLANS.annual.price), period: PLANS.annual.billingLabel, features: PLANS.annual.features, cta: "Go Annual", popular: false },
 ];
 
 const testimonials = [

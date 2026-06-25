@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Store as StoreIcon, ArrowRight, Package, ShieldCheck } from "lucide-react";
+import { Store as StoreIcon, ArrowRight, Package, ShieldCheck, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { FilterPills } from "@/components/ui/FilterPills";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
@@ -25,6 +25,21 @@ interface ExplorerPageProps {
   categories: string[];
 }
 
+interface RecommendedProduct {
+  id: string;
+  name: string;
+  price: number;
+  images: string[];
+  category: string | null;
+  store: {
+    id: string;
+    slug: string;
+    name: string;
+    logo_url: string | null;
+    plan: string;
+  };
+}
+
 interface SuggestedStore {
   id: string;
   slug: string;
@@ -40,8 +55,25 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
   const [suggestions, setSuggestions] = useState<SuggestedStore[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [recommended, setRecommended] = useState<RecommendedProduct[]>([]);
+  const [recIndex, setRecIndex] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const recScrollRef = useRef<HTMLDivElement>(null);
+
+  // Fetch recommended products
+  useEffect(() => {
+    const fetchRecommended = async () => {
+      try {
+        const res = await fetch("/api/products/recommended?limit=6");
+        if (res.ok) {
+          const data = await res.json();
+          setRecommended(data.products || []);
+        }
+      } catch {}
+    };
+    fetchRecommended();
+  }, []);
 
   // Fetch autocomplete suggestions
   const fetchSuggestions = useCallback(async (q: string) => {
@@ -128,6 +160,103 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
             Browse digital storefronts powered by StallHq
           </p>
         </div>
+
+        {/* Recommended Products Carousel */}
+        {recommended.length > 0 && (
+          <div style={{ marginBottom: "3rem" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <Sparkles size={18} style={{ color: "var(--glow-purple)" }} />
+                <h2 style={{ fontSize: "1.125rem", fontWeight: 700 }}>Recommended for You</h2>
+              </div>
+              <div style={{ display: "flex", gap: "0.375rem" }}>
+                <button
+                  onClick={() => {
+                    if (recScrollRef.current) recScrollRef.current.scrollBy({ left: -240, behavior: "smooth" });
+                  }}
+                  style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", background: "var(--bg-secondary)", color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={() => {
+                    if (recScrollRef.current) recScrollRef.current.scrollBy({ left: 240, behavior: "smooth" });
+                  }}
+                  style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", background: "var(--bg-secondary)", color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+            <div
+              ref={recScrollRef}
+              style={{
+                display: "flex",
+                gap: "1rem",
+                overflowX: "auto",
+                scrollSnapType: "x mandatory",
+                paddingBottom: "0.5rem",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
+            >
+              {recommended.map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/${product.store.slug}/product/${product.id}`}
+                  style={{
+                    flex: "0 0 220px",
+                    scrollSnapAlign: "start",
+                    background: "var(--bg-secondary)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: "0.75rem",
+                    overflow: "hidden",
+                    textDecoration: "none",
+                    color: "var(--text-primary)",
+                    transition: "border-color 0.2s",
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.borderColor = "rgba(168,133,247,0.3)")}
+                  onMouseOut={(e) => (e.currentTarget.style.borderColor = "var(--border-subtle)")}
+                >
+                  {/* Product Image */}
+                  <div style={{ height: "10rem", position: "relative", overflow: "hidden", background: "var(--bg-primary)" }}>
+                    {product.images && product.images.length > 0 ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Package size={24} style={{ color: "var(--text-muted)" }} />
+                      </div>
+                    )}
+                    <div style={{ position: "absolute", bottom: "0.5rem", right: "0.5rem", background: "rgba(0,0,0,0.7)", borderRadius: "0.375rem", padding: "0.25rem 0.5rem", fontSize: "0.75rem", fontWeight: 700, color: "var(--glow-green)" }}>
+                      ₦{product.price.toLocaleString()}
+                    </div>
+                  </div>
+
+                  {/* Product Info */}
+                  <div style={{ padding: "0.75rem" }}>
+                    <h3 style={{ fontSize: "0.8125rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: "0.375rem" }}>
+                      {product.name}
+                    </h3>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                      {product.store.logo_url ? (
+                        <img src={product.store.logo_url} alt="" style={{ width: "1rem", height: "1rem", borderRadius: "0.25rem", objectFit: "cover" }} />
+                      ) : (
+                        <div style={{ width: "1rem", height: "1rem", borderRadius: "0.25rem", background: "linear-gradient(135deg, var(--glow-purple), var(--glow-cyan))" }} />
+                      )}
+                      <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {product.store.name}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Search & Filters */}
         <div ref={dropdownRef} style={{ maxWidth: "36rem", margin: "0 auto 2.5rem", display: "flex", flexDirection: "column", gap: "1rem", position: "relative" }}>

@@ -32,6 +32,17 @@ interface SystemData {
     whatsappStores: number;
     instagramStores: number;
     bothChannels: number;
+    period: {
+      vendorsToday: number;
+      vendorsWeek: number;
+      vendorsMonth: number;
+      ordersToday: number;
+      ordersWeek: number;
+      ordersMonth: number;
+      revenueToday: number;
+      revenueWeek: number;
+      revenueMonth: number;
+    };
   };
   environment: Record<string, string | boolean | undefined>;
 }
@@ -46,6 +57,7 @@ export function AdminOverview() {
   const { error: showError } = useAlert();
   const [data, setData] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<"today" | "week" | "month">("week");
 
   const fetchData = async () => {
     setLoading(true);
@@ -144,6 +156,84 @@ export function AdminOverview() {
             <p style={{ fontSize: "1.25rem", fontWeight: 700, color: stat.color }}>{stat.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Period Reports */}
+      <div style={{ ...glassCard, padding: "1.25rem", marginBottom: "1.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+          <h3 style={{ fontSize: "0.875rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <TrendingUp size={14} /> Period Reports
+          </h3>
+          <div style={{ display: "flex", gap: "0.25rem", background: "var(--bg-primary)", borderRadius: "0.5rem", padding: "0.125rem" }}>
+            {(["today", "week", "month"] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                style={{
+                  padding: "0.375rem 0.75rem",
+                  fontSize: "0.75rem",
+                  fontWeight: 500,
+                  borderRadius: "0.375rem",
+                  border: "none",
+                  cursor: "pointer",
+                  background: period === p ? "rgba(168,133,247,0.2)" : "transparent",
+                  color: period === p ? "var(--glow-purple)" : "var(--text-muted)",
+                  minHeight: "44px",
+                }}
+              >
+                {p === "today" ? "Today" : p === "week" ? "This Week" : "This Month"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", gap: "0.75rem" }}>
+          {[
+            {
+              label: "New Vendors",
+              value: period === "today" ? o.period.vendorsToday : period === "week" ? o.period.vendorsWeek : o.period.vendorsMonth,
+              icon: <Users size={16} />,
+              color: "var(--glow-purple)",
+            },
+            {
+              label: "New Orders",
+              value: period === "today" ? o.period.ordersToday : period === "week" ? o.period.ordersWeek : o.period.ordersMonth,
+              icon: <ShoppingCart size={16} />,
+              color: "var(--glow-green)",
+            },
+            {
+              label: "Revenue",
+              value: `₦${(period === "today" ? o.period.revenueToday : period === "week" ? o.period.revenueWeek : o.period.revenueMonth).toLocaleString()}`,
+              icon: <TrendingUp size={16} />,
+              color: "var(--glow-green)",
+            },
+          ].map((stat) => (
+            <div key={stat.label} style={{
+              background: "var(--bg-primary)",
+              borderRadius: "0.5rem",
+              padding: "1rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+            }}>
+              <div style={{
+                width: "2.5rem",
+                height: "2.5rem",
+                borderRadius: "0.5rem",
+                background: `${stat.color}15`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: stat.color,
+              }}>
+                {stat.icon}
+              </div>
+              <div>
+                <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{stat.label}</p>
+                <p style={{ fontSize: "1.25rem", fontWeight: 700, color: stat.color }}>{stat.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Order Status Breakdown */}

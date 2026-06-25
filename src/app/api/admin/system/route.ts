@@ -100,6 +100,31 @@ export async function GET() {
   const instagramStores = stores.filter(s => s.instagram_handle).length;
   const bothChannels = stores.filter(s => s.whatsapp_number && s.instagram_handle).length;
 
+  // Period-based counts: daily, weekly, monthly
+  const nowMs = now.getTime();
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const last24h = new Date(nowMs - oneDayMs).toISOString();
+  const last7dISO = new Date(nowMs - 7 * oneDayMs).toISOString();
+  const last30dISO = new Date(nowMs - 30 * oneDayMs).toISOString();
+
+  const vendorsToday = stores.filter(s => s.created_at >= last24h).length;
+  const vendorsWeek = stores.filter(s => s.created_at >= last7dISO).length;
+  const vendorsMonth = stores.filter(s => s.created_at >= last30dISO).length;
+
+  const ordersToday = orders.filter(o => o.created_at >= last24h).length;
+  const ordersWeek = orders.filter(o => o.created_at >= last7dISO).length;
+  const ordersMonth = orders.filter(o => o.created_at >= last30dISO).length;
+
+  const revenueToday = orders
+    .filter(o => o.status !== "cancelled" && o.created_at >= last24h)
+    .reduce((sum, o) => sum + (o.total || 0), 0);
+  const revenueWeek = orders
+    .filter(o => o.status !== "cancelled" && o.created_at >= last7dISO)
+    .reduce((sum, o) => sum + (o.total || 0), 0);
+  const revenueMonth = orders
+    .filter(o => o.status !== "cancelled" && o.created_at >= last30dISO)
+    .reduce((sum, o) => sum + (o.total || 0), 0);
+
   // Orders by day (last 30 days)
   const ordersByDay: Record<string, number> = {};
   orders.forEach(o => {
@@ -137,6 +162,17 @@ export async function GET() {
       whatsappStores,
       instagramStores,
       bothChannels,
+      period: {
+        vendorsToday,
+        vendorsWeek,
+        vendorsMonth,
+        ordersToday,
+        ordersWeek,
+        ordersMonth,
+        revenueToday,
+        revenueWeek,
+        revenueMonth,
+      },
     },
     charts: {
       ordersByDay,
