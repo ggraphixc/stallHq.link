@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAlert } from "@/contexts/AlertContext";
-import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw, Sparkles, Eye, EyeOff, Palette } from "lucide-react";
+import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw, Sparkles, Eye, EyeOff, Palette, Upload, X } from "lucide-react";
 
 interface Setting {
   key: string; value: any; updated_at: string;
@@ -125,77 +125,7 @@ export default function AdminSettings() {
               </div>
             </div>
           ) : activeTab === "branding" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <Palette size={18} style={{ color: "var(--glow-purple)" }} /> Branding
-              </h3>
-              <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-                Configure logo and favicon displayed across the platform.
-              </p>
-
-              {/* Logo URL */}
-              <div>
-                <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Logo URL</label>
-                <input
-                  className="ambient-input"
-                  style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }}
-                  value={settings.logo_url || ""}
-                  onChange={(e) => updateSetting("logo_url", e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                />
-                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                  Full URL to your logo image. Used in headers, emails, and meta tags.
-                </p>
-              </div>
-
-              {/* Logo Preview */}
-              {settings.logo_url && (
-                <div style={{ padding: "1rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)" }}>
-                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.5rem" }}>Logo Preview</p>
-                  <img
-                    src={settings.logo_url}
-                    alt="Logo preview"
-                    style={{ maxHeight: "3rem", objectFit: "contain" }}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                  />
-                </div>
-              )}
-
-              {/* Favicon URL */}
-              <div>
-                <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Favicon URL</label>
-                <input
-                  className="ambient-input"
-                  style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }}
-                  value={settings.favicon_url || ""}
-                  onChange={(e) => updateSetting("favicon_url", e.target.value)}
-                  placeholder="https://example.com/favicon.ico"
-                />
-                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                  Full URL to your favicon. Recommended: 32x32 or 64x64 ICO/PNG.
-                </p>
-              </div>
-
-              {/* Favicon Preview */}
-              {settings.favicon_url && (
-                <div style={{ padding: "1rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)" }}>
-                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.5rem" }}>Favicon Preview</p>
-                  <img
-                    src={settings.favicon_url}
-                    alt="Favicon preview"
-                    style={{ width: "1.5rem", height: "1.5rem", objectFit: "contain" }}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                  />
-                </div>
-              )}
-
-              {/* Info */}
-              <div style={{ padding: "1rem", background: "rgba(168,133,247,0.05)", border: "1px solid rgba(168,133,247,0.15)", borderRadius: "0.5rem" }}>
-                <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
-                  Logo and favicon are stored in platform settings and applied site-wide. Upload images to any hosting service (Imgur, Cloudinary, etc.) and paste the direct URL.
-                </p>
-              </div>
-            </div>
+            <BrandingTab settings={settings} updateSetting={updateSetting} />
           ) : activeTab === "email" ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
               <h3 style={{ fontSize: "0.9375rem", fontWeight: 700 }}>Email (Brevo)</h3>
@@ -380,6 +310,142 @@ export default function AdminSettings() {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Branding Tab ────────────────────────────────── */
+
+function BrandingTab({ settings, updateSetting }: { settings: Record<string, any>; updateSetting: (key: string, value: any) => void }) {
+  const { error: showError, success: showSuccess } = useAlert();
+  const [uploading, setUploading] = useState<"logo" | "favicon" | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (file: File, type: "logo" | "favicon") => {
+    if (!file) return;
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/x-icon", "image/vnd.microsoft.icon"];
+    if (!allowedTypes.includes(file.type)) {
+      showError("Invalid file type. Use JPEG, PNG, WebP, GIF, or ICO.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showError("File too large. Maximum 2MB.");
+      return;
+    }
+    setUploading(type);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("bucket", "products");
+      formData.append("folder", `branding/${type}`);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      updateSetting(type === "logo" ? "logo_url" : "favicon_url", data.url);
+      showSuccess(`${type === "logo" ? "Logo" : "Favicon"} uploaded`);
+    } catch {
+      showError(`Failed to upload ${type}`);
+    }
+    setUploading(null);
+  };
+
+  const FileUpload = ({ label, type, accept, desc }: { label: string; type: "logo" | "favicon"; accept: string; desc: string }) => {
+    const url = settings[type === "logo" ? "logo_url" : "favicon_url"];
+    const inputRef = type === "logo" ? logoInputRef : faviconInputRef;
+    return (
+      <div>
+        <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>{label}</label>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading === type}
+            style={{
+              flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+              padding: "2rem 1rem", fontSize: "0.8125rem",
+              background: "var(--bg-primary)", border: "2px dashed var(--border-subtle)",
+              borderRadius: "0.5rem", color: "var(--text-muted)", cursor: uploading === type ? "wait" : "pointer",
+              transition: "border-color 0.2s",
+            }}
+            onMouseOver={(e) => { if (uploading !== type) e.currentTarget.style.borderColor = "rgba(168,133,247,0.4)"; }}
+            onMouseOut={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; }}
+          >
+            {uploading === type ? (
+              <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+            ) : (
+              <Upload size={16} />
+            )}
+            {uploading === type ? "Uploading..." : url ? "Replace file" : "Click to upload"}
+          </button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={accept}
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleUpload(file, type);
+              e.target.value = "";
+            }}
+          />
+        </div>
+        <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>{desc}</p>
+
+        {/* Preview */}
+        {url && (
+          <div style={{ marginTop: "0.75rem", padding: "0.75rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <img
+              src={url}
+              alt={`${label} preview`}
+              style={type === "logo" ? { maxHeight: "2.5rem", objectFit: "contain" } : { width: "1.5rem", height: "1.5rem", objectFit: "contain" }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{url}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => updateSetting(type === "logo" ? "logo_url" : "favicon_url", "")}
+              style={{ width: "1.75rem", height: "1.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "rgba(239,68,68,0.1)", color: "var(--glow-red)", cursor: "pointer", flexShrink: 0 }}
+              title="Remove"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <Palette size={18} style={{ color: "var(--glow-purple)" }} /> Branding
+      </h3>
+      <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+        Upload logo and favicon displayed across the platform.
+      </p>
+
+      <FileUpload
+        label="Logo"
+        type="logo"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        desc="Recommended: 200x200px or larger. PNG/SVG with transparency works best."
+      />
+
+      <FileUpload
+        label="Favicon"
+        type="favicon"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/x-icon"
+        desc="Recommended: 32x32 or 64x64 ICO/PNG."
+      />
+
+      <div style={{ padding: "1rem", background: "rgba(168,133,247,0.05)", border: "1px solid rgba(168,133,247,0.15)", borderRadius: "0.5rem" }}>
+        <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
+          Logo and favicon are uploaded to Supabase storage and applied site-wide in headers, emails, and browser tabs.
+        </p>
       </div>
     </div>
   );
