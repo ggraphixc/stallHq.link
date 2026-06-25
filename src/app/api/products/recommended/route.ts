@@ -8,21 +8,33 @@ const supabaseAdmin = createClient(
 
 // GET /api/products/recommended — Fetch recommended products from top stores
 // Returns products from stores with higher plans (quarterly/annual get priority)
+// Falls back to trial stores if no paid stores exist
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get("limit") || "6"), 12);
 
-    // Fetch active stores with products, ordered by plan priority
     const planPriority: Record<string, number> = { annual: 4, quarterly: 3, monthly: 2, trial: 1 };
 
-    const { data: stores } = await supabaseAdmin
+    // First try paid stores
+    let { data: stores } = await supabaseAdmin
       .from("stores")
       .select("id, slug, name, logo_url, category, plan")
-      .eq("is_active", true)
+      .eq("setup_complete", true)
       .in("plan", ["quarterly", "annual", "monthly"])
       .order("created_at", { ascending: false })
       .limit(20);
+
+    // Fallback to all stores if no paid stores
+    if (!stores || stores.length === 0) {
+      const result = await supabaseAdmin
+        .from("stores")
+        .select("id, slug, name, logo_url, category, plan")
+        .eq("setup_complete", true)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      stores = result.data;
+    }
 
     if (!stores || stores.length === 0) {
       return NextResponse.json({ products: [] });
@@ -36,7 +48,7 @@ export async function GET(request: Request) {
       .in("store_id", storeIds)
       .eq("in_stock", true)
       .order("created_at", { ascending: false })
-      .limit(limit * 3); // Fetch more to randomize
+      .limit(limit * 3);
 
     if (!products || products.length === 0) {
       return NextResponse.json({ products: [] });

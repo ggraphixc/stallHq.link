@@ -171,8 +171,14 @@ export function DashboardClient({
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
+  const [origin, setOrigin] = useState("");
 
   const supabase = createClient();
+
+  // Get origin on client only
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   // Subscription info
   const productLimit = getProductLimit(store);
@@ -283,7 +289,7 @@ export function DashboardClient({
                 {store.name}
               </h1>
               <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {new URL(window.location.origin).host}/{store.slug}
+                {origin ? `${new URL(origin).host}/${store.slug}` : `stallhq.link/${store.slug}`}
               </p>
             </div>
           </div>
@@ -648,7 +654,7 @@ export function DashboardClient({
               <QrCode size={180} strokeWidth={1} color="#000" />
             </div>
             <p style={{ fontFamily: "monospace", fontSize: "0.8125rem", color: "var(--text-secondary)", padding: "0.625rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", marginBottom: "1rem", wordBreak: "break-all" }}>
-              {typeof window !== "undefined" ? window.location.origin : ""}/{store.slug}
+              {origin ? `${origin}/${store.slug}` : `stallhq.link/${store.slug}`}
             </p>
             <ShareCard storeSlug={store.slug} storeName={store.name} />
             <a href={`/${store.slug}`} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", color: "var(--glow-cyan)", textDecoration: "none", marginTop: "0.75rem" }}>

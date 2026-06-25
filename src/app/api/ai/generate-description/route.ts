@@ -214,9 +214,19 @@ CATEGORY: <the category>`;
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content?.trim();
+
+    // Debug: log raw response structure (first 500 chars)
+    console.log("AI raw response keys:", Object.keys(data).join(", "));
+    console.log("AI raw response snippet:", JSON.stringify(data).slice(0, 500));
+
+    // Try multiple response formats
+    let content = data.choices?.[0]?.message?.content?.trim();
+    if (!content) content = data.choices?.[0]?.text?.trim();
+    if (!content) content = data.output?.text?.trim();
+    if (!content) content = data.choices?.[0]?.message?.content;
 
     if (!content) {
+      console.error("AI empty response. Full data:", JSON.stringify(data).slice(0, 1000));
       return NextResponse.json({ error: "AI returned empty response" }, { status: 500 });
     }
 

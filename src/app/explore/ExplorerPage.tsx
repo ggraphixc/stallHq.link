@@ -8,6 +8,68 @@ import { FilterPills } from "@/components/ui/FilterPills";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 
+function Particles() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let w = window.innerWidth;
+    let h = window.innerHeight;
+    canvas.width = w;
+    canvas.height = h;
+
+    const colors = ["rgba(168,133,247,0.4)", "rgba(6,182,212,0.4)", "rgba(16,185,129,0.3)"];
+    const dots = Array.from({ length: 50 }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 1.8 + 0.5,
+      dx: (Math.random() - 0.5) * 0.35,
+      dy: (Math.random() - 0.5) * 0.35,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+
+    let raf: number;
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      dots.forEach((d) => {
+        d.x += d.dx;
+        d.y += d.dy;
+        if (d.x < 0 || d.x > w) d.dx *= -1;
+        if (d.y < 0 || d.y > h) d.dy *= -1;
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fillStyle = d.color;
+        ctx.fill();
+      });
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+
+    const onResize = () => {
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w;
+      canvas.height = h;
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}
+    />
+  );
+}
+
 interface ExplorerPageProps {
   stores: Array<{
     id: string;
@@ -125,7 +187,8 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
   });
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", position: "relative" }}>
+      <Particles />
       {/* Header */}
       <header style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(var(--bg-primary),0.8)", backdropFilter: "blur(16px)", position: "sticky", top: 0, zIndex: 40 }}>
         <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 1rem", height: "3.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -149,7 +212,7 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
         </div>
       </header>
 
-      <main style={{ maxWidth: "80rem", margin: "0 auto", padding: "2.5rem 1rem" }}>
+      <main style={{ maxWidth: "80rem", margin: "0 auto", padding: "2.5rem 1rem", position: "relative", zIndex: 1 }}>
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: "3rem" }}>
           <h1 style={{ fontSize: "clamp(1.875rem,5vw,3rem)", fontWeight: 800, letterSpacing: "-0.025em", marginBottom: "0.75rem" }}>
