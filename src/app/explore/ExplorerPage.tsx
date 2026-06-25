@@ -217,10 +217,10 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
         <div style={{ textAlign: "center", marginBottom: "3rem" }}>
           <h1 style={{ fontSize: "clamp(1.875rem,5vw,3rem)", fontWeight: 800, letterSpacing: "-0.025em", marginBottom: "0.75rem" }}>
             Discover{" "}
-            <span className="text-gradient">Amazing Stores</span>
+            <span className="text-gradient">Local Stores</span>
           </h1>
           <p style={{ fontSize: "clamp(0.875rem,2vw,1rem)", color: "var(--text-secondary)", maxWidth: "36rem", margin: "0 auto" }}>
-            Browse digital storefronts powered by StallHq
+            Browse digital storefronts from vendors across Nigeria. Find fashion, electronics, skincare, food, and more.
           </p>
         </div>
 
@@ -538,12 +538,12 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
         {/* CTA */}
         <div style={{ marginTop: "5rem", textAlign: "center" }}>
           <div className="glass-card" style={{ maxWidth: "36rem", margin: "0 auto", padding: "2rem" }}>
-            <h2 style={{ fontSize: "clamp(1.25rem,3vw,1.5rem)", fontWeight: 700, marginBottom: "0.75rem" }}>Create Your Own Store</h2>
+            <h2 style={{ fontSize: "clamp(1.25rem,3vw,1.5rem)", fontWeight: 700, marginBottom: "0.75rem" }}>Have Something to Sell?</h2>
             <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: "2rem" }}>
-              Set up in minutes. Start selling on WhatsApp or Instagram today.
+              Create your own store in minutes. No coding needed. Start with a free trial.
             </p>
             <Link href="/auth/signup" className="glow-button">
-              Get Started — It&apos;s Free
+              Create Your Store — Free
             </Link>
           </div>
         </div>

@@ -230,7 +230,10 @@ export function CustomerDashboard({ user, orders, existingStore }: CustomerDashb
               <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--text-muted)" }}>
                 <ShoppingBag size={32} style={{ margin: "0 auto 0.75rem", opacity: 0.4 }} />
                 <p style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.25rem" }}>No orders yet</p>
-                <p style={{ fontSize: "0.75rem" }}>Browse stores and place your first order</p>
+                <p style={{ fontSize: "0.75rem", marginBottom: "1rem" }}>When you order from a store, it will appear here.</p>
+                <Link href="/explore" className="glow-button" style={{ display: "inline-flex", padding: "0.5rem 1rem", fontSize: "0.75rem", textDecoration: "none" }}>
+                  Browse Stores
+                </Link>
               </div>
             ) : (
               orders.map((order) => (

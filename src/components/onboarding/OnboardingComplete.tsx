@@ -117,12 +117,12 @@ export function OnboardingComplete({ store }: OnboardingCompleteProps) {
 
         {/* Tips */}
         <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-subtle)", borderRadius: "0.625rem", padding: "1rem", textAlign: "left" }}>
-          <p style={{ fontSize: "0.75rem", fontWeight: 600, marginBottom: "0.625rem" }}>Quick tips to get started:</p>
+          <p style={{ fontSize: "0.75rem", fontWeight: 600, marginBottom: "0.625rem" }}>What to do next:</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {[
-              "Add product images to attract more customers",
-              "Share your store link on social media",
-              "Keep your product catalog up to date",
+              "Add product photos — stores with images get 3x more orders",
+              "Share your store link on WhatsApp status, Instagram bio, and TikTok",
+              "Tell 5 friends about your store today — word of mouth is powerful",
             ].map((tip, i) => (
               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
                 <div style={{ width: "1.25rem", height: "1.25rem", borderRadius: "50%", background: "rgba(168,133,247,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "0.0625rem" }}>

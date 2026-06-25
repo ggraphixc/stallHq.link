@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Store, ShoppingCart, BarChart3, QrCode, Zap, Shield, ArrowRight, Check, Star, Users, TrendingUp, Menu, X } from "lucide-react";
+import { Store, ShoppingCart, BarChart3, QrCode, Zap, Shield, ArrowRight, Check, Star, Menu, X } from "lucide-react";
 import { PLANS, formatNaira } from "@/lib/subscription";
 import type { SubscriptionPlan } from "@/types";
 
@@ -64,18 +64,18 @@ function Particles() {
 }
 
 const features = [
-  { icon: Store, title: "Digital Storefront", desc: "A beautiful online store with your products, prices, and contact channels — live in minutes." },
-  { icon: ShoppingCart, title: "Orders via WhatsApp & Instagram", desc: "Customers order on your store, you get the order details straight in your preferred channel. No app needed." },
-  { icon: BarChart3, title: "Order Tracking", desc: "Track every order from pending to delivered. Know what's moving and what's stuck." },
-  { icon: QrCode, title: "QR Code & Links", desc: "Get a shareable link and QR code. Print it on flyers, put it on your social bio." },
-  { icon: Zap, title: "Instant Setup", desc: "No hosting, no coding, no developers. Create your store, add products, start selling." },
-  { icon: Shield, title: "Verified Badge", desc: "Build trust with customers. Verified stores get a green badge on their storefront." },
+  { icon: Store, title: "Your Own Store URL", desc: "Get a professional link like stallhq.link/yourstore. Share it anywhere — social bio, flyers, WhatsApp groups." },
+  { icon: ShoppingCart, title: "Orders on WhatsApp & Instagram", desc: "Customers browse your catalog, pick what they want, and the order lands in your WhatsApp or Instagram DM with all the details." },
+  { icon: BarChart3, title: "Track Every Order", desc: "See what's pending, confirmed, or delivered. Know your bestsellers and what needs restocking — all in one dashboard." },
+  { icon: QrCode, title: "QR Code for Offline Sales", desc: "Print your QR code on packaging, business cards, or shop displays. Customers scan it and your store opens instantly." },
+  { icon: Zap, title: "No Coding, No Hosting", desc: "Create your store, add products with photos and prices, and you're live. No developers, no servers, no monthly hosting bills." },
+  { icon: Shield, title: "Verified Vendor Badge", desc: "Build trust with customers. Your store gets a verified badge that shows you're a real, trusted seller." },
 ];
 
 const steps = [
-  { n: "01", title: "Create Your Store", desc: "Pick a name, add your WhatsApp and/or Instagram, choose a plan that fits." },
-  { n: "02", title: "Add Products", desc: "Upload photos, set prices, add variants. Done in minutes." },
-  { n: "03", title: "Share & Sell", desc: "Share your link. Customers browse, order, you get notified via WhatsApp or Instagram." },
+  { n: "01", title: "Create Your Store", desc: "Pick a name, add your WhatsApp or Instagram handle, choose a plan. Your store goes live instantly." },
+  { n: "02", title: "Add Your Products", desc: "Upload photos, set prices, add descriptions. Use AI to generate descriptions automatically." },
+  { n: "03", title: "Share & Get Orders", desc: "Share your store link. Customers browse and order. You get notified on WhatsApp or Instagram — ready to close the deal." },
 ];
 
 const plans: Array<{ key: SubscriptionPlan; name: string; price: string; period: string; features: string[]; cta: string; popular: boolean }> = [
@@ -86,9 +86,10 @@ const plans: Array<{ key: SubscriptionPlan; name: string; price: string; period:
 ];
 
 const testimonials = [
-  { name: "Adaeze", role: "Fashion Vendor, Lagos", text: "I was using WhatsApp status to sell. Now I have a real store. My customers love it." },
-  { name: "Chidi", role: "Electronics, Abuja", text: "Set it up in 10 minutes. Orders come straight to my WhatsApp. No more manual typing." },
-  { name: "Fatima", role: "Skincare, Port Harcourt", text: "The QR code is a game changer. I printed it on my packaging. Customers scan and reorder." },
+  { name: "Adaeze N.", role: "Fashion Vendor, Lagos", text: "I was using WhatsApp status to sell. Now I have a real store that looks professional. My customers trust me more and orders have doubled." },
+  { name: "Chidi O.", role: "Electronics, Abuja", text: "Set it up in 10 minutes with no tech skills. Orders come straight to my WhatsApp with all the details. No more copy-pasting messages." },
+  { name: "Fatima A.", role: "Skincare, Port Harcourt", text: "The QR code is a game changer. I printed it on my packaging. Customers scan and reorder without asking for my number again." },
+  { name: "Tunde M.", role: "Phone Accessories, Ibadan", text: "I used to lose orders because customers would DM and I'd forget who wanted what. Now everything is organized and I never miss a sale." },
 ];
 
 const sectionStyle: React.CSSProperties = { maxWidth: 800, margin: "0 auto", padding: "5rem 1.5rem" };
@@ -191,10 +192,10 @@ export default function Home() {
         <section style={{ padding: "3rem 1.5rem", borderTop: "1px solid var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", justifyContent: "center", gap: "3rem", flexWrap: "wrap" }}>
             {[
-              { icon: Users, value: "500+", label: "Active Vendors" },
-              { icon: ShoppingCart, value: "10K+", label: "Orders Processed" },
-              { icon: TrendingUp, value: "₦2M+", label: "Revenue Facilitated" },
-              { icon: Star, value: "4.8", label: "Average Rating" },
+              { icon: Store, value: "Free", label: "To Start" },
+              { icon: Zap, value: "60s", label: "Setup Time" },
+              { icon: ShoppingCart, value: "0%", label: "Platform Fees" },
+              { icon: Shield, value: "24/7", label: "Your Store Live" },
             ].map((stat) => (
               <div key={stat.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.375rem", minWidth: 100 }}>
                 <stat.icon size={18} style={{ color: "var(--glow-purple)" }} />
@@ -315,15 +316,15 @@ export default function Home() {
         {/* CTA */}
         <section style={{ maxWidth: 560, margin: "0 auto", padding: "5rem 1.5rem" }}>
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, borderRadius: 16, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.02)", padding: "3rem 2rem" }}>
-            <p style={{ fontSize: "clamp(1.5rem, 4vw, 2rem)", fontWeight: 800 }}>Ready to Start Selling?</p>
+            <p style={{ fontSize: "clamp(1.5rem, 4vw, 2rem)", fontWeight: 800 }}>Stop Losing Sales to Chaos</p>
             <p style={{ fontSize: 14, color: "var(--text-secondary)", maxWidth: 360 }}>
-              Create your store in 60 seconds. Start with a free trial, upgrade when you&apos;re ready.
+              No more missed DMs. No more forgotten orders. Your customers browse, order, and you get notified — all in one place.
             </p>
             <div style={{ display: "flex", gap: 12, paddingTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
               <Link href="/auth/signup" className="glow-button" style={{ fontSize: 13, padding: "12px 28px", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                Create Your Store <ArrowRight size={14} />
+                Create Your Store Free <ArrowRight size={14} />
               </Link>
-              <Link href="/explore" className="glow-button-secondary" style={{ fontSize: 13, padding: "12px 28px" }}>Browse Stores</Link>
+              <Link href="/explore" className="glow-button-secondary" style={{ fontSize: 13, padding: "12px 28px" }}>See How It Works</Link>
             </div>
           </div>
         </section>
@@ -331,14 +332,14 @@ export default function Home() {
         {/* Footer */}
         <footer style={{ padding: "2.5rem 1.5rem", borderTop: "1px solid var(--border-subtle)" }}>
           <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "flex-start", fontSize: 12, color: "var(--text-muted)", flexWrap: "wrap", gap: 24 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", maxWidth: 240 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
                 <div style={{ width: "1.25rem", height: "1.25rem", borderRadius: "0.25rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ color: "white", fontWeight: 700, fontSize: "0.5rem" }}>S</span>
                 </div>
                 <span style={{ fontWeight: 700, fontSize: "0.8125rem", color: "var(--text-primary)" }}>StallHq</span>
               </div>
-              <p style={{ lineHeight: 1.5 }}>Digital storefronts for WhatsApp &amp; Instagram vendors<br />across Africa.</p>
+              <p style={{ lineHeight: 1.5 }}>Digital storefronts for WhatsApp &amp; Instagram vendors across Nigeria and Africa. Sell smarter, not harder.</p>
             </div>
             <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
@@ -353,6 +354,11 @@ export default function Home() {
                 <Link href="/auth/login" style={{ color: "inherit", textDecoration: "none" }}>Login</Link>
                 <Link href="/auth/signup" style={{ color: "inherit", textDecoration: "none" }}>Sign Up</Link>
                 <Link href="/auth/forgot-password" style={{ color: "inherit", textDecoration: "none" }}>Reset Password</Link>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+                <p style={{ fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.25rem" }}>Support</p>
+                <a href="mailto:ggraphixc@gmail.com" style={{ color: "inherit", textDecoration: "none" }}>Contact Us</a>
+                <Link href="/dashboard/support" style={{ color: "inherit", textDecoration: "none" }}>Help Center</Link>
               </div>
             </div>
           </div>

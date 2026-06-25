@@ -113,7 +113,7 @@ export function StoreDetailsStep({ existingStore, onStoreCreated }: StoreDetails
           <StoreIcon size={20} style={{ color: "var(--glow-purple)" }} />
         </div>
         <h1 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.25rem" }}>Create Your Store</h1>
-        <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Set up your digital storefront in seconds</p>
+        <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Your store goes live in under a minute</p>
       </div>
 
       {/* Form Card */}
@@ -170,7 +170,7 @@ export function StoreDetailsStep({ existingStore, onStoreCreated }: StoreDetails
             value={whatsappNumber}
             onChange={(e) => setWhatsappNumber(e.target.value)}
           />
-          <p style={hintStyle}>Customers will chat with you on this number</p>
+          <p style={hintStyle}>Include country code (e.g., +234). Customers will message this number to place orders.</p>
         </div>
 
         {/* Instagram Handle */}
@@ -190,7 +190,7 @@ export function StoreDetailsStep({ existingStore, onStoreCreated }: StoreDetails
               onChange={(e) => setInstagramHandle(e.target.value)}
             />
           </div>
-          <p style={hintStyle}>Customers can also reach you on Instagram</p>
+          <p style={hintStyle}>Without the @ symbol. Customers can reach you on Instagram too.</p>
         </div>
 
         {/* Email */}
@@ -204,7 +204,7 @@ export function StoreDetailsStep({ existingStore, onStoreCreated }: StoreDetails
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <p style={hintStyle}>Get email alerts when customers place orders</p>
+          <p style={hintStyle}>Optional. Get email alerts when customers place orders.</p>
         </div>
 
         {/* Two columns: Category + Description */}

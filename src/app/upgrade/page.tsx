@@ -199,10 +199,10 @@ function UpgradeContent() {
             <Crown size={18} style={{ color: "var(--glow-purple)" }} />
           </div>
           <h1 style={{ fontSize: "clamp(1.5rem, 4vw, 2.25rem)", fontWeight: 800, letterSpacing: "-0.03em", marginBottom: "0.5rem" }}>
-            Simple, transparent pricing
+            Grow Your Store, Your Way
           </h1>
           <p style={{ fontSize: "0.9375rem", color: "var(--text-muted)", maxWidth: "28rem", margin: "0 auto" }}>
-            No hidden fees. No surprises. Pick a plan and start selling today.
+            Start with a free trial. Upgrade when you&apos;re ready to scale. No hidden fees, no surprises.
           </p>
         </div>
 
@@ -393,9 +393,9 @@ function UpgradeContent() {
           marginBottom: "3.5rem",
         }}>
           {[
-            { icon: <ShieldCheck size={18} />, title: "Secure Payments", desc: "Bank-grade encryption via Paystack" },
-            { icon: <Package size={18} />, title: "Instant Activation", desc: "Start selling immediately after payment" },
-            { icon: <Headphones size={18} />, title: "Support", desc: "We help you get set up and running" },
+            { icon: <ShieldCheck size={18} />, title: "Secure Payments", desc: "Pay with card, bank transfer, or USSD via Paystack" },
+            { icon: <Package size={18} />, title: "Instant Access", desc: "Your plan activates immediately after payment" },
+            { icon: <Headphones size={18} />, title: "We Help You", desc: "Reach out anytime — we respond fast" },
           ].map(({ icon, title, desc }) => (
             <div key={title} style={{
               padding: "1rem", borderRadius: "0.75rem",
@@ -416,10 +416,11 @@ function UpgradeContent() {
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {[
-              { q: "Can I change plans later?", a: "Yes. Upgrade anytime and get instant access to your new plan's features." },
-              { q: "What happens when my trial ends?", a: "Your store goes offline but your data is preserved. Upgrade anytime to bring it back live." },
-              { q: "Do I get a refund if I downgrade?", a: "We don't offer refunds for partial periods, but you keep your current features until expiry." },
-              { q: "How do payments work?", a: "We accept bank transfers, cards, and USSD via Paystack. Subscription starts immediately after payment." },
+              { q: "Can I upgrade or downgrade later?", a: "Yes. Upgrade anytime from your dashboard — you'll get instant access to new features. Downgrade takes effect at the end of your current billing period." },
+              { q: "What happens when my trial ends?", a: "Your store goes offline but all your data (products, orders, settings) is preserved. Upgrade anytime to bring it back live — nothing is lost." },
+              { q: "Do I get a refund if I change my mind?", a: "We don't offer refunds for partial periods, but you keep your current features until the billing period ends. You can cancel anytime." },
+              { q: "What payment methods do you accept?", a: "We accept debit cards, bank transfers, and USSD via Paystack — one of Africa's most trusted payment processors." },
+              { q: "Will I lose my products if I downgrade?", a: "No. Your products are always saved. If you downgrade to a plan with a lower product limit, you just can't add new ones until you upgrade again." },
             ].map(({ q, a }) => (
               <div key={q} style={{
                 padding: "1rem", borderRadius: "0.75rem",
