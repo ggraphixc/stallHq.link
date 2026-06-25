@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShoppingBag, Heart, User, Store, Package, Clock, CheckCircle, ArrowRight, Truck, LogOut, Trash2, ExternalLink } from "lucide-react";
+import { ShoppingBag, Heart, User, Store, Package, Clock, CheckCircle, ArrowRight, Truck, LogOut, Trash2, ExternalLink, AlertTriangle } from "lucide-react";
 
 interface Order {
   id: string;
@@ -51,6 +51,7 @@ export function CustomerDashboard({ user, orders, existingStore }: CustomerDashb
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [favCount, setFavCount] = useState(0);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     fetchFavorites();
@@ -87,6 +88,35 @@ export function CustomerDashboard({ user, orders, existingStore }: CustomerDashb
       // silent
     } finally {
       setRemovingId(null);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete your account?\n\nThis will permanently delete:\n" +
+      (existingStore ? "- Your store and all products\n" : "") +
+      "- All your orders\n- All your favorites\n- Your account\n\nThis cannot be undone."
+    );
+    if (!confirmed) return;
+
+    const doubleConfirm = window.confirm("This is your last chance. Type DELETE in your mind and click OK to permanently delete your account.");
+    if (!doubleConfirm) return;
+
+    setDeletingAccount(true);
+    try {
+      const response = await fetch("/api/account/delete", { method: "POST" });
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Failed to delete account");
+        return;
+      }
+
+      window.location.href = "/";
+    } catch {
+      alert("Network error. Please try again.");
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -336,6 +366,35 @@ export function CustomerDashboard({ user, orders, existingStore }: CustomerDashb
                   Sign Out
                 </button>
               </form>
+            </div>
+            <div style={{ borderTop: "1px solid var(--border-subtle)", marginTop: "0.75rem", paddingTop: "0.75rem" }}>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.625rem 1rem",
+                  borderRadius: "0.5rem",
+                  border: "1px solid rgba(239,68,68,0.3)",
+                  background: deletingAccount ? "rgba(239,68,68,0.03)" : "rgba(239,68,68,0.08)",
+                  color: "var(--glow-red)",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  cursor: deletingAccount ? "not-allowed" : "pointer",
+                  width: "100%",
+                  justifyContent: "center",
+                  minHeight: "44px",
+                  opacity: deletingAccount ? 0.6 : 1,
+                }}
+              >
+                <Trash2 size={14} />
+                {deletingAccount ? "Deleting..." : "Delete Account"}
+              </button>
+              <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.5rem", textAlign: "center" }}>
+                This will permanently delete your account and all data.
+              </p>
             </div>
           </div>
         )}

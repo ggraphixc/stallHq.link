@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAlert } from "@/contexts/AlertContext";
 import { Store, StoreHours } from "@/types";
-import { X, Loader2, Camera, Instagram } from "lucide-react";
+import { X, Loader2, Camera, Instagram, Trash2 } from "lucide-react";
 import { StoreHoursManager } from "./StoreHoursManager";
 
 interface StoreSettingsProps {
@@ -83,6 +83,7 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [lowStockThreshold, setLowStockThreshold] = useState(store.low_stock_threshold ?? 5);
   const [stockAlertsEnabled, setStockAlertsEnabled] = useState(store.stock_alerts_enabled ?? true);
+  const [deletingStore, setDeletingStore] = useState(false);
 
   const handleImageUpload = async (file: File, type: "logo" | "banner") => {
     const setUpload = type === "logo" ? setUploadingLogo : setUploadingBanner;
@@ -101,6 +102,34 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
       showError(`Failed to upload ${type}`);
     } finally {
       setUpload(false);
+    }
+  };
+
+  const handleDeleteStore = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${store.name}"?\n\nThis will permanently delete:\n- Your store and all products\n- All orders and analytics\n- All reviews and support tickets\n\nThis cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    const doubleConfirm = window.confirm("This is your last chance. Click OK to permanently delete your store and all its data.");
+    if (!doubleConfirm) return;
+
+    setDeletingStore(true);
+    try {
+      const response = await fetch("/api/account/delete", { method: "POST" });
+      const data = await response.json();
+
+      if (!response.ok) {
+        showError(data.error || "Failed to delete store");
+        return;
+      }
+
+      showSuccess("Store deleted. Redirecting...");
+      setTimeout(() => { window.location.href = "/"; }, 1500);
+    } catch {
+      showError("Network error. Please try again.");
+    } finally {
+      setDeletingStore(false);
     }
   };
 
@@ -275,6 +304,38 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
             ) : "Save Changes"}
           </button>
         </form>
+
+        {/* Delete Store */}
+        <div style={{ borderTop: "1px solid var(--border-subtle)", marginTop: "1rem", paddingTop: "1rem" }}>
+          <button
+            type="button"
+            onClick={handleDeleteStore}
+            disabled={deletingStore}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.625rem 1rem",
+              borderRadius: "0.5rem",
+              border: "1px solid rgba(239,68,68,0.3)",
+              background: deletingStore ? "rgba(239,68,68,0.03)" : "rgba(239,68,68,0.08)",
+              color: "var(--glow-red)",
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              cursor: deletingStore ? "not-allowed" : "pointer",
+              width: "100%",
+              justifyContent: "center",
+              minHeight: "44px",
+              opacity: deletingStore ? 0.6 : 1,
+            }}
+          >
+            <Trash2 size={14} />
+            {deletingStore ? "Deleting Store..." : "Delete Store & Account"}
+          </button>
+          <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.5rem", textAlign: "center" }}>
+            This will permanently delete your store, products, orders, and account.
+          </p>
+        </div>
       </div>
     </div>
   );

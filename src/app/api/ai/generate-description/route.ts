@@ -114,18 +114,26 @@ export async function POST(req: NextRequest) {
       baseURL = baseURL.replace(/\/+$/, "") + "/chat/completions";
     }
 
-    // Build prompt — single call for description + category
-    let promptText = `Generate a 2-3 sentence product description for:
+    // Build prompt — rich, detailed product description
+    let promptText = `You are a professional copywriter for a Nigerian online store. Write a compelling, detailed product description (4-6 sentences) for:
 
 Product Name: ${name.trim()}`;
     if (category) promptText += `\nCategory: ${category.trim()}`;
     if (price) promptText += `\nPrice: ₦${price}`;
-    promptText += `\n\nHighlight key features and benefits. Focus on what makes this product valuable.`;
+    promptText += `\n\nWrite a persuasive, sales-oriented description that:
+- Opens with an attention-grabbing hook
+- Highlights 2-3 key features and their benefits
+- Creates urgency or desire
+- Uses warm, professional language suitable for Nigerian customers
+- Flows naturally with good sentence construction
+- Ends with a subtle call-to-action feel
+
+Do NOT include any prefixes like "DESCRIPTION:" — just write the description directly.`;
 
     if (!category) {
       promptText += `\n\nAlso suggest ONE short category name (e.g., "Electronics", "Fashion", "Beauty", "Food").`;
       promptText += `\nReturn your response in this exact format:
-DESCRIPTION: <the description>
+DESCRIPTION: <the 4-6 sentence description>
 CATEGORY: <the category>`;
     } else {
       promptText += `\n\nOnly return the description text, nothing else.`;
@@ -165,10 +173,10 @@ CATEGORY: <the category>`;
         body: JSON.stringify({
           model,
           messages: [
-            { role: "system", content: "You are a product copywriter for a Nigerian online store. Generate compelling, concise product descriptions. Use persuasive, sales-oriented language appropriate for a Nigerian audience. Mention Naira pricing if relevant. Be professional but friendly." },
+            { role: "system", content: "You are an expert copywriter for Nigerian online stores. You write compelling, detailed product descriptions that sell. Your descriptions are 4-6 sentences, opening with a hook, highlighting key features and benefits, and ending with a subtle call-to-action. You use warm, professional language. Never include prefixes like 'DESCRIPTION:' — just write the description." },
             userMessage,
           ],
-          max_tokens: 200,
+          max_tokens: 600,
         }),
       }, 30000);
     } catch (fetchError: any) {
@@ -244,9 +252,13 @@ CATEGORY: <the category>`;
       description = content;
     }
 
-    // Trim to reasonable length (max ~500 chars for product descriptions)
-    if (description.length > 500) {
-      description = description.slice(0, 497) + "...";
+    // Strip any leftover prefixes the AI might add
+    description = description.replace(/^DESCRIPTION:\s*/i, "").trim();
+    suggestedCategory = suggestedCategory?.replace(/^CATEGORY:\s*/i, "").trim() || null;
+
+    // Trim to reasonable length (max ~1500 chars for detailed descriptions)
+    if (description.length > 1500) {
+      description = description.slice(0, 1497) + "...";
     }
 
     return NextResponse.json({ description, suggestedCategory });
