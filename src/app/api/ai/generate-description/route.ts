@@ -105,10 +105,13 @@ export async function POST(req: NextRequest) {
     const model = settings.ai_model;
     const apiKey = settings.ai_api_key;
 
-    // Determine base URL
-    const baseURL = settings.ai_base_url || PROVIDER_URLS[provider] || "";
+    // Determine base URL — append /chat/completions if not already present
+    let baseURL = settings.ai_base_url || PROVIDER_URLS[provider] || "";
     if (!baseURL) {
       return NextResponse.json({ error: `No base URL configured for ${provider}` }, { status: 400 });
+    }
+    if (!baseURL.endsWith("/chat/completions")) {
+      baseURL = baseURL.replace(/\/+$/, "") + "/chat/completions";
     }
 
     // Build prompt — single call for description + category

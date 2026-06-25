@@ -206,14 +206,14 @@ export default function AdminSettings() {
                       onChange={(e) => updateSetting("ai_model", e.target.value)}
                       placeholder={
                         settings.ai_provider === "openrouter" ? "e.g. google/gemini-2.0-flash-exp:free" :
-                        settings.ai_provider === "opencodezen" ? "e.g. gemini-2.0-flash" :
+                        settings.ai_provider === "opencodezen" ? "e.g. mimo-v2.5-free" :
                         settings.ai_provider === "openai" ? "e.g. gpt-4o-mini" :
                         "e.g. model-name"
                       }
                     />
                     <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
                       {settings.ai_provider === "openrouter" && "Browse free models at openrouter.ai/models?fmt=free"}
-                      {settings.ai_provider === "opencodezen" && "Use any available model from OpenCode Zen"}
+                      {settings.ai_provider === "opencodezen" && "Free: mimo-v2.5-free, deepseek-v4-flash-free, big-pickle, nemotron-3-super-free, minimax-m3-free"}
                       {settings.ai_provider === "openai" && "e.g. gpt-4o-mini, gpt-4o"}
                       {settings.ai_provider === "custom" && "Enter the model name for your API"}
                     </p>
@@ -257,10 +257,14 @@ export default function AdminSettings() {
                         value={settings.ai_base_url || ""}
                         onChange={(e) => updateSetting("ai_base_url", e.target.value)}
                         placeholder={
-                          settings.ai_provider === "opencodezen" ? "https://api.opencodezen.com/v1" :
+                          settings.ai_provider === "opencodezen" ? "https://opencode.ai/zen/v1" :
                           "https://api.example.com/v1"
                         }
                       />
+                      <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                        {settings.ai_provider === "opencodezen" && "Use https://opencode.ai/zen/v1 — /chat/completions is appended automatically"}
+                        {settings.ai_provider === "custom" && "Base URL — /chat/completions will be appended automatically"}
+                      </p>
                     </div>
                   )}
 
@@ -274,7 +278,7 @@ export default function AdminSettings() {
                     </p>
                     <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                       {settings.ai_provider === "openrouter" && "Access free and paid AI models. Many free models support image input (multimodal). No credit card required for free models."}
-                      {settings.ai_provider === "opencodezen" && "OpenCode Zen provides access to various AI models. Configure your base URL and API key above."}
+                      {settings.ai_provider === "opencodezen" && "Curated models for coding. Free models available (mimo-v2.5-free, deepseek-v4-flash-free, etc). Base URL: https://opencode.ai/zen/v1"}
                       {settings.ai_provider === "openai" && "Direct OpenAI API access. Requires a paid API key."}
                       {settings.ai_provider === "custom" && "Use any OpenAI-compatible API endpoint. Configure the base URL and API key above."}
                     </p>
