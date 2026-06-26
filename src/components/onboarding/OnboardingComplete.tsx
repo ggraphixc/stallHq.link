@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import { Store } from "@/types";
 import { CheckCircle, ExternalLink, ArrowRight, Sparkles, LayoutDashboard } from "lucide-react";
+import { useBranding } from "@/hooks/useBranding";
 
 interface OnboardingCompleteProps {
   store: Store | null;
@@ -66,6 +67,7 @@ function Particles() {
 }
 
 export function OnboardingComplete({ store }: OnboardingCompleteProps) {
+  const { logo_url } = useBranding();
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", position: "relative", overflow: "hidden" }}>
       <Particles />

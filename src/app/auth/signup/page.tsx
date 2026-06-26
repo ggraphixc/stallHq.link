@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, MessageCircle, Store, ShoppingCart, Eye, EyeOff } from "lucide-react";
 import { useAlert } from "@/contexts/AlertContext";
+import { useBranding } from "@/hooks/useBranding";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -70,6 +71,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { error: showError } = useAlert();
+  const { logo_url } = useBranding();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,9 +109,13 @@ export default function SignupPage() {
         <div style={{ width: "100%", maxWidth: "24rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Logo */}
           <Link href="/" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-            <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-green), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <MessageCircle style={{ width: "1rem", height: "1rem", color: "white" }} />
-            </div>
+            {logo_url ? (
+              <img src={logo_url} alt="StallHq" style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", objectFit: "cover" }} />
+            ) : (
+              <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-green), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <MessageCircle style={{ width: "1rem", height: "1rem", color: "white" }} />
+              </div>
+            )}
             <span style={{ fontSize: "1.125rem", fontWeight: 700 }} className="text-gradient">stallHq</span>
           </Link>
 

@@ -7,6 +7,7 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { FilterPills } from "@/components/ui/FilterPills";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useBranding } from "@/hooks/useBranding";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -122,6 +123,7 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const recScrollRef = useRef<HTMLDivElement>(null);
+  const { logo_url } = useBranding();
 
   // Fetch recommended products
   useEffect(() => {
@@ -193,9 +195,13 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
       <header style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(var(--bg-primary),0.8)", backdropFilter: "blur(16px)", position: "sticky", top: 0, zIndex: 40 }}>
         <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 1rem", height: "3.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
-            <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ color: "white", fontWeight: 700, fontSize: "0.875rem" }}>S</span>
-            </div>
+            {logo_url ? (
+              <img src={logo_url} alt="StallHq" style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", objectFit: "cover" }} />
+            ) : (
+              <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ color: "white", fontWeight: 700, fontSize: "0.875rem" }}>S</span>
+              </div>
+            )}
             <span style={{ fontWeight: 700, fontSize: "0.875rem" }}>StallHq</span>
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>

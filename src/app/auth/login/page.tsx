@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Mail, ArrowRight, MessageCircle, Eye, EyeOff } from "lucide-react";
 import { useAlert } from "@/contexts/AlertContext";
+import { useBranding } from "@/hooks/useBranding";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -68,48 +69,60 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { error: showError } = useAlert();
+  const { logo_url } = useBranding();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      if (data.error === "email_not_confirmed") {
-        await fetch("/api/auth/send-verification", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, type: "signup" }),
-        });
-        window.location.href = `/auth/verify-email?email=${encodeURIComponent(email)}`;
+      if (!res.ok) {
+        if (data.error === "email_not_confirmed") {
+          await fetch("/api/auth/send-verification", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, type: "signup" }),
+          });
+          window.location.href = `/auth/verify-email?email=${encodeURIComponent(email)}`;
+          return;
+        }
+        showError(data.error || "Login failed");
+        setLoading(false);
         return;
       }
-      showError(data.error || "Login failed");
-      setLoading(false);
-      return;
-    }
 
-    // Cookies are set on the JSON response — now check if user has a store
-    const storeCheck = await fetch("/api/stores");
-    const storeData = await storeCheck.json();
-    
-    // Check if user is admin
-    if (email.toLowerCase() === "zerupth@gmail.com") {
-      window.location.href = "/admin";
-      return;
-    }
-    
-    if (storeData.store) {
-      window.location.href = "/dashboard";
-    } else {
-      window.location.href = "/dashboard/customer";
+      // Check if user is admin
+      if (email.toLowerCase() === "zerupth@gmail.com") {
+        window.location.href = "/admin";
+        return;
+      }
+
+      // Check if user has a store — redirect accordingly
+      try {
+        const storeRes = await fetch("/api/stores");
+        const storeData = await storeRes.json();
+
+        // /api/stores returns the store object directly or null
+        if (storeData && storeData.id) {
+          window.location.href = "/dashboard";
+        } else {
+          window.location.href = "/dashboard/customer";
+        }
+      } catch {
+        // If store check fails, still redirect to dashboard
+        window.location.href = "/dashboard";
+      }
+    } catch {
+      showError("Network error. Please try again.");
+      setLoading(false);
     }
   };
 
@@ -120,9 +133,13 @@ export default function LoginPage() {
         <div style={{ width: "100%", maxWidth: "24rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Logo */}
           <Link href="/" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-            <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <MessageCircle style={{ width: "1rem", height: "1rem", color: "white" }} />
-            </div>
+            {logo_url ? (
+              <img src={logo_url} alt="StallHq" style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", objectFit: "cover" }} />
+            ) : (
+              <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <MessageCircle style={{ width: "1rem", height: "1rem", color: "white" }} />
+              </div>
+            )}
             <span style={{ fontSize: "1.125rem", fontWeight: 700 }} className="text-gradient">stallHq</span>
           </Link>
 

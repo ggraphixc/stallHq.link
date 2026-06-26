@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Store, ShoppingCart, BarChart3, QrCode, Zap, Shield, ArrowRight, Check, Star, Menu, X } from "lucide-react";
 import { PLANS, formatNaira } from "@/lib/subscription";
+import { useBranding } from "@/hooks/useBranding";
+import { HomeStructuredData } from "@/components/HomeStructuredData";
 import type { SubscriptionPlan } from "@/types";
 
 function Particles() {
@@ -97,18 +99,24 @@ const labelStyle: React.CSSProperties = { textAlign: "center", fontSize: 11, fon
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { logo_url } = useBranding();
 
   return (
     <>
+      <HomeStructuredData />
       <Particles />
       <main className="relative z-10" style={{ overflowX: "hidden" }}>
         {/* Header */}
         <header style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "rgba(6,6,11,0.95)", borderBottom: "1px solid var(--border-subtle)", overflow: "hidden" }}>
           <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 1rem", height: "3.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none", flexShrink: 0 }}>
-              <div style={{ width: "1.75rem", height: "1.75rem", borderRadius: "0.375rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ color: "white", fontWeight: 700, fontSize: "0.75rem" }}>S</span>
-              </div>
+              {logo_url ? (
+                <img src={logo_url} alt="StallHq" style={{ width: "1.75rem", height: "1.75rem", borderRadius: "0.375rem", objectFit: "cover" }} />
+              ) : (
+                <div style={{ width: "1.75rem", height: "1.75rem", borderRadius: "0.375rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ color: "white", fontWeight: 700, fontSize: "0.75rem" }}>S</span>
+                </div>
+              )}
               <span style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--text-primary)" }}>StallHq</span>
             </Link>
 
@@ -334,9 +342,13 @@ export default function Home() {
           <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "flex-start", fontSize: 12, color: "var(--text-muted)", flexWrap: "wrap", gap: 24 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", maxWidth: 240 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                <div style={{ width: "1.25rem", height: "1.25rem", borderRadius: "0.25rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ color: "white", fontWeight: 700, fontSize: "0.5rem" }}>S</span>
-                </div>
+                {logo_url ? (
+                  <img src={logo_url} alt="StallHq" style={{ width: "1.25rem", height: "1.25rem", borderRadius: "0.25rem", objectFit: "cover" }} />
+                ) : (
+                  <div style={{ width: "1.25rem", height: "1.25rem", borderRadius: "0.25rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ color: "white", fontWeight: 700, fontSize: "0.5rem" }}>S</span>
+                  </div>
+                )}
                 <span style={{ fontWeight: 700, fontSize: "0.8125rem", color: "var(--text-primary)" }}>StallHq</span>
               </div>
               <p style={{ lineHeight: 1.5 }}>Digital storefronts for WhatsApp &amp; Instagram vendors across Nigeria and Africa. Sell smarter, not harder.</p>
