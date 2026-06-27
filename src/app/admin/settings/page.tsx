@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAlert } from "@/contexts/AlertContext";
 import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw, Sparkles, Eye, EyeOff, Palette, Upload, X } from "lucide-react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface Setting {
   key: string; value: any; updated_at: string;
@@ -118,6 +119,7 @@ export default function AdminSettings() {
 
 /* ── General Tab ────────────────────────────────── */
 function GeneralTab({ settings, updateSetting }: { settings: Record<string, any>; updateSetting: (key: string, value: any) => void }) {
+  const isMobile = useMediaQuery("(max-width: 640px)");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       <h3 style={{ fontSize: "0.875rem", fontWeight: 700 }}>General</h3>
@@ -133,7 +135,7 @@ function GeneralTab({ settings, updateSetting }: { settings: Record<string, any>
         <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Support Email</label>
         <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.support_email || ""} onChange={(e) => updateSetting("support_email", e.target.value)} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "0.75rem" }}>
         <div>
           <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Trial Days</label>
           <input className="ambient-input" type="number" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.trial_days || 5} onChange={(e) => updateSetting("trial_days", parseInt(e.target.value) || 5)} />
@@ -286,6 +288,7 @@ function EmailTab({ settings, updateSetting }: { settings: Record<string, any>; 
 
 /* ── Payments Tab ────────────────────────────────── */
 function PaymentsTab() {
+  const isMobile = useMediaQuery("(max-width: 640px)");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       <h3 style={{ fontSize: "0.875rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -295,7 +298,7 @@ function PaymentsTab() {
         <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Paystack API keys are configured via environment variables.</p>
         <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Set <code style={{ padding: "0.125rem 0.25rem", background: "var(--bg-primary)", borderRadius: "0.25rem", fontSize: "0.625rem" }}>PAYSTACK_SECRET_KEY</code> in Vercel env vars.</p>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: "0.5rem" }}>
         {[
           { label: "Monthly", price: "₦3,500" },
           { label: "Quarterly", price: "₦7,500" },

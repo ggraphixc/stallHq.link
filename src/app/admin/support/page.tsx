@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAlert } from "@/contexts/AlertContext";
 import { LifeBuoy, MessageCircle, Send, ChevronLeft, Clock, CheckCircle, AlertCircle, Filter, User, RefreshCw } from "lucide-react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const CATEGORY_OPTIONS: Record<string, string> = {
   general: "General", technical: "Technical", billing: "Billing", bug_report: "Bug Report", feature_request: "Feature Request",
@@ -34,6 +35,7 @@ export default function AdminSupport() {
   const [loadingTicket, setLoadingTicket] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   useEffect(() => { fetchTickets(); }, []);
 
@@ -94,10 +96,10 @@ export default function AdminSupport() {
         <button onClick={() => setSelectedTicket(null)} style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", marginBottom: "1rem" }}>
           <ChevronLeft size={16} /> Back to tickets
         </button>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 16rem", gap: "1rem" }} className="admin-support-detail">
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 16rem", gap: "1rem" }} className="admin-support-detail">
           {/* Conversation */}
           <div style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", overflow: "hidden" }}>
-            <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)" }}>
+            <div style={{ padding: isMobile ? "1rem" : "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
                 <span style={{ fontSize: "0.6875rem", padding: "0.125rem 0.5rem", borderRadius: "1rem", background: `${STATUS_COLORS[selectedTicket.status]}15`, color: STATUS_COLORS[selectedTicket.status], border: `1px solid ${STATUS_COLORS[selectedTicket.status]}30`, textTransform: "uppercase" }}>
                   {selectedTicket.status.replace("_", " ")}
@@ -132,7 +134,7 @@ export default function AdminSupport() {
                 </div>
               ))}
             </div>
-            <div style={{ padding: "1rem 1.25rem", borderTop: "1px solid var(--border-subtle)", display: "flex", gap: "0.5rem" }}>
+            <div style={{ padding: isMobile ? "0.5rem" : "1rem 1.25rem", borderTop: "1px solid var(--border-subtle)", display: "flex", gap: "0.5rem" }}>
               <input className="ambient-input" style={{ flex: 1, padding: "0.75rem 1rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} placeholder="Reply as support..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()} />
               <button onClick={sendMessage} disabled={!newMessage.trim() || sending} className="glow-button" style={{ padding: "0.75rem 1rem", fontSize: "0.8125rem", opacity: !newMessage.trim() || sending ? 0.5 : 1 }}><Send size={16} /></button>
             </div>
@@ -166,7 +168,7 @@ export default function AdminSupport() {
   }
 
   return (
-    <div style={{ maxWidth: "56rem", margin: "0 auto" }}>
+    <div style={{ maxWidth: "56rem", margin: "0 auto", padding: isMobile ? "0 0.75rem" : "0" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
         <div>
           <h1 style={{ fontSize: "clamp(1.25rem,3vw,1.5rem)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>

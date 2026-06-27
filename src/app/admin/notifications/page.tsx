@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAlert } from "@/contexts/AlertContext";
 import { Bell, Send, Info, AlertTriangle, CheckCircle, XCircle, Megaphone, Users, RefreshCw, Pencil, Trash2, Palette } from "lucide-react";
 import { EmailEditor } from "@/components/email-editor";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const TYPE_OPTIONS = [
   { value: "info", label: "Info", icon: Info, color: "var(--glow-cyan)" },
@@ -40,6 +41,7 @@ export default function AdminNotifications() {
   const [sendEmail, setSendEmail] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   useEffect(() => { fetchNotifications(); }, []);
 
@@ -136,12 +138,12 @@ export default function AdminNotifications() {
               <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>{editingId ? "Edit Notification" : "Send Notification"}</h2>
               <button onClick={() => setShowCompose(false)} style={{ width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>✕</button>
             </div>
-            <form onSubmit={saveNotification} style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <form onSubmit={saveNotification} style={{ padding: isMobile ? "1rem" : "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div>
                 <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Title</label>
                 <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} placeholder="Notification title" value={title} onChange={(e) => setTitle(e.target.value)} required />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "0.75rem" }}>
                 <div>
                   <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Type</label>
                   <select className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", background: "var(--bg-primary)", boxSizing: "border-box" }} value={type} onChange={(e) => setType(e.target.value)}>
@@ -172,7 +174,7 @@ export default function AdminNotifications() {
                 </label>
               )}
 
-              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", flexWrap: "wrap" }}>
                 <button type="button" onClick={() => setShowCompose(false)} style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}>Cancel</button>
                 <button type="submit" disabled={saving} className="glow-button" style={{ padding: "0.5rem 1rem", fontSize: "0.75rem", opacity: saving ? 0.5 : 1 }}>
                   {saving ? "Saving..." : editingId ? "Update" : "Send Now"}

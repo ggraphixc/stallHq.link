@@ -5,9 +5,10 @@ import { useAlert } from "@/contexts/AlertContext";
 import {
   Type, Image, MousePointer2, Square, Minus, Space, Save, Eye, Undo2, Redo2,
   Trash2, Copy, MoveUp, MoveDown, AlignLeft, AlignCenter, AlignRight,
-  Bold, Italic, Underline, Palette, ChevronDown, X, Layers, Download, Code
+  Bold, Italic, Underline, Palette, ChevronDown, X, Layers, Download, Code, PanelLeftOpen, PanelRightOpen
 } from "lucide-react";
 import { EmailElement, EditorState } from "./types";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 let nextId = 1;
 function genId() { return `el_${nextId++}_${Date.now()}`; }
@@ -54,6 +55,7 @@ interface EmailEditorProps {
 
 export default function EmailEditor({ initialHtml, onSave, onClose }: EmailEditorProps) {
   const { error: showError, success: showSuccess } = useAlert();
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const canvasRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<EditorState>({
     elements: [], selectedId: null, zoom: 1, canvasWidth: 600, canvasHeight: 800, backgroundColor: "#0a0a12",
@@ -65,6 +67,8 @@ export default function EmailEditor({ initialHtml, onSave, onClose }: EmailEdito
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showHtml, setShowHtml] = useState(false);
   const [htmlPreview, setHtmlPreview] = useState("");
+  const [showToolbox, setShowToolbox] = useState(false);
+  const [showProperties, setShowProperties] = useState(false);
   const textRef = useRef<HTMLTextAreaElement>(null);
 
   const pushHistory = useCallback((s: EditorState) => {
@@ -301,37 +305,47 @@ export default function EmailEditor({ initialHtml, onSave, onClose }: EmailEdito
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", flexDirection: "column", background: "var(--bg-primary)" }}>
       {/* Top toolbar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 1rem", borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-secondary)", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: isMobile ? "0.375rem 0.5rem" : "0.5rem 1rem", borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-secondary)", flexShrink: 0, gap: "0.25rem", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <h2 style={{ fontSize: "0.875rem", fontWeight: 700 }}>Email Editor</h2>
-          <span style={{ fontSize: "0.625rem", color: "var(--text-muted)", padding: "0.125rem 0.5rem", background: "var(--bg-primary)", borderRadius: "1rem" }}>{state.elements.length} elements</span>
+          {isMobile && (
+            <button onClick={() => setShowToolbox(!showToolbox)} style={{ padding: "0.375rem", background: showToolbox ? "rgba(168,133,247,0.1)" : "none", border: "none", color: showToolbox ? "var(--glow-purple)" : "var(--text-muted)", cursor: "pointer", borderRadius: "0.25rem" }} title="Elements"><PanelLeftOpen size={16} /></button>
+          )}
+          <h2 style={{ fontSize: isMobile ? "0.75rem" : "0.875rem", fontWeight: 700 }}>Email Editor</h2>
+          <span style={{ fontSize: "0.625rem", color: "var(--text-muted)", padding: "0.125rem 0.5rem", background: "var(--bg-primary)", borderRadius: "1rem" }}>{state.elements.length}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-          <button onClick={undo} disabled={historyIdx <= 0} style={{ padding: "0.375rem", background: "none", border: "none", color: historyIdx <= 0 ? "var(--text-muted)" : "var(--text-secondary)", cursor: "pointer", borderRadius: "0.25rem" }} title="Undo"><Undo2 size={16} /></button>
-          <button onClick={redo} disabled={historyIdx >= history.length - 1} style={{ padding: "0.375rem", background: "none", border: "none", color: historyIdx >= history.length - 1 ? "var(--text-muted)" : "var(--text-secondary)", cursor: "pointer", borderRadius: "0.25rem" }} title="Redo"><Redo2 size={16} /></button>
-          <div style={{ width: "1px", height: "1.25rem", background: "var(--border-subtle)", margin: "0 0.25rem" }} />
-          <button onClick={handlePreview} style={{ padding: "0.375rem 0.625rem", fontSize: "0.6875rem", background: "none", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)", cursor: "pointer", borderRadius: "0.375rem", display: "flex", alignItems: "center", gap: "0.25rem" }}><Eye size={14} /> Preview</button>
-          <button onClick={handleExportHtml} style={{ padding: "0.375rem 0.625rem", fontSize: "0.6875rem", background: "none", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)", cursor: "pointer", borderRadius: "0.375rem", display: "flex", alignItems: "center", gap: "0.25rem" }}><Code size={14} /> HTML</button>
-          <button onClick={handleSave} className="glow-button" style={{ padding: "0.375rem 0.75rem", fontSize: "0.6875rem", display: "flex", alignItems: "center", gap: "0.25rem" }}><Save size={14} /> Save</button>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "0.125rem" : "0.25rem" }}>
+          <button onClick={undo} disabled={historyIdx <= 0} style={{ padding: "0.375rem", background: "none", border: "none", color: historyIdx <= 0 ? "var(--text-muted)" : "var(--text-secondary)", cursor: "pointer", borderRadius: "0.25rem" }} title="Undo"><Undo2 size={isMobile ? 14 : 16} /></button>
+          <button onClick={redo} disabled={historyIdx >= history.length - 1} style={{ padding: "0.375rem", background: "none", border: "none", color: historyIdx >= history.length - 1 ? "var(--text-muted)" : "var(--text-secondary)", cursor: "pointer", borderRadius: "0.25rem" }} title="Redo"><Redo2 size={isMobile ? 14 : 16} /></button>
+          {!isMobile && <div style={{ width: "1px", height: "1.25rem", background: "var(--border-subtle)", margin: "0 0.25rem" }} />}
+          {!isMobile && <button onClick={handlePreview} style={{ padding: "0.375rem 0.625rem", fontSize: "0.6875rem", background: "none", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)", cursor: "pointer", borderRadius: "0.375rem", display: "flex", alignItems: "center", gap: "0.25rem" }}><Eye size={14} /> Preview</button>}
+          {!isMobile && <button onClick={handleExportHtml} style={{ padding: "0.375rem 0.625rem", fontSize: "0.6875rem", background: "none", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)", cursor: "pointer", borderRadius: "0.375rem", display: "flex", alignItems: "center", gap: "0.25rem" }}><Code size={14} /> HTML</button>}
+          {isMobile && <button onClick={handlePreview} style={{ padding: "0.375rem", background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", borderRadius: "0.25rem" }} title="Preview"><Eye size={14} /></button>}
+          {isMobile && <button onClick={handleExportHtml} style={{ padding: "0.375rem", background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", borderRadius: "0.25rem" }} title="HTML"><Code size={14} /></button>}
+          <button onClick={handleSave} className="glow-button" style={{ padding: isMobile ? "0.375rem 0.5rem" : "0.375rem 0.75rem", fontSize: "0.6875rem", display: "flex", alignItems: "center", gap: "0.25rem" }}><Save size={14} /> {!isMobile && "Save"}</button>
           <button onClick={onClose} style={{ padding: "0.375rem", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={18} /></button>
+          {isMobile && (
+            <button onClick={() => setShowProperties(!showProperties)} style={{ padding: "0.375rem", background: showProperties ? "rgba(168,133,247,0.1)" : "none", border: "none", color: showProperties ? "var(--glow-purple)" : "var(--text-muted)", cursor: "pointer", borderRadius: "0.25rem" }} title="Properties"><PanelRightOpen size={16} /></button>
+          )}
         </div>
       </div>
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* Left toolbox */}
-        <div style={{ width: "3.5rem", borderRight: "1px solid var(--border-subtle)", background: "var(--bg-secondary)", display: "flex", flexDirection: "column", alignItems: "center", padding: "0.5rem 0", gap: "0.25rem", flexShrink: 0 }}>
-          {toolboxItems.map(item => (
-            <button key={item.type} onClick={() => addElement(item.type === "text" ? createTextElement() : item.type === "image" ? createImageElement() : item.type === "button" ? createButtonElement() : item.type === "divider" ? createDividerElement() : item.type === "spacer" ? createSpacerElement() : createShapeElement())} title={item.label} style={{ width: "2.5rem", height: "2.5rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer", transition: "all 0.15s" }} onMouseEnter={e => { e.currentTarget.style.background = "rgba(168,133,247,0.1)"; e.currentTarget.style.color = "var(--glow-purple)"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-muted)"; }}>
-              <item.icon size={16} />
-            </button>
-          ))}
-          <div style={{ width: "1.5rem", height: "1px", background: "var(--border-subtle)", margin: "0.25rem 0" }} />
-          <button onClick={duplicateSelected} disabled={!state.selectedId} title="Duplicate" style={{ width: "2.5rem", height: "2.5rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: state.selectedId ? "var(--text-muted)" : "var(--text-muted)", opacity: state.selectedId ? 1 : 0.4, cursor: state.selectedId ? "pointer" : "default" }}><Copy size={14} /></button>
-          <button onClick={deleteSelected} disabled={!state.selectedId} title="Delete" style={{ width: "2.5rem", height: "2.5rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--glow-red)", opacity: state.selectedId ? 1 : 0.4, cursor: state.selectedId ? "pointer" : "default" }}><Trash2 size={14} /></button>
-        </div>
+      <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
+        {/* Left toolbox - hidden on mobile unless toggled */}
+        {(!isMobile || showToolbox) && (
+          <div style={{ width: isMobile ? "3rem" : "3.5rem", borderRight: "1px solid var(--border-subtle)", background: "var(--bg-secondary)", display: "flex", flexDirection: "column", alignItems: "center", padding: "0.5rem 0", gap: "0.25rem", flexShrink: 0, ...(isMobile ? { position: "absolute", left: 0, top: 0, bottom: 0, zIndex: 20, boxShadow: "4px 0 16px rgba(0,0,0,0.3)" } : {}) }}>
+            {toolboxItems.map(item => (
+              <button key={item.type} onClick={() => { addElement(item.type === "text" ? createTextElement() : item.type === "image" ? createImageElement() : item.type === "button" ? createButtonElement() : item.type === "divider" ? createDividerElement() : item.type === "spacer" ? createSpacerElement() : createShapeElement()); if (isMobile) setShowToolbox(false); }} title={item.label} style={{ width: "2.5rem", height: "2.5rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer", transition: "all 0.15s" }} onMouseEnter={e => { e.currentTarget.style.background = "rgba(168,133,247,0.1)"; e.currentTarget.style.color = "var(--glow-purple)"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-muted)"; }}>
+                <item.icon size={16} />
+              </button>
+            ))}
+            <div style={{ width: "1.5rem", height: "1px", background: "var(--border-subtle)", margin: "0.25rem 0" }} />
+            <button onClick={duplicateSelected} disabled={!state.selectedId} title="Duplicate" style={{ width: "2.5rem", height: "2.5rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: state.selectedId ? "var(--text-muted)" : "var(--text-muted)", opacity: state.selectedId ? 1 : 0.4, cursor: state.selectedId ? "pointer" : "default" }}><Copy size={14} /></button>
+            <button onClick={deleteSelected} disabled={!state.selectedId} title="Delete" style={{ width: "2.5rem", height: "2.5rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--glow-red)", opacity: state.selectedId ? 1 : 0.4, cursor: state.selectedId ? "pointer" : "default" }}><Trash2 size={14} /></button>
+          </div>
+        )}
 
         {/* Canvas area */}
-        <div style={{ flex: 1, overflow: "auto", display: "flex", justifyContent: "center", padding: "1.5rem", background: "var(--bg-primary)" }}>
+        <div style={{ flex: 1, overflow: "auto", display: "flex", justifyContent: "center", padding: isMobile ? "0.75rem" : "1.5rem", background: "var(--bg-primary)" }}>
           <div
             ref={canvasRef}
             onMouseMove={onCanvasMouseMove}
@@ -345,7 +359,7 @@ export default function EmailEditor({ initialHtml, onSave, onClose }: EmailEdito
               background: state.backgroundColor,
               borderRadius: "0.5rem",
               boxShadow: "0 0 0 1px var(--border-subtle), 0 8px 32px rgba(0,0,0,0.3)",
-              transform: `scale(${state.zoom})`,
+              transform: `scale(${isMobile ? Math.min(state.zoom, 0.5) : state.zoom})`,
               transformOrigin: "top center",
               flexShrink: 0,
             }}
@@ -410,14 +424,16 @@ export default function EmailEditor({ initialHtml, onSave, onClose }: EmailEdito
           </div>
         </div>
 
-        {/* Right properties panel */}
-        <div style={{ width: "14rem", borderLeft: "1px solid var(--border-subtle)", background: "var(--bg-secondary)", overflowY: "auto", flexShrink: 0 }}>
-          {selectedEl ? (
-            <PropertiesPanel element={selectedEl} onUpdate={(updates) => { updateElement(selectedEl.id, updates); commitUpdate(); }} />
-          ) : (
-            <CanvasProperties state={state} setState={setState} />
-          )}
-        </div>
+        {/* Right properties panel - hidden on mobile unless toggled */}
+        {(!isMobile || showProperties) && (
+          <div style={{ width: isMobile ? "100%" : "14rem", ...(isMobile ? { position: "absolute", right: 0, top: 0, bottom: 0, zIndex: 20, boxShadow: "-4px 0 16px rgba(0,0,0,0.3)", maxWidth: "14rem" } : { borderLeft: "1px solid var(--border-subtle)" }), borderLeft: isMobile ? "none" : "1px solid var(--border-subtle)", background: "var(--bg-secondary)", overflowY: "auto", flexShrink: 0 }}>
+            {selectedEl ? (
+              <PropertiesPanel element={selectedEl} onUpdate={(updates) => { updateElement(selectedEl.id, updates); commitUpdate(); }} />
+            ) : (
+              <CanvasProperties state={state} setState={setState} />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Preview modal */}
