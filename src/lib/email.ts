@@ -1,5 +1,5 @@
 import { SubscriptionPlan } from "@/types";
-import { getPlanName } from "@/lib/subscription";
+import { getPlanName, formatNaira } from "@/lib/subscription";
 import { createClient } from "@supabase/supabase-js";
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY!;
@@ -779,5 +779,425 @@ export async function sendSupportReplyNotification({
     subject: `Support reply on ticket #${shortId}: ${subject}`,
     htmlContent: html,
     tags: ["support", "reply"],
+  });
+}
+
+// ─── Marketing email sequences ───────────────────────────────────────────────
+
+export async function sendTrialNurtureDay1({
+  email,
+  name,
+  storeName,
+  storeSlug,
+}: {
+  email: string;
+  name?: string;
+  storeName: string;
+  storeSlug: string;
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#127881;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Welcome aboard!</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">Your store is live</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting},</p>
+          <p style="margin:12px 0 0;font-size:15px;color:#e0e0e0;line-height:1.6;">Your store <strong>${storeName}</strong> is now live on ${platformName}! Here are 3 things to do right now to get your first order:</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);border-radius:12px;">
+            <tr>
+              <td style="padding:20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:8px 0;vertical-align:top;width:32px;">
+                      <div style="width:24px;height:24px;border-radius:50%;background:rgba(168,85,247,0.15);text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#a78bfa;">1</div>
+                    </td>
+                    <td style="padding:8px 0 8px 12px;">
+                      <p style="margin:0;font-size:14px;font-weight:600;color:#f1f5f9;">Add product photos</p>
+                      <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">Stores with images get 3x more orders. Upload clear, well-lit photos.</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0;vertical-align:top;width:32px;">
+                      <div style="width:24px;height:24px;border-radius:50%;background:rgba(168,85,247,0.15);text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#a78bfa;">2</div>
+                    </td>
+                    <td style="padding:8px 0 8px 12px;">
+                      <p style="margin:0;font-size:14px;font-weight:600;color:#f1f5f9;">Share your store link</p>
+                      <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">Put it in your WhatsApp bio, Instagram bio, and TikTok profile.</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0;vertical-align:top;width:32px;">
+                      <div style="width:24px;height:24px;border-radius:50%;background:rgba(168,85,247,0.15);text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#a78bfa;">3</div>
+                    </td>
+                    <td style="padding:8px 0 8px 12px;">
+                      <p style="margin:0;font-size:14px;font-weight:600;color:#f1f5f9;">Tell 5 friends today</p>
+                      <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">Word of mouth is the #1 channel for WhatsApp vendors.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/${storeSlug}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Your Store</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `Your store is live! 3 steps to get your first order`,
+    htmlContent: html,
+    tags: ["marketing", "trial_nurture", "day1"],
+  });
+}
+
+export async function sendTrialNurtureDay3({
+  email,
+  name,
+  storeName,
+  storeSlug,
+  productCount,
+}: {
+  email: string;
+  name?: string;
+  storeName: string;
+  storeSlug: string;
+  productCount: number;
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
+  const hasProducts = productCount > 0;
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#128161;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">${hasProducts ? "Your store is looking good!" : "Add your first product"}</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting},</p>
+          <p style="margin:12px 0 0;font-size:15px;color:#e0e0e0;line-height:1.6;">${
+            hasProducts
+              ? `You have ${productCount} product${productCount > 1 ? "s" : ""} on ${storeName}. Here's a tip from top vendors:`
+              : `You haven't added any products yet. It takes 2 minutes to add your first product.`
+          }</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <div style="padding:16px 20px;background:rgba(16,185,129,0.06);border-left:3px solid #10b981;border-radius:0 8px 8px 0;">
+            <p style="margin:0;font-size:14px;color:#e0e0e0;line-height:1.5;"><strong style="color:#10b981;">Pro tip:</strong> Vendors who add at least 5 products and share their link within the first 3 days get 70% more orders in their first week.</p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/dashboard" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">${hasProducts ? "Manage Your Store" : "Add Products Now"}</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: hasProducts
+      ? `Tip: Get more orders from ${storeName}`
+      : `Add your first product to ${storeName} — it takes 2 minutes`,
+    htmlContent: html,
+    tags: ["marketing", "trial_nurture", "day3"],
+  });
+}
+
+export async function sendTrialNurtureDay5({
+  email,
+  name,
+  storeName,
+  storeSlug,
+  daysLeft,
+}: {
+  email: string;
+  name?: string;
+  storeName: string;
+  storeSlug: string;
+  daysLeft: number;
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#ef4444);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#9888;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Your trial expires in ${daysLeft} days</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">Keep your store live</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting},</p>
+          <p style="margin:12px 0 0;font-size:15px;color:#e0e0e0;line-height:1.6;">Your free trial for <strong>${storeName}</strong> expires in ${daysLeft} day${daysLeft > 1 ? "s" : ""}. Upgrade now to keep your store live and continue receiving orders.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);border-radius:12px;">
+            <tr>
+              <td style="padding:20px;">
+                <p style="margin:0 0 12px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">What you get with a paid plan:</p>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  ${[
+                    "Your own store URL (stallhq.link/yourstore)",
+                    "Unlimited products with photos",
+                    "Order tracking dashboard",
+                    "QR code for offline sales",
+                    "Verified vendor badge",
+                    "Priority support",
+                  ]
+                    .map(
+                      (f) => `
+                    <tr>
+                      <td style="padding:4px 0;vertical-align:top;width:20px;">
+                        <span style="color:#22c55e;font-size:14px;">&#10003;</span>
+                      </td>
+                      <td style="padding:4px 0;font-size:13px;color:#e0e0e0;">${f}</td>
+                    </tr>`
+                    )
+                    .join("")}
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/upgrade" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Upgrade Now — From ${formatNaira(3500)}/month</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `Your trial expires in ${daysLeft} days — upgrade to keep ${storeName} live`,
+    htmlContent: html,
+    tags: ["marketing", "trial_nurture", "day5"],
+  });
+}
+
+export async function sendUpgradeThankYou({
+  email,
+  name,
+  storeName,
+  plan,
+}: {
+  email: string;
+  name?: string;
+  storeName: string;
+  plan: string;
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
+  const planLabel = getPlanName(plan as SubscriptionPlan);
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#127881;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Welcome to ${planLabel}!</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">Thank you for upgrading</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting},</p>
+          <p style="margin:12px 0 0;font-size:15px;color:#e0e0e0;line-height:1.6;">You've upgraded <strong>${storeName}</strong> to the <strong>${planLabel}</strong> plan. Your store now has all premium features unlocked.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <div style="padding:16px 20px;background:rgba(16,185,129,0.06);border-left:3px solid #10b981;border-radius:0 8px 8px 0;">
+            <p style="margin:0;font-size:14px;color:#e0e0e0;line-height:1.5;"><strong style="color:#10b981;">What's next?</strong> Focus on adding great products and sharing your store link. We'll handle the rest.</p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/dashboard" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Go to Dashboard</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `Welcome to ${planLabel} — ${storeName} is now premium`,
+    htmlContent: html,
+    tags: ["marketing", "upgrade", "thank_you"],
+  });
+}
+
+export async function sendWinBackEmail({
+  email,
+  name,
+  storeName,
+  storeSlug,
+  daysSinceExpiry,
+}: {
+  email: string;
+  name?: string;
+  storeName: string;
+  storeSlug: string;
+  daysSinceExpiry: number;
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#128148;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">We miss you!</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName} is offline</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting},</p>
+          <p style="margin:12px 0 0;font-size:15px;color:#e0e0e0;line-height:1.6;">It's been ${daysSinceExpiry} day${daysSinceExpiry > 1 ? "s" : ""} since your subscription expired. Your store <strong>${storeName}</strong> is currently offline and customers can't browse your products.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);border-radius:12px;">
+            <tr>
+              <td style="padding:20px;">
+                <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Quick reminder</p>
+                <p style="margin:0;font-size:14px;color:#e0e0e0;line-height:1.5;">Your data is safe. All your products, orders, and store settings are preserved. Upgrade anytime to bring your store back online instantly.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/upgrade" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Reactivate Your Store</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `We miss you — bring ${storeName} back online`,
+    htmlContent: html,
+    tags: ["marketing", "win_back"],
+  });
+}
+
+export async function sendWeeklyDigest({
+  email,
+  name,
+  storeName,
+  storeSlug,
+  stats,
+}: {
+  email: string;
+  name?: string;
+  storeName: string;
+  storeSlug: string;
+  stats: {
+    visits: number;
+    orders: number;
+    whatsappClicks: number;
+    topProduct?: string;
+  };
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#128200;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Your Weekly Report</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);border-radius:12px;">
+            <tr>
+              <td style="padding:20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:8px 0;width:33%;text-align:center;">
+                      <p style="margin:0;font-size:24px;font-weight:700;color:#a78bfa;">${stats.visits}</p>
+                      <p style="margin:4px 0 0;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Visits</p>
+                    </td>
+                    <td style="padding:8px 0;width:33%;text-align:center;">
+                      <p style="margin:0;font-size:24px;font-weight:700;color:#22c55e;">${stats.orders}</p>
+                      <p style="margin:4px 0 0;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Orders</p>
+                    </td>
+                    <td style="padding:8px 0;width:33%;text-align:center;">
+                      <p style="margin:0;font-size:24px;font-weight:700;color:#06b6d4;">${stats.whatsappClicks}</p>
+                      <p style="margin:4px 0 0;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">WA Clicks</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      ${
+        stats.topProduct
+          ? `<tr>
+        <td style="padding:0 32px 24px;">
+          <div style="padding:14px 18px;background:rgba(16,185,129,0.06);border-left:3px solid #10b981;border-radius:0 8px 8px 0;">
+            <p style="margin:0;font-size:14px;color:#e0e0e0;line-height:1.5;"><strong style="color:#10b981;">Top product:</strong> ${stats.topProduct}</p>
+          </div>
+        </td>
+      </tr>`
+          : ""
+      }
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/dashboard" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Full Dashboard</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `Weekly report for ${storeName} — ${stats.visits} visits, ${stats.orders} orders`,
+    htmlContent: html,
+    tags: ["marketing", "weekly_digest"],
   });
 }

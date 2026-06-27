@@ -322,6 +322,29 @@ export default function Home() {
           </div>
         </section>
 
+        {/* FAQ */}
+        <section style={sectionStyle}>
+          <p style={labelStyle}>Frequently Asked Questions</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxWidth: 600, margin: "0 auto" }}>
+            {[
+              { q: "Is StallHq really free to start?", a: "Yes. You get a 7-day free trial with full access. After that, plans start at just \u20a63,500/month. No hidden fees, no platform commission on your sales." },
+              { q: "Do I need a website or hosting?", a: "No. StallHq gives you a ready-made store at stallhq.link/yourstore. No coding, no hosting, no domain registration needed." },
+              { q: "How do customers place orders?", a: "Customers browse your catalog, select products, and click the order button. The order is sent to your WhatsApp or Instagram DM with all the details." },
+              { q: "Can I use it for Instagram too?", a: "Yes. You can connect both WhatsApp and Instagram. Customers can choose which channel to order through." },
+              { q: "What happens after my trial expires?", a: "Your store goes offline, but all your data is preserved. Upgrade anytime to bring it back instantly — no re-setup needed." },
+              { q: "Can I accept payments directly?", a: "StallHq connects you to customers via WhatsApp/Instagram where you can arrange payment (bank transfer, cash on delivery, etc). We don't process payments directly." },
+            ].map((item, i) => (
+              <details key={i} className="ambient-card" style={{ padding: "1rem 1.25rem", cursor: "pointer" }}>
+                <summary style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)", listStyle: "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  {item.q}
+                  <span style={{ fontSize: "1.25rem", color: "var(--text-muted)", transition: "transform 0.2s" }}>+</span>
+                </summary>
+                <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", lineHeight: 1.6, marginTop: "0.75rem" }}>{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
         {/* CTA */}
         <section style={{ maxWidth: 560, margin: "0 auto", padding: "5rem 1.5rem" }}>
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, borderRadius: 16, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.02)", padding: "3rem 2rem" }}>

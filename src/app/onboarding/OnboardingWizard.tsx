@@ -108,8 +108,12 @@ export function OnboardingWizard({ existingStore, productCount }: OnboardingWiza
     setCurrentStep(3);
   };
 
-  const handleWhatsAppConnected = () => {
+  const handleWhatsAppConnected = async () => {
     setIsComplete(true);
+    // Send welcome email after onboarding completion (non-blocking)
+    try {
+      fetch("/api/auth/welcome-email", { method: "POST" }).catch(() => {});
+    } catch {}
   };
 
   const handleSkip = () => {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { verifyWebhookSignature, verifyTransaction, getSubscriptionExpiry } from "@/lib/paystack";
+import { sendUpgradeThankYou } from "@/lib/email";
 import { SubscriptionPlan } from "@/types";
 
 const supabaseAdmin = createClient(
@@ -102,6 +103,28 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Paystack webhook: Successfully activated ${plan} for store ${payment.store_id}`);
+
+    // Send upgrade thank you email (non-blocking)
+    try {
+      const { data: storeData } = await supabaseAdmin
+        .from("stores")
+        .select("name")
+        .eq("id", payment.store_id)
+        .single();
+
+      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(payment.user_id);
+
+      if (userData?.user?.email) {
+        sendUpgradeThankYou({
+          email: userData.user.email,
+          name: userData.user.user_metadata?.name || userData.user.user_metadata?.full_name,
+          storeName: storeData?.name || "Your Store",
+          plan,
+        }).catch(() => {});
+      }
+    } catch {
+      // Non-blocking — email failure should not fail the webhook
+    }
 
     return NextResponse.json({ received: true });
   } catch (error) {
