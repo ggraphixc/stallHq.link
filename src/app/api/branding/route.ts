@@ -13,7 +13,7 @@ export async function GET() {
     const { data, error } = await supabaseAdmin
       .from("platform_settings")
       .select("key, value")
-      .in("key", ["logo_url", "favicon_url"]);
+      .in("key", ["logo_url", "favicon_url", "platform_name"]);
 
     if (error) throw error;
 
@@ -22,10 +22,14 @@ export async function GET() {
       settings[row.key] = row.value;
     }
 
-    return NextResponse.json(settings, {
+    return NextResponse.json({
+      logo_url: settings.logo_url || null,
+      favicon_url: settings.favicon_url || null,
+      platform_name: settings.platform_name || "stallHq",
+    }, {
       headers: { "Cache-Control": "public, max-age=300, s-maxage=300" },
     });
   } catch {
-    return NextResponse.json({ logo_url: null, favicon_url: null });
+    return NextResponse.json({ logo_url: null, favicon_url: null, platform_name: "stallHq" });
   }
 }

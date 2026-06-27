@@ -222,34 +222,34 @@ export function StorePage({ store, products }: StorePageProps) {
 
         {/* ── Store Info Card ────────────────────────── */}
         <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 1rem", position: "relative", zIndex: 2, marginTop: store.banner_url ? "-5rem" : "-3rem" }}>
-          <div style={{ ...glassCard, padding: "clamp(1rem, 3vw, 1.5rem)", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            {/* Top row: avatar + name + WhatsApp */}
-            <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", flexWrap: "wrap" }}>
+          <div style={{ ...glassCard, padding: "clamp(1rem, 3vw, 1.5rem)", display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {/* Top row: avatar + name + meta */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "0.875rem" }}>
               <StoreAvatar name={store.name} logoUrl={store.logo_url} size="xl" rounded="2xl" />
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h1 style={{ fontSize: "clamp(1.25rem, 4vw, 1.75rem)", fontWeight: 800, letterSpacing: "-0.025em", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <h1 style={{ fontSize: "clamp(1.125rem, 4vw, 1.75rem)", fontWeight: 800, letterSpacing: "-0.025em", display: "flex", alignItems: "center", gap: "0.5rem", lineHeight: 1.2 }}>
                   {store.name}
                   {store.verified && (
                     <span title="Verified Vendor" style={{
                       display: "inline-flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      width: "1.5rem",
-                      height: "1.5rem",
+                      width: "1.25rem",
+                      height: "1.25rem",
                       borderRadius: "50%",
                       background: "linear-gradient(135deg, #06b6d4, #10b981)",
                       flexShrink: 0,
                     }}>
-                      <ShieldCheck size={12} style={{ color: "white" }} />
+                      <ShieldCheck size={10} style={{ color: "white" }} />
                     </span>
                   )}
                 </h1>
                 {store.description && (
                   <p style={{
-                    fontSize: "clamp(0.8125rem, 2vw, 0.9375rem)",
+                    fontSize: "0.8125rem",
                     color: "var(--text-secondary)",
-                    marginTop: "0.375rem",
+                    marginTop: "0.25rem",
                     lineHeight: 1.5,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -262,7 +262,7 @@ export function StorePage({ store, products }: StorePageProps) {
                 )}
 
                 {/* Meta row */}
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
                   <VisitorBadge storeId={store.id} />
                   <StoreHoursBadge storeHours={store.store_hours} />
                   {store.category && (
@@ -282,54 +282,58 @@ export function StorePage({ store, products }: StorePageProps) {
                 </div>
 
                 {/* Share */}
-                <div style={{ marginTop: "0.75rem" }}>
+                <div style={{ marginTop: "0.5rem" }}>
                   <ShareCard storeSlug={store.slug} storeName={store.name} />
                 </div>
               </div>
+            </div>
 
-              {/* Channel CTAs */}
-              <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0, flexWrap: "wrap" }}>
-                {hasWhatsApp(store.whatsapp_number) && (
-                  <a
-                    href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="glow-button whatsapp-button"
-                    style={{
-                      padding: "0.625rem 1.25rem",
-                      fontSize: "0.8125rem",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      minHeight: "44px",
-                    }}
-                  >
-                    <MessageCircle size={16} />
-                    WhatsApp
-                  </a>
-                )}
-                {hasInstagram(store.instagram_handle) && (
-                  <a
-                    href={generateInstagramUrl(store.instagram_handle!)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="glow-button"
-                    style={{
-                      padding: "0.625rem 1.25rem",
-                      fontSize: "0.8125rem",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      background: "linear-gradient(135deg, #E1306C, #833AB4)",
-                      color: "white",
-                      minHeight: "44px",
-                    }}
-                  >
-                    <Instagram size={16} />
-                    Instagram
-                  </a>
-                )}
-              </div>
+            {/* Channel CTAs — full width row below store info */}
+            <div style={{ display: "flex", gap: "0.5rem", width: "100%" }}>
+              {hasWhatsApp(store.whatsapp_number) && (
+                <a
+                  href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glow-button whatsapp-button"
+                  style={{
+                    flex: 1,
+                    padding: "0.625rem 1rem",
+                    fontSize: "0.8125rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                    minHeight: "44px",
+                  }}
+                >
+                  <MessageCircle size={16} />
+                  WhatsApp
+                </a>
+              )}
+              {hasInstagram(store.instagram_handle) && (
+                <a
+                  href={generateInstagramUrl(store.instagram_handle!)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glow-button"
+                  style={{
+                    flex: 1,
+                    padding: "0.625rem 1rem",
+                    fontSize: "0.8125rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                    background: "linear-gradient(135deg, #E1306C, #833AB4)",
+                    color: "white",
+                    minHeight: "44px",
+                  }}
+                >
+                  <Instagram size={16} />
+                  Instagram
+                </a>
+              )}
             </div>
           </div>
         </div>

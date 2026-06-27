@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAlert } from "@/contexts/AlertContext";
-import { Bell, Send, Info, AlertTriangle, CheckCircle, XCircle, Megaphone, Users, RefreshCw, Pencil, Trash2 } from "lucide-react";
+import { Bell, Send, Info, AlertTriangle, CheckCircle, XCircle, Megaphone, Users, RefreshCw, Pencil, Trash2, Palette } from "lucide-react";
+import { EmailEditor } from "@/components/email-editor";
 
 const TYPE_OPTIONS = [
   { value: "info", label: "Info", icon: Info, color: "var(--glow-cyan)" },
@@ -38,6 +39,7 @@ export default function AdminNotifications() {
   const [target, setTarget] = useState("all");
   const [sendEmail, setSendEmail] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
 
   useEffect(() => { fetchNotifications(); }, []);
 
@@ -112,16 +114,16 @@ export default function AdminNotifications() {
   };
 
   return (
-    <div style={{ maxWidth: "48rem", margin: "0 auto" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
+    <div style={{ maxWidth: "48rem", margin: "0 auto", padding: "0 1rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
         <div>
-          <h1 style={{ fontSize: "clamp(1.25rem,3vw,1.5rem)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <Bell size={24} style={{ color: "var(--glow-purple)" }} /> Notifications
+          <h1 style={{ fontSize: "clamp(1.125rem,3vw,1.5rem)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Bell size={20} style={{ color: "var(--glow-purple)" }} /> Notifications
           </h1>
-          <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Send announcements, emails, and manage notifications</p>
+          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Send announcements and manage notifications</p>
         </div>
-        <button onClick={() => openCompose()} className="glow-button" style={{ display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.625rem 1rem", fontSize: "0.8125rem" }}>
-          <Send size={16} /> Compose
+        <button onClick={() => openCompose()} className="glow-button" style={{ display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 0.875rem", fontSize: "0.75rem" }}>
+          <Send size={14} /> Compose
         </button>
       </div>
 
@@ -137,40 +139,42 @@ export default function AdminNotifications() {
             <form onSubmit={saveNotification} style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div>
                 <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Title</label>
-                <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem" }} placeholder="Notification title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} placeholder="Notification title" value={title} onChange={(e) => setTitle(e.target.value)} required />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
                 <div>
                   <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Type</label>
-                  <select className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", background: "var(--bg-primary)" }} value={type} onChange={(e) => setType(e.target.value)}>
+                  <select className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", background: "var(--bg-primary)", boxSizing: "border-box" }} value={type} onChange={(e) => setType(e.target.value)}>
                     {TYPE_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Target</label>
-                  <select className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", background: "var(--bg-primary)" }} value={target} onChange={(e) => setTarget(e.target.value)}>
+                  <select className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", background: "var(--bg-primary)", boxSizing: "border-box" }} value={target} onChange={(e) => setTarget(e.target.value)}>
                     {TARGET_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Message</label>
-                <textarea className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", resize: "none" }} rows={4} placeholder="Notification content..." value={body} onChange={(e) => setBody(e.target.value)} required />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.375rem" }}>
+                  <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase" }}>Message</label>
+                  <button type="button" onClick={() => setShowEditor(true)} style={{ display: "flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", fontSize: "0.625rem", background: "rgba(168,133,247,0.1)", border: "1px solid rgba(168,133,247,0.3)", borderRadius: "0.375rem", color: "var(--glow-purple)", cursor: "pointer" }}>
+                    <Palette size={10} /> Visual Editor
+                  </button>
+                </div>
+                <textarea className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", resize: "none", boxSizing: "border-box" }} rows={4} placeholder="Notification content..." value={body} onChange={(e) => setBody(e.target.value)} required />
               </div>
 
-              {/* Email toggle */}
               {!editingId && (
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem", background: sendEmail ? "rgba(168,133,247,0.08)" : "var(--bg-primary)", border: `1px solid ${sendEmail ? "rgba(168,133,247,0.3)" : "var(--border-subtle)"}`, borderRadius: "0.5rem" }}>
-                  <input type="checkbox" id="send-email" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} style={{ accentColor: "var(--glow-purple)", width: "1rem", height: "1rem" }} />
-                  <label htmlFor="send-email" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", cursor: "pointer" }}>
-                    Also send email to {TARGET_OPTIONS.find(t => t.value === target)?.label}
-                  </label>
-                </div>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem", background: sendEmail ? "rgba(168,133,247,0.08)" : "var(--bg-primary)", border: `1px solid ${sendEmail ? "rgba(168,133,247,0.3)" : "var(--border-subtle)"}`, borderRadius: "0.5rem", cursor: "pointer" }}>
+                  <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} style={{ accentColor: "var(--glow-purple)", width: "1rem", height: "1rem" }} />
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Also send email to {TARGET_OPTIONS.find(t => t.value === target)?.label}</span>
+                </label>
               )}
 
               <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-                <button type="button" onClick={() => setShowCompose(false)} style={{ padding: "0.625rem 1rem", fontSize: "0.8125rem", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" disabled={saving} className="glow-button" style={{ padding: "0.625rem 1.25rem", fontSize: "0.8125rem", opacity: saving ? 0.5 : 1 }}>
+                <button type="button" onClick={() => setShowCompose(false)} style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}>Cancel</button>
+                <button type="submit" disabled={saving} className="glow-button" style={{ padding: "0.5rem 1rem", fontSize: "0.75rem", opacity: saving ? 0.5 : 1 }}>
                   {saving ? "Saving..." : editingId ? "Update" : "Send Now"}
                 </button>
               </div>
@@ -193,35 +197,45 @@ export default function AdminNotifications() {
         ) : notifications.map((n) => {
           const TypeIcon = TYPE_OPTIONS.find(t => t.value === n.type)?.icon || Info;
           return (
-            <div key={n.id} style={{ padding: "1rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.625rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                <div style={{ width: "1.75rem", height: "1.75rem", borderRadius: "0.375rem", background: `${TYPE_COLORS[n.type]}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <TypeIcon size={14} style={{ color: TYPE_COLORS[n.type] }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: "0.875rem", fontWeight: 600 }}>{n.title}</h3>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.6875rem", color: "var(--text-muted)" }}>
-                    <span style={{ textTransform: "capitalize" }}>{n.type}</span>
-                    <span>·</span>
-                    <Users size={10} /> {TARGET_OPTIONS.find(t => t.value === n.target)?.label}
-                    <span>·</span>
-                    {new Date(n.sent_at).toLocaleString()}
+            <div key={n.id} style={{ padding: "0.875rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.625rem" }}>
+              {/* Title row with actions */}
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0, flex: 1 }}>
+                  <div style={{ width: "1.75rem", height: "1.75rem", borderRadius: "0.375rem", background: `${TYPE_COLORS[n.type]}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <TypeIcon size={14} style={{ color: TYPE_COLORS[n.type] }} />
                   </div>
+                  <h3 style={{ fontSize: "0.8125rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.title}</h3>
                 </div>
-                <div style={{ display: "flex", gap: "0.25rem" }}>
-                  <button onClick={() => openCompose(n)} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }} title="Edit">
-                    <Pencil size={13} />
+                <div style={{ display: "flex", gap: "0.125rem", flexShrink: 0 }}>
+                  <button onClick={() => openCompose(n)} style={{ width: "1.75rem", height: "1.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }} title="Edit">
+                    <Pencil size={12} />
                   </button>
-                  <button onClick={() => deleteNotification(n.id)} style={{ width: "2rem", height: "2rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--glow-red)", cursor: "pointer" }} title="Delete">
-                    <Trash2 size={13} />
+                  <button onClick={() => deleteNotification(n.id)} style={{ width: "1.75rem", height: "1.75rem", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "none", background: "transparent", color: "var(--glow-red)", cursor: "pointer" }} title="Delete">
+                    <Trash2 size={12} />
                   </button>
                 </div>
               </div>
-              <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{n.body}</p>
+              {/* Meta row */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.625rem", color: "var(--text-muted)", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                <span style={{ textTransform: "capitalize", color: TYPE_COLORS[n.type] }}>{n.type}</span>
+                <span>·</span>
+                <span>{TARGET_OPTIONS.find(t => t.value === n.target)?.label}</span>
+                <span>·</span>
+                <span>{new Date(n.sent_at).toLocaleDateString()}</span>
+              </div>
+              <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{n.body}</p>
             </div>
           );
         })}
       </div>
+
+      {/* Email Editor */}
+      {showEditor && (
+        <EmailEditor
+          onSave={(html) => { setBody(html); setShowEditor(false); }}
+          onClose={() => setShowEditor(false)}
+        />
+      )}
     </div>
   );
 }

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useAlert } from "@/contexts/AlertContext";
 import { Store } from "@/types";
-import { Package, Loader2, Plus, X, ArrowRight } from "lucide-react";
+import { Package, Loader2, Plus, X, ArrowRight, Sparkles } from "lucide-react";
+import { hasAIAccess } from "@/lib/subscription";
 
 interface ProductEntryStepProps {
   store: Store;
@@ -15,6 +16,7 @@ interface ProductDraft {
   name: string;
   price: string;
   category: string;
+  description: string;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -41,9 +43,10 @@ const labelStyle: React.CSSProperties = {
 export function ProductEntryStep({ store, onProductsAdded, onSkip }: ProductEntryStepProps) {
   const [loading, setLoading] = useState(false);
   const { error: showError, success: showSuccess, confirm } = useAlert();
-  const [products, setProducts] = useState<ProductDraft[]>([{ name: "", price: "", category: "" }]);
+  const [products, setProducts] = useState<ProductDraft[]>([{ name: "", price: "", category: "", description: "" }]);
+  const [generatingAI, setGeneratingAI] = useState<number | null>(null);
 
-  const addProduct = () => setProducts([...products, { name: "", price: "", category: "" }]);
+  const addProduct = () => setProducts([...products, { name: "", price: "", category: "", description: "" }]);
 
   const removeProduct = (index: number) => {
     if (products.length > 1) setProducts(products.filter((_, i) => i !== index));
@@ -53,6 +56,30 @@ export function ProductEntryStep({ store, onProductsAdded, onSkip }: ProductEntr
     const updated = [...products];
     updated[index] = { ...updated[index], [field]: value };
     setProducts(updated);
+  };
+
+  const handleGenerateDescription = async (index: number) => {
+    const product = products[index];
+    if (!product.name.trim()) return;
+    setGeneratingAI(index);
+    try {
+      const res = await fetch("/api/ai/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: product.name.trim(),
+          category: product.category.trim() || undefined,
+          price: product.price || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.description) {
+        const updated = [...products];
+        updated[index] = { ...updated[index], description: data.description };
+        setProducts(updated);
+      }
+    } catch {}
+    setGeneratingAI(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,6 +99,7 @@ export function ProductEntryStep({ store, onProductsAdded, onSkip }: ProductEntr
             name: product.name,
             price: parseFloat(product.price),
             category: product.category || undefined,
+            description: product.description || undefined,
           }),
         });
         if (!res.ok) {
@@ -128,7 +156,41 @@ export function ProductEntryStep({ store, onProductsAdded, onSkip }: ProductEntr
                 required
               />
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.5rem" }}>
+              {/* Description + AI button */}
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.25rem" }}>
+                  <label style={{ ...labelStyle, marginBottom: 0 }}>Description <span style={{ fontWeight: 400, textTransform: "none", color: "var(--text-muted)" }}>(optional)</span></label>
+                  {hasAIAccess(store) ? (
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateDescription(index)}
+                      disabled={generatingAI === index || !product.name.trim()}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "0.25rem",
+                        padding: "0.1875rem 0.5rem", fontSize: "0.625rem", fontWeight: 600,
+                        color: generatingAI === index ? "var(--text-muted)" : "var(--glow-purple)",
+                        background: generatingAI === index ? "rgba(168,85,247,0.05)" : "rgba(168,85,247,0.1)",
+                        border: "1px solid rgba(168,85,247,0.2)", borderRadius: "0.25rem",
+                        cursor: generatingAI === index || !product.name.trim() ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {generatingAI === index ? <Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} /> : <Sparkles size={10} />}
+                      {generatingAI === index ? "Generating..." : "AI"}
+                    </button>
+                  ) : null}
+                </div>
+                <textarea
+                  className="ambient-input"
+                  style={{ ...inputStyle, resize: "none", fontSize: "0.75rem", minHeight: "2.5rem" }}
+                  rows={2}
+                  placeholder={generatingAI === index ? "AI is generating..." : "Product description"}
+                  value={product.description}
+                  onChange={(e) => updateProduct(index, "description", e.target.value)}
+                  disabled={generatingAI === index}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                 <div>
                   <label style={labelStyle}>Price (₦)</label>
                   <input

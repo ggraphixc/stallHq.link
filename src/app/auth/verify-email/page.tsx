@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, MessageCircle, RefreshCw } from "lucide-react";
 import { useAlert } from "@/contexts/AlertContext";
+import { useBranding } from "@/hooks/useBranding";
 
 function Particles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -66,6 +67,7 @@ function Particles() {
 function VerifyEmailForm() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
+  const { logo_url, platform_name } = useBranding();
 
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -182,10 +184,14 @@ function VerifyEmailForm() {
         <div style={{ width: "100%", maxWidth: "24rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Logo */}
           <Link href="/" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
-            <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <MessageCircle style={{ width: "1rem", height: "1rem", color: "white" }} />
-            </div>
-            <span style={{ fontSize: "1.125rem", fontWeight: 700 }} className="text-gradient">stallHq</span>
+            {logo_url ? (
+              <img src={logo_url} alt={platform_name} style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", objectFit: "cover" }} />
+            ) : (
+              <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <MessageCircle style={{ width: "1rem", height: "1rem", color: "white" }} />
+              </div>
+            )}
+            <span style={{ fontSize: "1.125rem", fontWeight: 700 }} className="text-gradient">{platform_name}</span>
           </Link>
 
           {/* Header */}

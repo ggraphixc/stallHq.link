@@ -71,7 +71,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { error: showError } = useAlert();
-  const { logo_url } = useBranding();
+  const { logo_url, platform_name } = useBranding();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +116,7 @@ export default function SignupPage() {
                 <MessageCircle style={{ width: "1rem", height: "1rem", color: "white" }} />
               </div>
             )}
-            <span style={{ fontSize: "1.125rem", fontWeight: 700 }} className="text-gradient">stallHq</span>
+            <span style={{ fontSize: "1.125rem", fontWeight: 700 }} className="text-gradient">{platform_name}</span>
           </Link>
 
           {/* Header */}

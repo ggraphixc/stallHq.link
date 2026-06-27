@@ -66,10 +66,10 @@ function Particles() {
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { logo_url, platform_name } = useBranding();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { error: showError } = useAlert();
-  const { logo_url } = useBranding();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,13 +134,13 @@ export default function LoginPage() {
           {/* Logo */}
           <Link href="/" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
             {logo_url ? (
-              <img src={logo_url} alt="StallHq" style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", objectFit: "cover" }} />
+              <img src={logo_url} alt={platform_name} style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", objectFit: "cover" }} />
             ) : (
               <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: "linear-gradient(to bottom right, var(--glow-purple), var(--glow-cyan))", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <MessageCircle style={{ width: "1rem", height: "1rem", color: "white" }} />
               </div>
             )}
-            <span style={{ fontSize: "1.125rem", fontWeight: 700 }} className="text-gradient">stallHq</span>
+            <span style={{ fontSize: "1.125rem", fontWeight: 700 }} className="text-gradient">{platform_name}</span>
           </Link>
 
           {/* Header */}

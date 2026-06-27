@@ -224,19 +224,24 @@ function UpgradeContent() {
                 key={planKey}
                 style={{
                   borderRadius: "1rem",
-                  overflow: "hidden",
                   border: isPopular ? "2px solid var(--glow-green)" : "1px solid var(--border-subtle)",
                   background: isPopular ? "rgba(16,185,129,0.03)" : "rgba(255,255,255,0.02)",
                   transition: "transform 0.2s, border-color 0.2s",
                   position: "relative",
+                  paddingTop: isPopular ? "1.75rem" : 0,
                 }}
               >
-                {/* Popular badge */}
+                {/* Popular badge — positioned above card content */}
                 {isPopular && (
                   <div style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
                     background: "var(--glow-green)", color: "white",
                     fontSize: "0.625rem", fontWeight: 700, textAlign: "center",
                     letterSpacing: "0.06em", textTransform: "uppercase", padding: "0.375rem",
+                    borderRadius: "1rem 1rem 0 0",
                   }}>
                     Most Popular
                   </div>

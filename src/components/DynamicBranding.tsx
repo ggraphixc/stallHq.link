@@ -8,6 +8,7 @@ const BRANDING_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 interface BrandingCache {
   logo_url: string | null;
   favicon_url: string | null;
+  platform_name: string;
   timestamp: number;
 }
 
@@ -46,6 +47,7 @@ export function DynamicBranding() {
         const branding: BrandingCache = {
           logo_url: data.logo_url || null,
           favicon_url: data.favicon_url || null,
+          platform_name: data.platform_name || "stallHq",
           timestamp: Date.now(),
         };
         setCachedBranding(branding);
@@ -87,5 +89,12 @@ function applyBranding(branding: BrandingCache) {
       document.head.appendChild(og);
     }
     og.content = branding.favicon_url;
+  }
+
+  // Update document title with platform name
+  if (branding.platform_name && branding.platform_name !== "stallHq") {
+    const currentTitle = document.title;
+    // Replace "stallHq" with custom name in titles
+    document.title = currentTitle.replace(/stallHq/gi, branding.platform_name);
   }
 }

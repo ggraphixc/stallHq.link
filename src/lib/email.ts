@@ -1,10 +1,35 @@
 import { SubscriptionPlan } from "@/types";
 import { getPlanName } from "@/lib/subscription";
+import { createClient } from "@supabase/supabase-js";
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY!;
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || "ggraphixc@gmail.com";
-const BREVO_SENDER_NAME = "StallHq";
+const DEFAULT_PLATFORM_NAME = "stallHq";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
+
+// Cache platform name in memory (fetched once per serverless instance)
+let cachedPlatformName: string | null = null;
+
+async function getPlatformName(): Promise<string> {
+  if (cachedPlatformName) return cachedPlatformName;
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data } = await supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "platform_name")
+      .single();
+    if (data?.value) {
+      cachedPlatformName = data.value;
+      return data.value;
+    }
+  } catch {}
+  cachedPlatformName = DEFAULT_PLATFORM_NAME;
+  return DEFAULT_PLATFORM_NAME;
+}
 
 interface BrevoEmail {
   to: { email: string; name?: string }[];
@@ -20,6 +45,8 @@ async function sendBrevoEmail({ to, subject, htmlContent, textContent, tags }: B
     return false;
   }
 
+  const platformName = await getPlatformName();
+
   try {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
@@ -29,7 +56,7 @@ async function sendBrevoEmail({ to, subject, htmlContent, textContent, tags }: B
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        sender: { email: BREVO_SENDER_EMAIL, name: BREVO_SENDER_NAME },
+        sender: { email: BREVO_SENDER_EMAIL, name: platformName },
         to,
         subject,
         htmlContent,
@@ -51,7 +78,8 @@ async function sendBrevoEmail({ to, subject, htmlContent, textContent, tags }: B
 
 // ─── Email wrapper (dark ambient theme) ──────────────────────────────────────
 
-function emailWrapper(content: string): string {
+function emailWrapper(content: string, platformName?: string): string {
+  const name = platformName || DEFAULT_PLATFORM_NAME;
   return `
     <!DOCTYPE html>
     <html>
@@ -67,7 +95,7 @@ function emailWrapper(content: string): string {
               <tr>
                 <td style="padding:24px 0;text-align:center;">
                   <p style="margin:0;font-size:12px;color:#4b5563;">
-                    Built by <a href="${APP_URL}" style="color:#a855f7;text-decoration:none;">StallHq</a> &mdash; Free digital storefronts for WhatsApp vendors
+                    Built by <a href="${APP_URL}" style="color:#a855f7;text-decoration:none;">${name}</a> &mdash; Free digital storefronts for WhatsApp vendors
                   </p>
                 </td>
               </tr>
@@ -129,6 +157,7 @@ export async function sendVerificationEmail({
   name?: string;
 }) {
   const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
 
   const html = emailWrapper(`
       <tr>
@@ -137,7 +166,7 @@ export async function sendVerificationEmail({
             <span style="color:white;font-size:20px;font-weight:700;">&#9993;</span>
           </div>
           <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Verify your email</h1>
-          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">StallHq</p>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${platformName}</p>
         </td>
       </tr>
       <tr>
@@ -179,6 +208,7 @@ export async function sendPasswordResetEmail({
 }) {
   const resetUrl = `${APP_URL}/auth/reset-password?token=${token}`;
   const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
 
   const html = emailWrapper(`
       <tr>
@@ -187,7 +217,7 @@ export async function sendPasswordResetEmail({
             <span style="color:white;font-size:20px;font-weight:700;">&#128274;</span>
           </div>
           <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Reset your password</h1>
-          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">StallHq</p>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${platformName}</p>
         </td>
       </tr>
       <tr>
@@ -210,7 +240,7 @@ export async function sendPasswordResetEmail({
 
   return sendBrevoEmail({
     to: [{ email }],
-    subject: "Reset your StallHq password",
+    subject: `Reset your ${await getPlatformName()} password`,
     htmlContent: html,
     tags: ["auth", "password_reset"],
   });
@@ -224,6 +254,7 @@ export async function sendWelcomeEmail({
   name?: string;
 }) {
   const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
 
   const html = emailWrapper(`
       <tr>
@@ -231,7 +262,7 @@ export async function sendWelcomeEmail({
           <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
             <span style="color:white;font-size:20px;">&#10024;</span>
           </div>
-          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Welcome to StallHq!</h1>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Welcome to ${platformName}!</h1>
           <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">Your email has been verified</p>
         </td>
       </tr>
@@ -250,7 +281,7 @@ export async function sendWelcomeEmail({
 
   return sendBrevoEmail({
     to: [{ email }],
-    subject: "Welcome to StallHq!",
+    subject: `Welcome to ${await getPlatformName()}!`,
     htmlContent: html,
     tags: ["auth", "welcome"],
   });
@@ -271,6 +302,7 @@ export async function sendTrialExpiryReminder({
   storeSlug: string;
   daysLeft: number;
 }) {
+  const platformName = await getPlatformName();
   const urgency = daysLeft <= 1 ? "tomorrow" : `in ${daysLeft} days`;
   const icon = daysLeft <= 1 ? "&#9888;" : "&#9203;";
   const bgColor = daysLeft <= 1 ? "rgba(239,68,68,0.08)" : "rgba(234,179,8,0.08)";
@@ -320,8 +352,8 @@ export async function sendTrialExpiryReminder({
   return sendBrevoEmail({
     to: [{ email }],
     subject: daysLeft <= 1
-      ? `⚠️ Your StallHq trial expires tomorrow — ${storeName}`
-      : `Your StallHq trial expires in ${daysLeft} days — ${storeName}`,
+      ? `⚠️ Your ${platformName} trial expires tomorrow — ${storeName}`
+      : `Your ${platformName} trial expires in ${daysLeft} days — ${storeName}`,
     htmlContent: html,
     tags: ["subscription", "trial_expiry"],
   });
@@ -338,6 +370,7 @@ export async function sendSubscriptionExpiryReminder({
   plan: string;
   daysLeft: number;
 }) {
+  const platformName = await getPlatformName();
   const urgency = daysLeft <= 1 ? "tomorrow" : `in ${daysLeft} days`;
   const icon = daysLeft <= 1 ? "&#9888;" : "&#9203;";
   const bgColor = daysLeft <= 1 ? "rgba(239,68,68,0.08)" : "rgba(234,179,8,0.08)";
@@ -376,8 +409,8 @@ export async function sendSubscriptionExpiryReminder({
   return sendBrevoEmail({
     to: [{ email }],
     subject: daysLeft <= 1
-      ? `⚠️ Your StallHq subscription expires tomorrow — ${storeName}`
-      : `Your StallHq subscription expires in ${daysLeft} days — ${storeName}`,
+      ? `⚠️ Your ${platformName} subscription expires tomorrow — ${storeName}`
+      : `Your ${platformName} subscription expires in ${daysLeft} days — ${storeName}`,
     htmlContent: html,
     tags: ["subscription", "subscription_expiry"],
   });
