@@ -259,13 +259,14 @@ export default function Home() {
                 key={plan.name}
                 className="ambient-card"
                 style={{
-                  padding: "1.5rem",
+                  padding: plan.popular ? "1.75rem 1.5rem 1.5rem" : "1.5rem",
                   border: plan.popular ? "1px solid var(--glow-purple)" : "1px solid var(--border-subtle)",
                   position: "relative",
+                  overflow: plan.popular ? "visible" : undefined,
                 }}
               >
                 {plan.popular && (
-                  <span style={{ position: "absolute", top: "-0.5rem", left: "50%", transform: "translateX(-50%)", fontSize: "0.625rem", fontWeight: 600, padding: "0.1875rem 0.75rem", borderRadius: 999, background: "var(--glow-purple)", color: "white", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
+                  <span style={{ position: "absolute", top: "-0.625rem", left: "50%", transform: "translateX(-50%)", fontSize: "0.625rem", fontWeight: 600, padding: "0.1875rem 0.75rem", borderRadius: 999, background: "var(--glow-purple)", color: "white", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", zIndex: 1 }}>
                     Most Popular
                   </span>
                 )}

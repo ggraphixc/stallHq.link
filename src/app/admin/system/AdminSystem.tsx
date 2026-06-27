@@ -46,7 +46,7 @@ export function AdminSystem() {
   const env = data?.environment || {};
 
   return (
-    <div style={{ padding: "1.5rem", maxWidth: "72rem", margin: "0 auto" }}>
+    <div style={{ padding: "clamp(1rem,3vw,1.5rem)", maxWidth: "72rem", margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>

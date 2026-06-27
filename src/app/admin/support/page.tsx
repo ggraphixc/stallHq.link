@@ -90,7 +90,7 @@ export default function AdminSupport() {
 
   if (selectedTicket) {
     return (
-      <div style={{ maxWidth: "56rem", margin: "0 auto" }}>
+      <div style={{ maxWidth: "56rem", margin: "0 auto", padding: "clamp(1rem,3vw,1.5rem)" }}>
         <button onClick={() => setSelectedTicket(null)} style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", marginBottom: "1rem" }}>
           <ChevronLeft size={16} /> Back to tickets
         </button>

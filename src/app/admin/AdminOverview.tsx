@@ -95,7 +95,7 @@ export function AdminOverview() {
   const { overview: o, environment: env } = data;
 
   return (
-    <div style={{ padding: "1.5rem", maxWidth: "72rem", margin: "0 auto" }}>
+    <div style={{ padding: "clamp(1rem,3vw,1.5rem)", maxWidth: "72rem", margin: "0 auto" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>

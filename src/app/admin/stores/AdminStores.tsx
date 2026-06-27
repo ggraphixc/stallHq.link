@@ -84,7 +84,7 @@ export function AdminStores() {
   };
 
   return (
-    <div style={{ padding: "1.5rem", maxWidth: "72rem", margin: "0 auto" }}>
+    <div style={{ padding: "clamp(1rem,3vw,1.5rem)", maxWidth: "72rem", margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -154,41 +154,43 @@ export function AdminStores() {
                 {/* Store Row */}
                 <div
                   style={{
-                    display: "grid", gridTemplateColumns: "1fr auto auto auto auto auto",
-                    alignItems: "center", gap: "1rem", padding: "0.875rem 1rem",
+                    display: "grid", gridTemplateColumns: "1fr auto",
+                    alignItems: "center", gap: "0.5rem", padding: "0.875rem 1rem",
                     cursor: "pointer", minHeight: "44px",
                   }}
                   className="admin-store-row"
                   onClick={() => setExpandedId(isExpanded ? null : store.id)}
                 >
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>{store.name || "Unnamed"}</span>
                       {store.verified && <ShieldCheck size={14} style={{ color: "var(--glow-amber)" }} />}
+                      <span style={{
+                        padding: "0.1875rem 0.5rem", borderRadius: "0.25rem", fontSize: "0.6875rem",
+                        fontWeight: 600, color: getPlanColor(store.plan), background: `${getPlanColor(store.plan)}15`,
+                      }}>{getPlanName(store.plan)}</span>
+                      <span style={{
+                        padding: "0.1875rem 0.5rem", borderRadius: "0.25rem", fontSize: "0.6875rem",
+                        fontWeight: 600, color: active ? "var(--glow-green)" : "var(--glow-red)",
+                        background: active ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+                      }}>{active ? "Active" : "Expired"}</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", flexWrap: "wrap" }}>
-                      <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>/{store.slug} · {store.category || "Uncategorized"}</p>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", flexWrap: "wrap", marginTop: "0.25rem" }}>
+                      <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>/{store.slug}</p>
+                      <span style={{ fontSize: "0.625rem", color: "var(--text-muted)" }}>·</span>
+                      <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>{store.category || "Uncategorized"}</p>
                       {store.whatsapp_number && (
                         <span style={{ fontSize: "0.5625rem", padding: "0.0625rem 0.375rem", borderRadius: "1rem", background: "rgba(37,211,102,0.1)", color: "#25d366", border: "1px solid rgba(37,211,102,0.2)", whiteSpace: "nowrap" }}>WA</span>
                       )}
                       {store.instagram_handle && (
                         <span style={{ fontSize: "0.5625rem", padding: "0.0625rem 0.375rem", borderRadius: "1rem", background: "rgba(225,48,108,0.1)", color: "#e1306c", border: "1px solid rgba(225,48,108,0.2)", whiteSpace: "nowrap" }}>IG</span>
                       )}
+                      <span style={{ fontSize: "0.625rem", color: "var(--text-muted)" }}>·</span>
+                      <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>{daysLeft !== null ? `${daysLeft}d` : "—"}</span>
+                      <span style={{ fontSize: "0.625rem", color: "var(--text-muted)" }}>·</span>
+                      <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>{store.product_count} products</span>
                     </div>
                   </div>
-                  <span style={{
-                    padding: "0.1875rem 0.5rem", borderRadius: "0.25rem", fontSize: "0.6875rem",
-                    fontWeight: 600, color: getPlanColor(store.plan), background: `${getPlanColor(store.plan)}15`,
-                  }} className="admin-hide-mobile">{getPlanName(store.plan)}</span>
-                  <span style={{
-                    padding: "0.1875rem 0.5rem", borderRadius: "0.25rem", fontSize: "0.6875rem",
-                    fontWeight: 600, color: active ? "var(--glow-green)" : "var(--glow-red)",
-                    background: active ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
-                  }}>{active ? "Active" : "Expired"}</span>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem" }} className="admin-hide-mobile">
-                    <Clock size={12} /> {daysLeft !== null ? `${daysLeft}d` : "—"}
-                  </span>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }} className="admin-hide-mobile">{store.product_count} products</span>
                   <ChevronDown size={14} style={{
                     color: "var(--text-muted)", transition: "transform 0.2s",
                     transform: isExpanded ? "rotate(180deg)" : "rotate(0)",
