@@ -677,14 +677,38 @@ Admin check: isAdmin(userId) → userId matches any admin UUID
 | Feature | Status | Description |
 |---------|--------|-------------|
 | Overview Dashboard | DONE | Stats, recent orders, quick actions |
-| Store Management | DONE | View/search/delete stores |
+| Store Management | DONE | 2-column grid with inline badges (plan, status, days left) |
 | User Management | DONE | View/search users |
 | Order Management | DONE | View/update order status |
 | Subscription Dashboard | DONE | Plan distribution, expiring soon |
 | Support Panel | DONE | Filter tickets, reply, status management |
-| Notification Composer | DONE | Send to all/plan-segment |
-| System Settings | DONE | Platform config (maintenance, signup, limits) |
-| Mobile Responsive | DONE | Card-based layouts, hidden columns on mobile |
+| Notification Composer | DONE | Send to all/plan-segment, drag-and-drop email editor |
+| System Settings | DONE | 6-tab config (General, Branding, Email, Payments, AI, Security) |
+| Mobile Responsive | DONE | Card-based layouts, responsive padding, hidden columns on mobile |
+| Dynamic Branding | DONE | Logo/favicon upload, platform name, public API |
+
+### AI Features
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| AI Description Generator | DONE | Product descriptions via configurable OpenAI-compatible API |
+| AI Plan Gating | DONE | AI gated to paid plans only |
+| AI Multimodal | DONE | Product photos sent to vision models for better descriptions |
+| AI Rate Limiting | DONE | 10 requests/user/5min in-memory limiter |
+| Onboarding AI | DONE | Description + AI generate button per product in onboarding flow |
+
+### GEO/AEO Features
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| GEO Meta Tags | DONE | geo.region, geo.placename, geo.position, ICBM on store pages |
+| LocalBusiness Schema | DONE | Store structured data with GeoCoordinates, address, areaServed |
+| FAQ Schema | DONE | Homepage (6 FAQs) and /about page (9 FAQs) |
+| HowTo Schema | DONE | Step-by-step instructions for AI crawlers |
+| BreadcrumbList | DONE | All store and product pages |
+| WebPage AEO Summaries | DONE | AI-crawler-optimized summaries on store/product pages |
+| Organization/WebSite Schema | DONE | Root layout with SearchAction for AI search |
+| SoftwareApplication Schema | DONE | App listing schema in root layout |
 
 ---
 
@@ -801,6 +825,14 @@ Admin check: isAdmin(userId) → userId matches any admin UUID
 
 All interactive elements have `min-height: 44px` (Apple HIG standard) for thumb-friendly mobile use.
 
+### MOST POPULAR Badge Pattern
+
+Used on pricing/plan cards to highlight the recommended plan:
+- Card uses `overflow: visible` when popular (not hidden)
+- Badge positioned at `top: -0.625rem` with `zIndex: 1` (above card)
+- Card gets extra `paddingTop: 1.75rem 1.5rem 1.5rem` to accommodate badge
+- Badge: absolute positioned, purple gradient background, white text, uppercase, small font
+
 ---
 
 ## 10. Page Map — Route Architecture
@@ -821,11 +853,11 @@ All interactive elements have `min-height: 44px` (Apple HIG standard) for thumb-
 
 | Route | File | Type | Purpose |
 |-------|------|------|---------|
-| `/auth/login` | `src/app/auth/login/page.tsx` | CSR | Email/password login |
-| `/auth/signup` | `src/app/auth/signup/page.tsx` | CSR | Account registration |
-| `/auth/forgot-password` | `src/app/auth/forgot-password/page.tsx` | CSR | Request password reset |
-| `/auth/reset-password` | `src/app/auth/reset-password/page.tsx` | CSR | Set new password |
-| `/auth/verify-email` | `src/app/auth/verify-email/page.tsx` | CSR | Enter 6-digit verification code |
+| `/auth/login` | `src/app/auth/login/page.tsx` | CSR | Email/password login, dynamic branding |
+| `/auth/signup` | `src/app/auth/signup/page.tsx` | CSR | Account registration, dynamic branding |
+| `/auth/forgot-password` | `src/app/auth/forgot-password/page.tsx` | CSR | Request password reset, dynamic branding |
+| `/auth/reset-password` | `src/app/auth/reset-password/page.tsx` | CSR | Set new password, dynamic branding |
+| `/auth/verify-email` | `src/app/auth/verify-email/page.tsx` | CSR | Enter 6-digit verification code, dynamic branding |
 | `/auth/callback` | `src/app/auth/callback/route.ts` | Server | OAuth callback handler |
 
 ### Vendor Dashboard Pages
@@ -853,7 +885,7 @@ All interactive elements have `min-height: 44px` (Apple HIG standard) for thumb-
 | `/admin/subscriptions` | `src/app/admin/subscriptions/page.tsx` | CSR | Subscription dashboard |
 | `/admin/support` | `src/app/admin/support/page.tsx` | CSR | Support ticket panel |
 | `/admin/notifications` | `src/app/admin/notifications/page.tsx` | CSR | Notification composer |
-| `/admin/settings` | `src/app/admin/settings/page.tsx` | CSR | Platform settings |
+| `/admin/settings` | `src/app/admin/settings/page.tsx` | CSR | Platform settings (6 tabs: General, Branding, Email, Payments, AI, Security) |
 | `/admin/system` | `src/app/admin/system/page.tsx` | CSR | System health |
 
 ### Static/Utility
@@ -971,6 +1003,12 @@ All interactive elements have `min-height: 44px` (Apple HIG standard) for thumb-
 | GET | `/api/inventory/check` | Yes | Check low stock items |
 | GET | `/api/cron/check-expiry` | Cron | Daily subscription expiry check |
 
+### Branding API
+
+| Method | Route | Auth | Purpose |
+|--------|-------|------|---------|
+| GET | `/api/branding` | No | Get logo_url, favicon_url, platform_name (public, cached) |
+
 ---
 
 ## 12. Component Map — UI Architecture
@@ -993,6 +1031,9 @@ All interactive elements have `min-height: 44px` (Apple HIG standard) for thumb-
 | OrderManager | `src/components/OrderManager.tsx` | Order list with status management |
 | StoreSettings | `src/components/StoreSettings.tsx` | Store config form |
 | ThemeSettings | `src/components/ThemeSettings.tsx` | Theme customization form |
+| DynamicBranding | `src/components/DynamicBranding.tsx` | Updates favicon, apple-touch-icon, og:image, document title from branding API |
+| HomeStructuredData | `src/components/HomeStructuredData.tsx` | Homepage FAQ + HowTo structured data for AI crawlers |
+| EmailEditor | `src/components/email-editor/EmailEditor.tsx` | Drag-and-drop canvas email builder (6 element types, resize, keyboard shortcuts) |
 
 ### Dashboard Components
 
@@ -1008,14 +1049,14 @@ All interactive elements have `min-height: 44px` (Apple HIG standard) for thumb-
 | Component | File | Purpose |
 |-----------|------|---------|
 | AdminOverview | `src/app/admin/AdminOverview.tsx` | Admin dashboard stats |
-| AdminStores | `src/app/admin/stores/AdminStores.tsx` | Store management table |
-| AdminUsers | `src/app/admin/users/AdminUsers.tsx` | User management table |
-| AdminOrders | `src/app/admin/orders/AdminOrders.tsx` | Order management table |
-| SubscriptionsClient | `src/app/admin/subscriptions/SubscriptionsClient.tsx` | Subscription dashboard |
-| AdminSystem | `src/app/admin/system/AdminSystem.tsx` | System health |
-| AdminSupport | `src/app/admin/support/page.tsx` | Support panel |
-| AdminNotifications | `src/app/admin/notifications/page.tsx` | Notification composer |
-| AdminSettings | `src/app/admin/settings/page.tsx` | Platform settings |
+| AdminStores | `src/app/admin/stores/AdminStores.tsx` | Store management — 2-column grid with inline badges |
+| AdminUsers | `src/app/admin/users/AdminUsers.tsx` | User management — expandable rows |
+| AdminOrders | `src/app/admin/orders/AdminOrders.tsx` | Order management — expandable rows with status update |
+| SubscriptionsClient | `src/app/admin/subscriptions/SubscriptionsClient.tsx` | Subscription dashboard — card-based expandable layout |
+| AdminSystem | `src/app/admin/system/AdminSystem.tsx` | System health — environment checks, database stats |
+| AdminSupport | `src/app/admin/support/page.tsx` | Support panel — 2-column detail view (collapses on mobile) |
+| AdminNotifications | `src/app/admin/notifications/page.tsx` | Notification composer with email editor integration |
+| AdminSettings | `src/app/admin/settings/page.tsx` | Platform settings — 6 tab components (General, Branding, Email, Payments, AI, Security) |
 
 ### Onboarding Components
 
@@ -1023,7 +1064,7 @@ All interactive elements have `min-height: 44px` (Apple HIG standard) for thumb-
 |-----------|------|---------|
 | PlanSelectionStep | `src/components/onboarding/PlanSelectionStep.tsx` | Plan picker |
 | StoreDetailsStep | `src/components/onboarding/StoreDetailsStep.tsx` | Store name/desc/number |
-| ProductEntryStep | `src/components/onboarding/ProductEntryStep.tsx` | First product setup |
+| ProductEntryStep | `src/components/onboarding/ProductEntryStep.tsx` | Product setup with description + AI generate button |
 | ThemeStep | `src/components/onboarding/ThemeStep.tsx` | Theme customization |
 | SetupCompleteStep | `src/components/onboarding/SetupCompleteStep.tsx` | Completion screen |
 
@@ -1053,9 +1094,19 @@ All interactive elements have `min-height: 44px` (Apple HIG standard) for thumb-
 |---------|------|---------|
 | Subscription | `src/lib/subscription.ts` | Plan definitions, limits, helpers |
 | Paystack | `src/lib/paystack.ts` | Payment init, verify, webhook sig |
-| Email | `src/lib/email.ts` | Brevo API, 8 email templates |
+| Email | `src/lib/email.ts` | Brevo API, 8 email templates, dynamic platform name |
 | WhatsApp | `src/lib/whatsapp.ts` | Order message generation |
 | Admin | `src/lib/admin.ts` | Admin verification helper |
+| SEO | `src/lib/seo.ts` | GEO/AEO schema generators (StoreWithGeo, ProductWithRatings) |
+| Channel | `src/lib/channel.ts` | Multi-channel helpers (WhatsApp, Instagram) |
+
+### Hooks
+
+| Hook | File | Purpose |
+|------|------|---------|
+| useBranding | `src/hooks/useBranding.ts` | Fetches logo/favicon/platform_name from /api/branding with localStorage caching (5min TTL) |
+| useMediaQuery | `src/hooks/useMediaQuery.ts` | Client-side responsive media query |
+| useAnalytics | `src/hooks/useAnalytics.ts` | Client-side analytics tracking |
 
 ### Subscription Plans
 
@@ -1123,6 +1174,16 @@ interface CartItem {
 // Synced to Supabase favorites table
 ```
 
+### Branding State (useBranding hook)
+
+```typescript
+// src/hooks/useBranding.ts
+// Fetches logo_url, favicon_url, platform_name from /api/branding
+// Cached in module-level variable + localStorage (stallhq_branding) with 5min TTL
+// Provides: useBranding() hook, getPlatformNameSync() utility, refresh() method
+// DynamicBranding component auto-updates <head> (favicon, apple-touch-icon, og:image, title)
+```
+
 ---
 
 ## 15. Email System — Notification Architecture
@@ -1149,7 +1210,7 @@ All emails use a consistent dark theme wrapper:
 - Card: `#13131d` with `rgba(255,255,255,0.06)` border
 - Accent: Purple gradient for CTAs
 - Typography: System font stack, 14-15px body
-- Footer: "Built by StallHq" branding
+- Footer: Dynamic platform name via `getPlatformName()` (fetched from platform_settings)
 
 ### Email Flow
 
@@ -1279,7 +1340,7 @@ Hi, I'm following up on my order above. Thank you!
 
 | Feature | Implementation |
 |---------|---------------|
-| Sitemap | Dynamic `/sitemap.xml` — all stores + products |
+| Sitemap | Dynamic `/sitemap.xml` — all stores + products + /about |
 | Robots.txt | Dynamic `/robots.txt` — allows all, points to sitemap |
 | Structured Data | Product schema (JSON-LD) on product pages |
 | Store Schema | Store structured data (address, contact, rating) |
@@ -1287,6 +1348,29 @@ Hi, I'm following up on my order above. Thank you!
 | Canonical URLs | metadataBase set to `https://hqlink.vercel.app` |
 | Semantic HTML | Proper heading hierarchy, landmarks |
 | Image alt text | Product images with descriptive alt |
+
+### GEO (Geographic) Optimization
+
+| Feature | Implementation |
+|---------|---------------|
+| geo.region | Meta tag on store pages (default: NG-LA) |
+| geo.placename | Meta tag on store pages (default: Lagos) |
+| geo.position | Lat/long meta tag from store settings |
+| ICBM | Comma-separated lat/long meta tag |
+| LocalBusiness Schema | JSON-LD with GeoCoordinates, address, areaServed |
+
+### AEO (Answer Engine) Optimization
+
+| Feature | Implementation |
+|---------|---------------|
+| Organization Schema | Root layout — company info for AI search |
+| WebSite Schema | Root layout with SearchAction for AI search |
+| SoftwareApplication Schema | App listing schema in root layout |
+| FAQ Schema | Homepage (6 FAQs), /about page (9 FAQs) |
+| HowTo Schema | Step-by-step instructions for AI crawlers |
+| BreadcrumbList | All store and product pages |
+| WebPage Summaries | AI-crawler-optimized summaries on store/product pages |
+| /about Page | AI-crawler-optimized with comprehensive FAQ, HowTo, structured data |
 
 ### On-Page SEO
 
@@ -1345,14 +1429,23 @@ Hi, I'm following up on my order above. Thank you!
 | Page | Purpose |
 |------|---------|
 | Overview | Total stores, users, orders, revenue, recent activity |
-| Stores | Search, view, manage all vendor stores |
-| Users | Search, view all registered users |
-| Orders | Search, update status for any order |
-| Subscriptions | Plan distribution, expiring subscriptions |
-| Support | Filter tickets, reply, manage status |
-| Notifications | Compose and send announcements by plan segment |
-| Settings | Platform config (maintenance mode, signup toggle, limits) |
-| System | System health, database stats |
+| Stores | Search, view, manage all vendor stores — 2-column grid with inline badges (plan, status, days left) |
+| Users | Search, view all registered users — expandable rows |
+| Orders | Search, update status for any order — expandable rows with notes |
+| Subscriptions | Plan distribution, expiring subscriptions — card-based expandable layout |
+| Support | Filter tickets, reply, manage status — 2-column detail view (collapses on mobile) |
+| Notifications | Compose and send announcements by plan segment, drag-and-drop email editor |
+| Settings | 6-tab config: General, Branding (logo/favicon upload), Email, Payments, AI, Security |
+| System | System health, database stats, environment checks |
+
+### Admin Mobile Responsive
+
+All admin pages use:
+- `padding: clamp(1rem,3vw,1.5rem)` for responsive container padding
+- `admin-store-row`, `admin-user-row`, `admin-order-row` CSS classes for mobile row collapse
+- `admin-support-detail` for 2-column → 1-column stack on mobile
+- `admin-hide-mobile` to hide secondary columns on small screens
+- Horizontal scrollable tabs on settings page
 
 ### Admin Security
 
@@ -1492,6 +1585,8 @@ stallHq/
 │   │   │   ├── support/page.tsx
 │   │   │   └── settings/page.tsx
 │   │   ├── api/
+│   │   │   ├── account/
+│   │   │   │   └── delete/route.ts              # Delete account (deletes all data)
 │   │   │   ├── admin/
 │   │   │   │   ├── notifications/route.ts
 │   │   │   │   ├── orders/route.ts
@@ -1502,6 +1597,7 @@ stallHq/
 │   │   │   │   └── users/route.ts
 │   │   │   ├── analytics/route.ts
 │   │   │   ├── analytics/visitors/route.ts
+│   │   │   ├── branding/route.ts                # Public branding API (logo, favicon, platform name)
 │   │   │   ├── auth/
 │   │   │   │   ├── forgot-password/route.ts
 │   │   │   │   ├── login/route.ts
@@ -1512,6 +1608,8 @@ stallHq/
 │   │   │   │   └── verify-email/route.ts
 │   │   │   ├── cron/check-expiry/route.ts
 │   │   │   ├── favorites/route.ts
+│   │   │   ├── ai/
+│   │   │   │   └── generate-description/route.ts # AI product description generator
 │   │   │   ├── inventory/check/route.ts
 │   │   │   ├── og/route.ts
 │   │   │   ├── orders/route.ts
@@ -1520,6 +1618,7 @@ stallHq/
 │   │   │   ├── payments/initialize/route.ts
 │   │   │   ├── products/route.ts
 │   │   │   ├── products/[id]/route.ts
+│   │   │   ├── products/recommended/route.ts    # Recommended products (trial store fallback)
 │   │   │   ├── reviews/route.ts
 │   │   │   ├── reviews/batch/route.ts
 │   │   │   ├── stores/route.ts
@@ -1546,6 +1645,8 @@ stallHq/
 │   │   │   ├── products/[id]/page.tsx
 │   │   │   └── support/page.tsx
 │   │   │   └── support/SupportDashboard.tsx
+│   │   ├── about/
+│   │   │   └── page.tsx                         # AI-crawler-optimized about page
 │   │   ├── account/page.tsx
 │   │   ├── explore/page.tsx
 │   │   ├── favorites/page.tsx
@@ -1566,6 +1667,8 @@ stallHq/
 │   │   │   └── SetupCompleteStep.tsx
 │   │   ├── CartDrawer.tsx
 │   │   ├── DashboardProductGrid.tsx
+│   │   ├── DynamicBranding.tsx                   # Updates <head> from branding API
+│   │   ├── HomeStructuredData.tsx                # FAQ + HowTo schemas for homepage
 │   │   ├── OrderManager.tsx
 │   │   ├── Particles.tsx
 │   │   ├── ProductCard.tsx
@@ -1579,9 +1682,17 @@ stallHq/
 │   │   ├── StoreSettings.tsx
 │   │   ├── ThemeSettings.tsx
 │   │   ├── VariantManager.tsx
-│   │   └── VisitorBadge.tsx
+│   │   ├── VisitorBadge.tsx
+│   │   └── email-editor/
+│   │       ├── EmailEditor.tsx                   # Drag-and-drop canvas builder
+│   │       ├── index.ts
+│   │       └── types.ts
 │   ├── contexts/
 │   │   └── AlertContext.tsx
+│   ├── hooks/
+│   │   ├── useAnalytics.ts
+│   │   ├── useBranding.ts                      # Logo/favicon/platform_name with localStorage cache
+│   │   └── useMediaQuery.ts
 │   ├── lib/
 │   │   ├── supabase/
 │   │   │   ├── api.ts
@@ -1589,8 +1700,10 @@ stallHq/
 │   │   │   ├── middleware.ts
 │   │   │   └── server.ts
 │   │   ├── admin.ts
+│   │   ├── channel.ts                           # Multi-channel helpers (WhatsApp, Instagram)
 │   │   ├── email.ts
 │   │   ├── paystack.ts
+│   │   ├── seo.ts                               # GEO/AEO schema generators
 │   │   ├── subscription.ts
 │   │   ├── supabase.ts
 │   │   └── whatsapp.ts
@@ -1606,7 +1719,8 @@ stallHq/
 │   ├── payments.sql
 │   ├── schema.sql
 │   ├── subscriptions.sql
-│   └── support-tickets.sql
+│   ├── support-tickets.sql
+│   └── instagram-channel.sql
 ├── .env.local
 ├── .gitignore
 ├── next.config.ts
@@ -1653,6 +1767,7 @@ stallHq/
 | 7 | `support-tickets.sql` | support_tickets, support_messages, admin_notifications, platform_settings + RLS |
 | 8 | `order-notes.sql` | vendor_notes column on orders |
 | 9 | `admin-setup.sql` | Documentation for admin user setup |
+| 10 | `instagram-channel.sql` | instagram_handle column on stores |
 
 ---
 
