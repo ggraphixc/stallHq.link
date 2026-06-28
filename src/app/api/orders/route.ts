@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import { createClient } from "@/lib/supabase/api";
+import { createClient } from "@supabase/supabase-js";
+import { createClient as createAuthClient } from "@/lib/supabase/api";
 import { sendOrderNotification } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
   try {
-    const authSupabase = await createClient();
+    const authSupabase = await createAuthClient();
 
     const {
       data: { user },
@@ -64,6 +64,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "store_id and items are required" }, { status: 400 });
     }
 
+    // Use service role key — orders are placed by anonymous customers
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     // Validate store exists
     const { data: store } = await supabase
       .from("stores")
@@ -75,7 +81,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Store not found" }, { status: 404 });
     }
 
-    // Orders are placed by anonymous customers — use plain client (permissive RLS)
     const { data: order, error: insertError } = await supabase
       .from("orders")
       .insert({

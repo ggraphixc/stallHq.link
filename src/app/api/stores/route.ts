@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/api";
 import { apiRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 import { canCustomizeTheme } from "@/lib/subscription";
+import { normalizeWhatsAppNumber } from "@/lib/channel";
 
 export async function GET(request: Request) {
   const rateLimitResult = await apiRateLimit(request);
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
         slug: body.slug,
         name: body.name,
         description: body.description,
-        whatsapp_number: body.whatsapp_number || "",
+        whatsapp_number: body.whatsapp_number ? normalizeWhatsAppNumber(body.whatsapp_number) : "",
         instagram_handle: body.instagram_handle || null,
         category: body.category,
         email: body.email,
@@ -142,6 +143,11 @@ export async function PATCH(request: NextRequest) {
 
     // Prevent users from self-upgrading plan fields
     const { plan: _plan, verified: _verified, subscription_expires_at: _sub, trial_ends_at: _trial, ...safeBody } = body;
+
+    // Normalize WhatsApp number
+    if (safeBody.whatsapp_number) {
+      safeBody.whatsapp_number = normalizeWhatsAppNumber(safeBody.whatsapp_number);
+    }
 
     // Validate theme changes — only quarterly+ can customize
     if (safeBody.theme) {

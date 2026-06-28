@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useAlert } from "@/contexts/AlertContext";
 import { Store, StoreHours } from "@/types";
-import { X, Loader2, Camera, Instagram, Trash2 } from "lucide-react";
+import { normalizeWhatsAppNumber } from "@/lib/channel";
+import { X, Loader2, Camera, Instagram, Trash2, MessageCircle } from "lucide-react";
 import { StoreHoursManager } from "./StoreHoursManager";
 
 interface StoreSettingsProps {
@@ -230,8 +231,29 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
 
           <div>
             <label style={labelStyle}>WhatsApp Number</label>
-            <input type="tel" className="ambient-input" style={inputStyle} placeholder="+234 800 000 0000" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} />
-            <p style={hintStyle}>Customers will chat with you on this number</p>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <span style={{ padding: "0.625rem 0.5rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRight: "none", borderRadius: "0.5rem 0 0 0.5rem", color: "var(--text-muted)", fontSize: "0.75rem", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                <MessageCircle size={12} />
+                <span>+234</span>
+              </span>
+              <input
+                type="tel"
+                className="ambient-input"
+                style={{ ...inputStyle, borderRadius: "0 0.5rem 0.5rem 0" }}
+                placeholder="800 000 0000"
+                value={(whatsappNumber || "").replace(/^\+234/, "")}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, "");
+                  setWhatsappNumber(raw ? "+234" + raw.replace(/^234/, "") : "");
+                }}
+                onBlur={() => {
+                  if (whatsappNumber && !whatsappNumber.startsWith("+234")) {
+                    setWhatsappNumber(normalizeWhatsAppNumber(whatsappNumber));
+                  }
+                }}
+              />
+            </div>
+            <p style={hintStyle}>Nigerian number only. Customers will chat with you on this number</p>
           </div>
 
           <div>

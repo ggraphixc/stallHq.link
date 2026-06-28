@@ -2,6 +2,21 @@ import { CartItem, OrderItem } from "@/types";
 
 // ─── WhatsApp ────────────────────────────────────────────────────────────────
 
+export function normalizeWhatsAppNumber(input: string): string {
+  let digits = input.replace(/[^0-9]/g, "");
+  if (digits.startsWith("234") && digits.length >= 11) {
+    return "+" + digits;
+  }
+  if (digits.startsWith("0") && digits.length >= 10) {
+    return "+234" + digits.slice(1);
+  }
+  if (digits.length >= 8 && !digits.startsWith("234")) {
+    return "+234" + digits;
+  }
+  if (input.startsWith("+")) return "+" + digits;
+  return input;
+}
+
 export function generateWhatsAppUrl(
   whatsappNumber: string,
   storeName: string,
