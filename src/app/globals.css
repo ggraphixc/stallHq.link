@@ -657,3 +657,25 @@ header {
 body::before {
   background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(168, 85, 247, 0.15), transparent);
 }
+
+/* Hide scrollbar on horizontal scroll containers */
+.scroll-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* Constrain notification HTML content */
+.notif-body {
+  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.notif-body img,
+.notif-body video,
+.notif-body iframe {
+  max-width: 100% !important;
+  height: auto !important;
+}
+.notif-body table {
+  max-width: 100%;
+  overflow: hidden;
+}

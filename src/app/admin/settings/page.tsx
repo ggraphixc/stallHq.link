@@ -85,9 +85,9 @@ export default function AdminSettings() {
       </div>
 
       {/* Tabs - Horizontal scroll on mobile */}
-      <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1rem", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: "0.25rem" }}>
+      <div className="scroll-hidden" style={{ display: "flex", gap: "0.25rem", marginBottom: "1rem", overflowX: "auto", WebkitOverflowScrolling: "touch", paddingBottom: "0.25rem", msOverflowStyle: "none" }}>
         {tabs.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "none", background: activeTab === tab.id ? "rgba(168,133,247,0.1)" : "transparent", color: activeTab === tab.id ? "var(--glow-purple)" : "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", whiteSpace: "nowrap", flexShrink: 0 }}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "none", background: activeTab === tab.id ? "rgba(168,133,247,0.1)" : "transparent", color: activeTab === tab.id ? "var(--glow-purple)" : "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", whiteSpace: "nowrap", flexShrink: 0, minWidth: "max-content" }}>
             <tab.icon size={14} /> {tab.label}
           </button>
         ))}

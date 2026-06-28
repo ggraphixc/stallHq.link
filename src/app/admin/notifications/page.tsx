@@ -225,7 +225,7 @@ export default function AdminNotifications() {
                 <span>·</span>
                 <span>{new Date(n.sent_at).toLocaleDateString()}</span>
               </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5 }} dangerouslySetInnerHTML={{ __html: n.body }} />
+              <div className="notif-body" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5 }} dangerouslySetInnerHTML={{ __html: n.body }} />
             </div>
           );
         })}
