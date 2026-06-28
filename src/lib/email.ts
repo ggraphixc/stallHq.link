@@ -10,6 +10,9 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
 // Cache platform name in memory (fetched once per serverless instance)
 let cachedPlatformName: string | null = null;
 
+// Cache email templates in memory (fetched once per serverless instance)
+let cachedTemplates: Record<string, { html_body: string; subject_template: string | null; variables: string[] }> | null = null;
+
 async function getPlatformName(): Promise<string> {
   if (cachedPlatformName) return cachedPlatformName;
   try {
@@ -31,21 +34,68 @@ async function getPlatformName(): Promise<string> {
   return DEFAULT_PLATFORM_NAME;
 }
 
+async function loadTemplatesFromDB(): Promise<Record<string, { html_body: string; subject_template: string | null; variables: string[] }>> {
+  if (cachedTemplates) return cachedTemplates;
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data } = await supabase
+      .from("email_templates")
+      .select("slug, html_body, subject_template, variables")
+      .eq("is_active", true);
+    if (data) {
+      cachedTemplates = data.reduce((acc, t) => {
+        acc[t.slug] = {
+          html_body: t.html_body,
+          subject_template: t.subject_template,
+          variables: Array.isArray(t.variables) ? t.variables : [],
+        };
+        return acc;
+      }, {} as Record<string, { html_body: string; subject_template: string | null; variables: string[] }>);
+      return cachedTemplates;
+    }
+  } catch {}
+  cachedTemplates = {};
+  return cachedTemplates;
+}
+
+async function getTemplateHtml(slug: string, vars: Record<string, string>): Promise<string | null> {
+  const templates = await loadTemplatesFromDB();
+  const tmpl = templates[slug];
+  if (!tmpl) return null;
+  let html = tmpl.html_body;
+  for (const [key, value] of Object.entries(vars)) {
+    html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), value);
+  }
+  return html;
+}
+
 interface BrevoEmail {
   to: { email: string; name?: string }[];
   subject: string;
   htmlContent: string;
   textContent?: string;
   tags?: string[];
+  templateSlug?: string;
+  templateVars?: Record<string, string>;
 }
 
-async function sendBrevoEmail({ to, subject, htmlContent, textContent, tags }: BrevoEmail) {
+async function sendBrevoEmail({ to, subject, htmlContent, textContent, tags, templateSlug, templateVars }: BrevoEmail) {
   if (!BREVO_API_KEY) {
     console.error("[Brevo] BREVO_API_KEY not configured");
     return false;
   }
 
   const platformName = await getPlatformName();
+
+  // Try DB template first
+  let finalHtml = htmlContent;
+  if (templateSlug && templateVars) {
+    const dbHtml = await getTemplateHtml(templateSlug, templateVars);
+    if (dbHtml) finalHtml = dbHtml;
+  }
 
   try {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -59,7 +109,7 @@ async function sendBrevoEmail({ to, subject, htmlContent, textContent, tags }: B
         sender: { email: BREVO_SENDER_EMAIL, name: platformName },
         to,
         subject,
-        htmlContent,
+        htmlContent: finalHtml,
         textContent,
         tags,
       }),
@@ -194,6 +244,8 @@ export async function sendVerificationEmail({
     subject: `Your verification code: ${code}`,
     htmlContent: html,
     tags: ["auth", "verification"],
+    templateSlug: "email-verification",
+    templateVars: { greeting, code, platform_name: platformName, app_url: APP_URL },
   });
 }
 
@@ -240,9 +292,11 @@ export async function sendPasswordResetEmail({
 
   return sendBrevoEmail({
     to: [{ email }],
-    subject: `Reset your ${await getPlatformName()} password`,
+    subject: `Reset your ${platformName} password`,
     htmlContent: html,
     tags: ["auth", "password_reset"],
+    templateSlug: "password-reset",
+    templateVars: { greeting, reset_url: resetUrl, platform_name: platformName, app_url: APP_URL },
   });
 }
 
@@ -281,9 +335,11 @@ export async function sendWelcomeEmail({
 
   return sendBrevoEmail({
     to: [{ email }],
-    subject: `Welcome to ${await getPlatformName()}!`,
+    subject: `Welcome to ${platformName}!`,
     htmlContent: html,
     tags: ["auth", "welcome"],
+    templateSlug: "welcome-email",
+    templateVars: { greeting, platform_name: platformName, app_url: APP_URL },
   });
 }
 
@@ -356,6 +412,8 @@ export async function sendTrialExpiryReminder({
       : `Your ${platformName} trial expires in ${daysLeft} days — ${storeName}`,
     htmlContent: html,
     tags: ["subscription", "trial_expiry"],
+    templateSlug: "trial-expiry-reminder",
+    templateVars: { store_name: storeName, store_slug: storeSlug, days_left: String(daysLeft), platform_name: platformName, app_url: APP_URL },
   });
 }
 
@@ -413,6 +471,8 @@ export async function sendSubscriptionExpiryReminder({
       : `Your ${platformName} subscription expires in ${daysLeft} days — ${storeName}`,
     htmlContent: html,
     tags: ["subscription", "subscription_expiry"],
+    templateSlug: "subscription-expiry-reminder",
+    templateVars: { store_name: storeName, plan: planLabel, days_left: String(daysLeft), platform_name: platformName, app_url: APP_URL },
   });
 }
 
@@ -479,6 +539,8 @@ export async function sendLowStockAlert({
     subject: `⚠️ Low stock alert — ${storeName}`,
     htmlContent: html,
     tags: ["inventory", "low_stock"],
+    templateSlug: "low-stock-alert",
+    templateVars: { store_name: storeName, store_slug: storeSlug, threshold: String(threshold), item_count: String(items.length), platform_name: (await getPlatformName()), app_url: APP_URL },
   });
 }
 
@@ -579,6 +641,8 @@ export async function sendOrderNotification({
     subject: `New order #${shortId} from ${customer} - ${storeName}`,
     htmlContent: html,
     tags: ["order", "notification"],
+    templateSlug: "new-order-notification",
+    templateVars: { store_name: storeName, order_id: shortId, customer_name: customer, customer_phone: customerPhone || "", total: formatCurrency(total), notes: notes || "", platform_name: (await getPlatformName()), app_url: APP_URL },
   });
 }
 
@@ -661,6 +725,8 @@ export async function sendStatusUpdateEmail({
     subject: `Order #${shortId} ${statusLabel} - ${storeName}`,
     htmlContent: html,
     tags: ["order", "status_update"],
+    templateSlug: "order-status-update",
+    templateVars: { store_name: storeName, order_id: shortId, status: statusLabel, total: formatCurrency(total), platform_name: (await getPlatformName()), app_url: APP_URL },
   });
 }
 
@@ -729,6 +795,8 @@ export async function sendSupportTicketCreated({
     subject: `New support ticket #${shortId}: ${subject}`,
     htmlContent: html,
     tags: ["support", "new_ticket"],
+    templateSlug: "new-support-ticket",
+    templateVars: { ticket_id: shortId, subject, category: categoryLabel, vendor_email: vendorEmail, app_url: APP_URL },
   });
 }
 
@@ -779,6 +847,8 @@ export async function sendSupportReplyNotification({
     subject: `Support reply on ticket #${shortId}: ${subject}`,
     htmlContent: html,
     tags: ["support", "reply"],
+    templateSlug: "support-reply-notification",
+    templateVars: { ticket_id: shortId, subject, reply_preview: replyPreview.slice(0, 200), app_url: APP_URL },
   });
 }
 
@@ -865,6 +935,8 @@ export async function sendTrialNurtureDay1({
     subject: `Your store is live! 3 steps to get your first order`,
     htmlContent: html,
     tags: ["marketing", "trial_nurture", "day1"],
+    templateSlug: "trial-nurture-day1",
+    templateVars: { greeting, store_name: storeName, store_slug: storeSlug, platform_name: platformName, app_url: APP_URL },
   });
 }
 
@@ -926,6 +998,8 @@ export async function sendTrialNurtureDay3({
       : `Add your first product to ${storeName} — it takes 2 minutes`,
     htmlContent: html,
     tags: ["marketing", "trial_nurture", "day3"],
+    templateSlug: "trial-nurture-day3",
+    templateVars: { greeting, store_name: storeName, store_slug: storeSlug, product_count: String(productCount), platform_name: platformName, app_url: APP_URL },
   });
 }
 
@@ -1004,6 +1078,8 @@ export async function sendTrialNurtureDay5({
     subject: `Your trial expires in ${daysLeft} days — upgrade to keep ${storeName} live`,
     htmlContent: html,
     tags: ["marketing", "trial_nurture", "day5"],
+    templateSlug: "trial-nurture-day5",
+    templateVars: { greeting, store_name: storeName, store_slug: storeSlug, days_left: String(daysLeft), platform_name: platformName, app_url: APP_URL },
   });
 }
 
@@ -1057,6 +1133,8 @@ export async function sendUpgradeThankYou({
     subject: `Welcome to ${planLabel} — ${storeName} is now premium`,
     htmlContent: html,
     tags: ["marketing", "upgrade", "thank_you"],
+    templateSlug: "upgrade-thank-you",
+    templateVars: { greeting, store_name: storeName, plan: planLabel, platform_name: platformName, app_url: APP_URL },
   });
 }
 
@@ -1116,6 +1194,8 @@ export async function sendWinBackEmail({
     subject: `We miss you — bring ${storeName} back online`,
     htmlContent: html,
     tags: ["marketing", "win_back"],
+    templateSlug: "win-back-email",
+    templateVars: { greeting, store_name: storeName, store_slug: storeSlug, days_since_expiry: String(daysSinceExpiry), platform_name: platformName, app_url: APP_URL },
   });
 }
 
@@ -1199,5 +1279,7 @@ export async function sendWeeklyDigest({
     subject: `Weekly report for ${storeName} — ${stats.visits} visits, ${stats.orders} orders`,
     htmlContent: html,
     tags: ["marketing", "weekly_digest"],
+    templateSlug: "weekly-digest",
+    templateVars: { greeting, store_name: storeName, store_slug: storeSlug, visits: String(stats.visits), orders: String(stats.orders), whatsapp_clicks: String(stats.whatsappClicks), top_product: stats.topProduct || "", platform_name: platformName, app_url: APP_URL },
   });
 }

@@ -14,6 +14,7 @@ import {
   Save,
   Plus,
   GripVertical,
+  Sparkles,
 } from "lucide-react";
 
 interface EditProductClientProps {
@@ -145,6 +146,7 @@ export function EditProductClient({
   const [deleting, setDeleting] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [generatingDesc, setGeneratingDesc] = useState(false);
 
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description || "");
@@ -263,6 +265,36 @@ export function EditProductClient({
     (acc, v) => { if (!acc[v.option_name]) acc[v.option_name] = []; acc[v.option_name].push(v); return acc; },
     {} as Record<string, ProductVariant[]>
   );
+
+  /* ── AI Generate Description ──────────────────── */
+
+  const handleGenerateDescription = async () => {
+    if (!name.trim()) return;
+    setGeneratingDesc(true);
+    try {
+      const res = await fetch("/api/ai/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          category: category || undefined,
+          price: price || undefined,
+          imageUrl: imageUrl || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to generate description");
+        return;
+      }
+      if (data.description) setDescription(data.description);
+      if (data.suggestedCategory && !category) setCategory(data.suggestedCategory);
+    } catch {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setGeneratingDesc(false);
+    }
+  };
 
   /* ── Save ─────────────────────────────────────── */
 
@@ -520,6 +552,33 @@ export function EditProductClient({
             <div>
               <label style={labelStyle}>Description <span style={{ fontWeight: 400, textTransform: "none", color: "var(--text-muted)" }}>(optional)</span></label>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="ambient-input" style={{ ...inputStyle, resize: "none" }} rows={3} />
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={generatingDesc || !name.trim()}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.375rem",
+                  marginTop: "0.5rem",
+                  padding: "0.375rem 0.75rem",
+                  fontSize: "0.6875rem",
+                  fontWeight: 500,
+                  color: generatingDesc ? "var(--text-muted)" : "var(--accent-purple, #a885f7)",
+                  background: generatingDesc ? "var(--bg-secondary)" : "rgba(168,133,247,0.1)",
+                  border: "1px solid " + (generatingDesc ? "var(--border-subtle)" : "rgba(168,133,247,0.25)"),
+                  borderRadius: "0.375rem",
+                  cursor: generatingDesc || !name.trim() ? "not-allowed" : "pointer",
+                  transition: "all 0.2s",
+                }}
+              >
+                {generatingDesc ? (
+                  <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+                ) : (
+                  <Sparkles size={12} />
+                )}
+                {generatingDesc ? "Generating..." : "AI Generate Description"}
+              </button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.75rem" }}>
