@@ -27,6 +27,7 @@ import {
   Upload,
   Palette,
   ShoppingCart,
+  Sparkles,
   Link as LinkIcon,
   MoreVertical,
   X,
@@ -302,10 +303,17 @@ export function DashboardClient({
                 { icon: BarChart3, label: "Analytics", onClick: () => setShowAnalytics(true) },
                 { icon: ShoppingCart, label: "Orders", onClick: () => setShowOrders(true) },
                 { icon: Palette, label: "Theme", onClick: () => setShowTheme(true) },
-              ].map(({ icon: Icon, label, onClick }) => (
-                <button key={label} onClick={onClick} style={iconBtn} className="icon-button" title={label}>
-                  <Icon size={16} />
-                </button>
+                { icon: Sparkles, label: "Promo Cards", href: "/dashboard/promo" },
+              ].map(({ icon: Icon, label, onClick, href }) => (
+                href ? (
+                  <a key={label} href={href} style={iconBtn} className="icon-button" title={label}>
+                    <Icon size={16} />
+                  </a>
+                ) : (
+                  <button key={label} onClick={onClick} style={iconBtn} className="icon-button" title={label}>
+                    <Icon size={16} />
+                  </button>
+                )
               ))}
 
               <div style={{ width: "1px", height: "1.25rem", background: "var(--border-subtle)", margin: "0 0.25rem" }} />
@@ -362,16 +370,28 @@ export function DashboardClient({
                       { icon: ShoppingCart, label: "Orders", onClick: () => { setShowOrders(true); setShowMobileMenu(false); } },
                       { icon: Palette, label: "Theme", onClick: () => { setShowTheme(true); setShowMobileMenu(false); } },
                       { icon: Upload, label: "Batch Upload", onClick: () => { setShowBatchUpload(true); setShowMobileMenu(false); } },
+                      { icon: Sparkles, label: "Promo Cards", href: "/dashboard/promo" },
                       { icon: LifeBuoy, label: "Support", onClick: () => { window.location.href = "/dashboard/support"; } },
-                    ].map(({ icon: Icon, label, onClick }) => (
-                      <button
-                        key={label}
-                        onClick={onClick}
-                        style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", minHeight: "44px" }}
-                      >
-                        <Icon size={16} />
-                        {label}
-                      </button>
+                    ].map(({ icon: Icon, label, onClick, href }) => (
+                      href ? (
+                        <a
+                          key={label}
+                          href={href}
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none", minHeight: "44px" }}
+                        >
+                          <Icon size={16} />
+                          {label}
+                        </a>
+                      ) : (
+                        <button
+                          key={label}
+                          onClick={onClick}
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", minHeight: "44px" }}
+                        >
+                          <Icon size={16} />
+                          {label}
+                        </button>
+                      )
                     ))}
 
                     <div style={{ height: "1px", background: "var(--border-subtle)", margin: "0.375rem 0" }} />
