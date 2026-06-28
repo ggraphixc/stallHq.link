@@ -178,6 +178,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         style={{
           flex: 1, marginLeft: isMobile ? 0 : "16rem", minHeight: "100vh",
           paddingTop: isMobile ? "3.5rem" : "0",
+          overflowX: "hidden",
         }}
       >
         {children}

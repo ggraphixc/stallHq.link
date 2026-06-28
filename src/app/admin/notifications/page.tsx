@@ -116,7 +116,7 @@ export default function AdminNotifications() {
   };
 
   return (
-    <div style={{ maxWidth: "48rem", margin: "0 auto", padding: "0 1rem" }}>
+    <div style={{ maxWidth: "48rem", margin: "0 auto", padding: "0 1rem 2rem", overflowX: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
         <div>
           <h1 style={{ fontSize: "clamp(1.125rem,3vw,1.5rem)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -225,7 +225,7 @@ export default function AdminNotifications() {
                 <span>·</span>
                 <span>{new Date(n.sent_at).toLocaleDateString()}</span>
               </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5, overflow: "hidden", wordBreak: "break-word" }} dangerouslySetInnerHTML={{ __html: n.body }} />
+              <div className="notification-body" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5, overflow: "hidden", wordBreak: "break-word", maxWidth: "100%" }} dangerouslySetInnerHTML={{ __html: n.body }} />
             </div>
           );
         })}

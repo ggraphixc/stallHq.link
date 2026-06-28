@@ -69,7 +69,7 @@ export default function AdminSettings() {
   ];
 
   return (
-    <div style={{ maxWidth: "48rem", margin: "0 auto", padding: "0 1rem" }}>
+    <div style={{ maxWidth: "48rem", margin: "0 auto", padding: "0 1rem 2rem", overflowX: "hidden" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
         <div>

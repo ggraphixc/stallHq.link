@@ -604,6 +604,44 @@ input[type="number"] {
 }
 
 /* ============================================
+   NOTIFICATION EMAIL CONTENT
+   ============================================ */
+.email-body img,
+.notification-body img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+.email-body table,
+.notification-body table {
+  max-width: 100% !important;
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+.email-body td,
+.notification-body td,
+.email-body th,
+.notification-body th {
+  max-width: 100% !important;
+  overflow: hidden !important;
+  word-wrap: break-word !important;
+}
+.email-body div,
+.notification-body div,
+.email-body p,
+.notification-body p,
+.email-body span,
+.notification-body span {
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+  word-wrap: break-word !important;
+}
+.email-body,
+.notification-body {
+  overflow: hidden !important;
+  max-width: 100% !important;
+}
+
+/* ============================================
    OPERA MINI / PROXY BROWSER COMPATIBILITY
    Opera Mini strips CSS variables, backdrop-filter,
    and canvas. Provide direct fallback values.
