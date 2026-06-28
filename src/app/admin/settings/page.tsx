@@ -85,16 +85,16 @@ export default function AdminSettings() {
       </div>
 
       {/* Tabs - Horizontal scroll on mobile */}
-      <div className="scroll-hidden" style={{ display: "flex", gap: "0.25rem", marginBottom: "1rem", overflowX: "auto", WebkitOverflowScrolling: "touch", paddingBottom: "0.25rem", msOverflowStyle: "none" }}>
+      <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1rem", overflowX: "auto", WebkitOverflowScrolling: "touch", paddingBottom: "0.25rem", msOverflowStyle: "none", scrollbarWidth: "none" }}>
         {tabs.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "none", background: activeTab === tab.id ? "rgba(168,133,247,0.1)" : "transparent", color: activeTab === tab.id ? "var(--glow-purple)" : "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", whiteSpace: "nowrap", flexShrink: 0, minWidth: "max-content" }}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "none", background: activeTab === tab.id ? "rgba(168,133,247,0.1)" : "transparent", color: activeTab === tab.id ? "var(--glow-purple)" : "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", whiteSpace: "nowrap", flexShrink: 0, minWidth: "fit-content" }}>
             <tab.icon size={14} /> {tab.label}
           </button>
         ))}
       </div>
 
       {/* Content */}
-      <div style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", padding: "clamp(1rem,3vw,1.5rem)" }}>
+      <div style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", padding: "clamp(1rem,3vw,1.5rem)", overflow: "hidden", wordBreak: "break-word" }}>
         {loading ? (
           <div style={{ textAlign: "center", padding: "2rem" }}>
             <RefreshCw size={20} style={{ animation: "spin 1s linear infinite", color: "var(--glow-purple)" }} />

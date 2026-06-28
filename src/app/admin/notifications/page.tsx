@@ -199,7 +199,7 @@ export default function AdminNotifications() {
         ) : notifications.map((n) => {
           const TypeIcon = TYPE_OPTIONS.find(t => t.value === n.type)?.icon || Info;
           return (
-            <div key={n.id} style={{ padding: "0.875rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.625rem" }}>
+            <div key={n.id} style={{ padding: "0.875rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.625rem", overflow: "hidden", wordBreak: "break-word" }}>
               {/* Title row with actions */}
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.5rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0, flex: 1 }}>
@@ -225,7 +225,7 @@ export default function AdminNotifications() {
                 <span>·</span>
                 <span>{new Date(n.sent_at).toLocaleDateString()}</span>
               </div>
-              <div className="notif-body" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5 }} dangerouslySetInnerHTML={{ __html: n.body }} />
+              <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5, overflow: "hidden", wordBreak: "break-word" }} dangerouslySetInnerHTML={{ __html: n.body }} />
             </div>
           );
         })}

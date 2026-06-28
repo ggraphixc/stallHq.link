@@ -668,6 +668,11 @@ body::before {
   overflow: hidden;
   word-break: break-word;
   overflow-wrap: break-word;
+  max-width: 100%;
+}
+.notif-body > * {
+  max-width: 100% !important;
+  overflow: hidden !important;
 }
 .notif-body img,
 .notif-body video,

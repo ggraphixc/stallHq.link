@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Share2, Copy, Check, X, ExternalLink } from "lucide-react";
+import { Share2, Copy, Check, X, ExternalLink, Sparkles } from "lucide-react";
+import { PromoCardGenerator } from "./PromoCardGenerator";
 
 interface ProductShareModalProps {
   isOpen: boolean;
@@ -13,6 +14,13 @@ interface ProductShareModalProps {
   productName: string;
   productImage?: string;
   productPrice: number;
+  store?: {
+    slug: string;
+    name: string;
+    logo_url?: string;
+    whatsapp_number?: string;
+    instagram_handle?: string;
+  };
 }
 
 export function ProductShareModal({
@@ -24,8 +32,10 @@ export function ProductShareModal({
   productName,
   productImage,
   productPrice,
+  store,
 }: ProductShareModalProps) {
   const [copied, setCopied] = useState(false);
+  const [showPromoGenerator, setShowPromoGenerator] = useState(false);
 
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/${storeSlug}/product/${productId}`;
   const shareText = `Check out ${productName} — ₦${productPrice.toLocaleString()} on ${storeName}`;
@@ -237,6 +247,21 @@ export function ProductShareModal({
           </button>
         </div>
 
+        {/* Promo Card button */}
+        <button
+          onClick={() => setShowPromoGenerator(true)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+            gap: "0.5rem", padding: "0.75rem", borderRadius: "0.5rem",
+            background: "rgba(168,133,247,0.1)", border: "1px solid rgba(168,133,247,0.25)",
+            color: "var(--glow-purple)", fontSize: "0.8125rem", fontWeight: 600,
+            cursor: "pointer", marginBottom: "0.75rem", transition: "all 0.2s",
+          }}
+        >
+          <Sparkles size={16} />
+          Create Promo Card for Status & Story
+        </button>
+
         {/* Action buttons */}
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button
@@ -283,6 +308,22 @@ export function ProductShareModal({
             View
           </a>
         </div>
+
+        {/* Promo Card Generator Modal */}
+        <PromoCardGenerator
+          isOpen={showPromoGenerator}
+          onClose={() => setShowPromoGenerator(false)}
+          product={{
+            id: productId,
+            name: productName,
+            price: productPrice,
+            image_url: productImage,
+          }}
+          store={store || {
+            slug: storeSlug,
+            name: storeName,
+          }}
+        />
 
         {/* Store info */}
         <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "1rem" }}>
