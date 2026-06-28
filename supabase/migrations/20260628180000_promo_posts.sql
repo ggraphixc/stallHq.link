@@ -68,13 +68,4 @@ CREATE POLICY "Vendors delete own scheduled posts" ON scheduled_promo_posts
     store_id IN (SELECT id FROM stores WHERE user_id = auth.uid())
   );
 
--- Admin full access
-CREATE POLICY "Admins full access promo posts" ON promo_posts
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
-
-CREATE POLICY "Admins full access scheduled posts" ON scheduled_promo_posts
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+-- Admin access handled via service-role client (bypasses RLS) — no profiles table needed
