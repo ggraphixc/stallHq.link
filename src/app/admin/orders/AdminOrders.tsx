@@ -7,6 +7,7 @@ import {
   ShoppingCart, Search, RefreshCw, ChevronDown, Loader2, CheckCircle2,
   XCircle, Clock, Truck, Package, ExternalLink
 } from "lucide-react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface OrderWithStore extends Order {
   stores: { id: string; name: string; slug: string; whatsapp_number: string | null; instagram_handle: string | null } | null;
@@ -32,6 +33,8 @@ export function AdminOrders() {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isSmall = useMediaQuery("(max-width: 480px)");
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -146,17 +149,16 @@ export function AdminOrders() {
               }}>
                 <div
                   style={{
-                    display: "grid", gridTemplateColumns: "1fr auto auto auto",
+                    display: "grid", gridTemplateColumns: isMobile ? "1fr auto auto" : "1fr auto auto auto",
                     alignItems: "center", gap: "1rem", padding: "0.875rem 1rem",
                     cursor: "pointer", minHeight: "44px",
                   }}
-                  className="admin-order-row"
                   onClick={() => setExpandedId(isExpanded ? null : order.id)}
                 >
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                       <span style={{ fontWeight: 600, fontSize: "0.875rem", fontFamily: "monospace" }}>#{shortId}</span>
-                      <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} className="admin-hide-mobile">{order.stores?.name || "Unknown"}</span>
+                      <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: isMobile ? "none" : "inline" }}>{order.stores?.name || "Unknown"}</span>
                     </div>
                     <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
                       {order.customer_name || "Anonymous"} · {new Date(order.created_at).toLocaleDateString()}

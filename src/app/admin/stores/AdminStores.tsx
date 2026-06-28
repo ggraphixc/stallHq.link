@@ -9,6 +9,7 @@ import {
   ShieldOff, Clock, Crown, Loader2, ChevronDown, Eye, Trash2
 } from "lucide-react";
 import Link from "next/link";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface StoreWithCount extends Store {
   product_count: number;
@@ -25,6 +26,8 @@ export function AdminStores() {
   const [total, setTotal] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isSmall = useMediaQuery("(max-width: 480px)");
 
   const fetchStores = async () => {
     setLoading(true);
@@ -158,7 +161,6 @@ export function AdminStores() {
                     alignItems: "center", gap: "0.5rem", padding: "0.875rem 1rem",
                     cursor: "pointer", minHeight: "44px",
                   }}
-                  className="admin-store-row"
                   onClick={() => setExpandedId(isExpanded ? null : store.id)}
                 >
                   <div style={{ minWidth: 0 }}>

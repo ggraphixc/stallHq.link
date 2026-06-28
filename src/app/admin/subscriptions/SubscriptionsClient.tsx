@@ -9,6 +9,7 @@ import {
   ChevronDown, Loader2, CheckCircle2, XCircle, CreditCard, Users, TrendingUp
 } from "lucide-react";
 import Link from "next/link";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface Payment {
   id: string;
@@ -37,6 +38,8 @@ export function SubscriptionsClient({ stores, payments, currentUserId }: Subscri
   const [updatePlan, setUpdatePlan] = useState<SubscriptionPlan>("monthly");
   const [updateDays, setUpdateDays] = useState("30");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isSmall = useMediaQuery("(max-width: 480px)");
 
   const now = new Date();
 
@@ -193,11 +196,10 @@ export function SubscriptionsClient({ stores, payments, currentUserId }: Subscri
                 {/* Store Row */}
                 <div
                   style={{
-                    display: "grid", gridTemplateColumns: "1fr auto auto auto",
+                    display: "grid", gridTemplateColumns: isMobile ? "1fr auto auto" : "1fr auto auto auto",
                     alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem",
                     cursor: "pointer", minHeight: "44px",
                   }}
-                  className="admin-sub-row"
                   onClick={() => setExpandedId(isExpanded ? null : store.id)}
                 >
                   <div style={{ minWidth: 0 }}>
@@ -212,7 +214,8 @@ export function SubscriptionsClient({ stores, payments, currentUserId }: Subscri
                   <span style={{
                     padding: "0.1875rem 0.5rem", borderRadius: "0.25rem", fontSize: "0.6875rem",
                     fontWeight: 600, color: getPlanColor(store.plan), background: `${getPlanColor(store.plan)}15`,
-                  }} className="admin-hide-mobile">{getPlanName(store.plan)}</span>
+                    display: isMobile ? "none" : "inline",
+                  }}>{getPlanName(store.plan)}</span>
                   <span style={{
                     padding: "0.1875rem 0.5rem", borderRadius: "0.25rem", fontSize: "0.6875rem",
                     fontWeight: 600, color: status.color, background: status.bg,
@@ -372,11 +375,6 @@ export function SubscriptionsClient({ stores, payments, currentUserId }: Subscri
         </div>
       )}
 
-      <style>{`
-        @media (max-width: 768px) {
-          .admin-sub-row { grid-template-columns: 1fr auto auto !important; }
-        }
-      `}</style>
     </div>
   );
 }

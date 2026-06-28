@@ -8,6 +8,7 @@ import {
   LifeBuoy, Bell, Settings, Mail
 } from "lucide-react";
 import { useState } from "react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -25,17 +26,18 @@ const NAV_ITEMS = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isSmall = useMediaQuery("(max-width: 480px)");
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)", display: "flex" }}>
       {/* Desktop Sidebar */}
       <aside style={{
         width: "16rem", flexShrink: 0, background: "var(--bg-card)",
-        borderRight: "1px solid var(--border-subtle)", display: "flex",
+        borderRight: "1px solid var(--border-subtle)", display: isMobile ? "none" : "flex",
         flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0,
         zIndex: 40,
       }}
-        className="admin-sidebar-desktop"
       >
         {/* Logo */}
         <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)" }}>
@@ -94,11 +96,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobile Header */}
       <div
-        className="admin-mobile-header"
         style={{
           position: "fixed", top: 0, left: 0, right: 0, height: "3.5rem",
           background: "rgba(6,6,11,0.9)", backdropFilter: "blur(16px)",
-          borderBottom: "1px solid var(--border-subtle)", display: "none",
+          borderBottom: "1px solid var(--border-subtle)", display: isMobile ? "flex" : "none",
           alignItems: "center", justifyContent: "space-between", padding: "0 1rem",
           zIndex: 50,
         }}
@@ -132,11 +133,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobile Sidebar */}
       <aside
-        className="admin-sidebar-mobile"
         style={{
           position: "fixed", top: 0, left: 0, bottom: 0, width: "16rem",
           background: "var(--bg-card)", borderRight: "1px solid var(--border-subtle)",
-          display: "none", flexDirection: "column", zIndex: 50,
+          display: isMobile ? "flex" : "none", flexDirection: "column", zIndex: 50,
           transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 0.2s",
         }}
@@ -175,35 +175,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content */}
       <main
-        className="admin-main"
         style={{
-          flex: 1, marginLeft: "16rem", minHeight: "100vh",
-          paddingTop: "0",
+          flex: 1, marginLeft: isMobile ? 0 : "16rem", minHeight: "100vh",
+          paddingTop: isMobile ? "3.5rem" : "0",
         }}
       >
         {children}
       </main>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .admin-sidebar-desktop { display: none !important; }
-          .admin-mobile-header { display: flex !important; }
-          .admin-sidebar-mobile { display: flex !important; }
-          .admin-main { margin-left: 0 !important; padding-top: 3.5rem !important; }
-          .admin-hide-mobile { display: none !important; }
-          .admin-grid-stacked { grid-template-columns: 1fr !important; }
-          .admin-grid-2col { grid-template-columns: 1fr !important; }
-          .admin-support-detail { grid-template-columns: 1fr !important; }
-          .admin-flex-wrap { flex-wrap: wrap !important; }
-          .admin-user-row { grid-template-columns: 1fr auto !important; }
-          .admin-store-row { grid-template-columns: 1fr auto !important; }
-          .admin-order-row { grid-template-columns: 1fr auto auto !important; }
-        }
-        @media (max-width: 480px) {
-          .admin-hide-small { display: none !important; }
-          .admin-settings-tabs { flex-direction: column !important; }
-        }
-      `}</style>
     </div>
   );
 }

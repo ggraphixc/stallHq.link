@@ -8,6 +8,7 @@ import {
   Users as UsersIcon, Search, RefreshCw, Mail, Clock, Store,
   ShoppingCart, ChevronDown, ExternalLink, User
 } from "lucide-react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface UserWithStores {
   id: string;
@@ -26,6 +27,8 @@ export function AdminUsers() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isSmall = useMediaQuery("(max-width: 480px)");
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -79,11 +82,10 @@ export function AdminUsers() {
               }}>
                 <div
                   style={{
-                    display: "grid", gridTemplateColumns: "1fr auto auto auto",
+                    display: "grid", gridTemplateColumns: isMobile ? "1fr auto" : "1fr auto auto auto",
                     alignItems: "center", gap: "1rem", padding: "0.875rem 1rem",
                     cursor: "pointer", minHeight: "44px",
                   }}
-                  className="admin-user-row"
                   onClick={() => setExpandedId(isExpanded ? null : u.id)}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
@@ -99,10 +101,10 @@ export function AdminUsers() {
                       <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</p>
                     </div>
                   </div>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem" }} className="admin-hide-mobile">
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: isMobile ? "none" : "flex", alignItems: "center", gap: "0.25rem" }}>
                     <Store size={12} /> {u.stores.length}
                   </span>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem" }} className="admin-hide-mobile">
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: isMobile ? "none" : "flex", alignItems: "center", gap: "0.25rem" }}>
                     <ShoppingCart size={12} /> {u.total_orders}
                   </span>
                   <ChevronDown size={14} style={{
