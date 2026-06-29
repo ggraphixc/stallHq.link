@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     if (platform === "whatsapp") {
       result = await postToWhatsApp(
         { whatsapp_number: store.whatsapp_number as string },
+        { name: product.name as string, image_url: product.image_url as string, price: product.price as number },
         caption
       );
     } else {
@@ -88,6 +89,7 @@ export async function POST(req: NextRequest) {
 
 async function postToWhatsApp(
   store: { whatsapp_number: string },
+  product: { name: string; image_url?: string; price: number },
   caption: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
@@ -97,9 +99,45 @@ async function postToWhatsApp(
     return { success: false, error: "WhatsApp Business API not configured" };
   }
 
+  const toNumber = store.whatsapp_number.replace(/\D/g, "");
+
+  // Try sending image message first
+  if (product.image_url) {
+    try {
+      const response = await fetch(
+        `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: toNumber,
+            type: "image",
+            image: {
+              link: product.image_url,
+              caption: caption,
+            },
+          }),
+        }
+      );
+
+      const data = await response.json();
+      if (data.messages?.[0]?.id) {
+        return { success: true, messageId: data.messages[0].id };
+      }
+      console.warn("Image send failed, falling back to text:", data.error?.message);
+    } catch (e) {
+      console.warn("Image send error, falling back to text:", e);
+    }
+  }
+
+  // Fallback to text
   try {
     const response = await fetch(
-      `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+      `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`,
       {
         method: "POST",
         headers: {
@@ -108,7 +146,7 @@ async function postToWhatsApp(
         },
         body: JSON.stringify({
           messaging_product: "whatsapp",
-          to: store.whatsapp_number.replace(/\D/g, ""),
+          to: toNumber,
           type: "text",
           text: { body: caption },
         }),
@@ -116,11 +154,9 @@ async function postToWhatsApp(
     );
 
     const data = await response.json();
-
     if (data.messages?.[0]?.id) {
       return { success: true, messageId: data.messages[0].id };
     }
-
     return { success: false, error: data.error?.message || "Failed to send" };
   } catch (error) {
     return { success: false, error: String(error) };

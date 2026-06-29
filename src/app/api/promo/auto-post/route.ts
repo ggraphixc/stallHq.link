@@ -53,12 +53,12 @@ export async function POST(req: NextRequest) {
     }
 
     const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://stallhq.com"}/${storeSlug}/product/${productId}`;
-    const caption = `🛍️ ${product.name}\n💰 ₦${product.price.toLocaleString()}\n\nShop now on ${store.name} via StallHq\n${shareUrl}`;
+    const caption = `*${product.name}*\n\n*N${product.price.toLocaleString()}*\n\nShop now on ${store.name} via StallHq\n${shareUrl}`;
 
     let result: { success: boolean; messageId?: string; error?: string };
 
     if (platform === "whatsapp") {
-      result = await postToWhatsApp(store, caption, shareUrl);
+      result = await postToWhatsApp(store, product, caption, shareUrl);
     } else {
       result = await postToInstagram(store, product, caption, shareUrl);
     }
@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
 
 async function postToWhatsApp(
   store: { whatsapp_number: string; whatsapp_access_token?: string },
+  product: { name: string; image_url?: string; price: number },
   caption: string,
   _shareUrl: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
@@ -95,13 +96,51 @@ async function postToWhatsApp(
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
   if (!token || !phoneNumberId) {
-    return { success: false, error: "WhatsApp Business API not configured" };
+    return { success: false, error: "WhatsApp Business API not configured. Add WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID to .env" };
   }
 
+  const toNumber = store.whatsapp_number.replace(/\D/g, "");
+
+  // Send image message if product has image, otherwise text
+  if (product.image_url) {
+    try {
+      const response = await fetch(
+        `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: toNumber,
+            type: "image",
+            image: {
+              link: product.image_url,
+              caption: caption,
+            },
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.messages?.[0]?.id) {
+        return { success: true, messageId: data.messages[0].id };
+      }
+
+      // If image fails, fall back to text
+      console.warn("Image send failed, falling back to text:", data.error?.message);
+    } catch (e) {
+      console.warn("Image send error, falling back to text:", e);
+    }
+  }
+
+  // Fallback: send text message
   try {
-    // Send text message via WhatsApp Cloud API
     const response = await fetch(
-      `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+      `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`,
       {
         method: "POST",
         headers: {
@@ -110,7 +149,7 @@ async function postToWhatsApp(
         },
         body: JSON.stringify({
           messaging_product: "whatsapp",
-          to: store.whatsapp_number.replace(/\D/g, ""),
+          to: toNumber,
           type: "text",
           text: { body: caption },
         }),
