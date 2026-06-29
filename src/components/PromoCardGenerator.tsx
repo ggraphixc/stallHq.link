@@ -44,6 +44,30 @@ const CARD_FORMATS: Record<CardFormat, { label: string; width: number; height: n
   post: { label: "Instagram Post", width: 1080, height: 1080, icon: "🖼️" },
 };
 
+/** Fetch image as blob to avoid canvas tainted error */
+async function loadImageBlob(url: string): Promise<HTMLImageElement | null> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    const blob = await res.blob();
+    const localUrl = URL.createObjectURL(blob);
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((resolve) => {
+      img.onload = () => resolve();
+      img.onerror = () => {
+        URL.revokeObjectURL(localUrl);
+        resolve();
+      };
+      img.src = localUrl;
+    });
+    if (img.complete && img.naturalWidth > 0) return img;
+    URL.revokeObjectURL(localUrl);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCardGeneratorProps) {
   const [cardStyle, setCardStyle] = useState<CardStyle>("modern");
   const [cardFormat, setCardFormat] = useState<CardFormat>("story");
@@ -58,284 +82,260 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = format.width;
-    canvas.height = format.height;
+    const W = format.width;
+    const H = format.height;
+    canvas.width = W;
+    canvas.height = H;
 
-    // Background
+    // ── Background ──────────────────────────────────────────────────
     if (style.bg.startsWith("linear")) {
-      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      const grad = ctx.createLinearGradient(0, 0, W, H);
       grad.addColorStop(0, "#667eea");
       grad.addColorStop(1, "#764ba2");
       ctx.fillStyle = grad;
     } else {
       ctx.fillStyle = style.bg;
     }
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, W, H);
 
-    // Decorative elements — subtle ambient glow circles
-    ctx.globalAlpha = 0.06;
+    // ── Decorative orbs ─────────────────────────────────────────────
+    ctx.globalAlpha = 0.08;
     ctx.fillStyle = style.accent;
     ctx.beginPath();
-    ctx.arc(canvas.width * 0.85, canvas.height * 0.12, 350, 0, Math.PI * 2);
+    ctx.arc(W * 0.82, H * 0.1, W * 0.32, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(canvas.width * 0.15, canvas.height * 0.88, 280, 0, Math.PI * 2);
+    ctx.arc(W * 0.18, H * 0.92, W * 0.26, 0, Math.PI * 2);
     ctx.fill();
-    // Top-left corner glow
-    const cornerGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, canvas.width * 0.4);
-    cornerGrad.addColorStop(0, style.accent);
-    cornerGrad.addColorStop(1, "transparent");
-    ctx.globalAlpha = 0.04;
-    ctx.fillStyle = cornerGrad;
-    ctx.fillRect(0, 0, canvas.width * 0.5, canvas.height * 0.3);
     ctx.globalAlpha = 1;
 
-    // Product image — maintain aspect ratio with cover crop
-    let imageBottomY = canvas.height * 0.12;
-    if (product.image_url) {
-      try {
-        const img = new window.Image();
-        img.crossOrigin = "anonymous";
-        await new Promise<void>((resolve) => {
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-          img.src = product.image_url!;
-        });
-        if (img.complete && img.naturalWidth > 0) {
-          const maxImgW = canvas.width * 0.78;
-          const maxImgH = canvas.height * 0.4;
-          const imgAspect = img.naturalWidth / img.naturalHeight;
-          let imgW: number;
-          let imgH: number;
-          if (imgAspect > maxImgW / maxImgH) {
-            imgW = maxImgW;
-            imgH = maxImgW / imgAspect;
-          } else {
-            imgH = maxImgH;
-            imgW = maxImgH * imgAspect;
-          }
-          const imgX = (canvas.width - imgW) / 2;
-          const imgY = canvas.height * 0.08;
+    // ── Top bar ─────────────────────────────────────────────────────
+    const barH = H * 0.05;
+    ctx.fillStyle = style.accent;
+    ctx.globalAlpha = 0.9;
+    ctx.fillRect(0, 0, W, barH);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `700 ${W * 0.025}px Inter, sans-serif`;
+    ctx.textAlign = "left";
+    ctx.fillText("STALLHQ", W * 0.04, barH * 0.65);
 
-          // Subtle shadow under image
-          ctx.shadowColor = "rgba(0,0,0,0.3)";
-          ctx.shadowBlur = 40;
-          ctx.shadowOffsetY = 10;
+    // ── Product Image ───────────────────────────────────────────────
+    let imgBottom = H * 0.1;
+    const img = product.image_url ? await loadImageBlob(product.image_url) : null;
 
-          // Image container with rounded corners
-          ctx.save();
-          ctx.beginPath();
-          ctx.roundRect(imgX, imgY, imgW, imgH, 20);
-          ctx.clip();
-          ctx.drawImage(img, imgX, imgY, imgW, imgH);
-          ctx.restore();
-
-          // Reset shadow
-          ctx.shadowColor = "transparent";
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetY = 0;
-
-          // Image border glow
-          ctx.strokeStyle = style.accent;
-          ctx.lineWidth = 2.5;
-          ctx.globalAlpha = 0.35;
-          ctx.beginPath();
-          ctx.roundRect(imgX, imgY, imgW, imgH, 20);
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-
-          imageBottomY = imgY + imgH + canvas.height * 0.03;
-        }
-      } catch {
-        // Fallback placeholder
-        ctx.fillStyle = style.accent;
-        ctx.globalAlpha = 0.12;
-        const phW = canvas.width * 0.78;
-        const phH = canvas.height * 0.35;
-        const phX = (canvas.width - phW) / 2;
-        const phY = canvas.height * 0.08;
-        ctx.beginPath();
-        ctx.roundRect(phX, phY, phW, phH, 20);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = style.accent;
-        ctx.font = `bold ${canvas.width * 0.08}px Inter, sans-serif`;
-        ctx.textAlign = "center";
-        ctx.fillText("📦", canvas.width / 2, phY + phH / 2 + canvas.width * 0.03);
-        imageBottomY = phY + phH + canvas.height * 0.03;
+    if (img) {
+      const maxW = W * 0.85;
+      const maxH = H * 0.42;
+      const aspect = img.naturalWidth / img.naturalHeight;
+      let drawW: number;
+      let drawH: number;
+      if (aspect > maxW / maxH) {
+        drawW = maxW;
+        drawH = maxW / aspect;
+      } else {
+        drawH = maxH;
+        drawW = maxH * aspect;
       }
+      const imgX = (W - drawW) / 2;
+      const imgY = H * 0.08;
+
+      // Soft shadow
+      ctx.shadowColor = "rgba(0,0,0,0.4)";
+      ctx.shadowBlur = 50;
+      ctx.shadowOffsetY = 12;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(imgX, imgY, drawW, drawH, 16);
+      ctx.clip();
+      ctx.drawImage(img, imgX, imgY, drawW, drawH);
+      ctx.restore();
+
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
+      imgBottom = imgY + drawH + H * 0.025;
+    } else {
+      // Placeholder
+      const phW = W * 0.75;
+      const phH = H * 0.3;
+      const phX = (W - phW) / 2;
+      const phY = H * 0.1;
+      ctx.fillStyle = style.accent;
+      ctx.globalAlpha = 0.12;
+      ctx.beginPath();
+      ctx.roundRect(phX, phY, phW, phH, 16);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.font = `bold ${W * 0.06}px Inter, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillStyle = style.accent;
+      ctx.fillText("\u{1F4E6}", W / 2, phY + phH / 2 + W * 0.02);
+      imgBottom = phY + phH + H * 0.025;
     }
 
-    // ── Price Tag ──────────────────────────────────────────────────────
-    const priceY = imageBottomY + canvas.height * 0.01;
-    const priceText = `₦${product.price.toLocaleString()}`;
-    ctx.font = `800 ${canvas.width * 0.075}px Inter, sans-serif`;
-    const priceMetrics = ctx.measureText(priceText);
-    const pricePadX = canvas.width * 0.05;
-    const pricePadY = canvas.height * 0.012;
+    // ── Price ───────────────────────────────────────────────────────
+    const priceText = `\u20A6${product.price.toLocaleString()}`;
+    ctx.font = `800 ${W * 0.07}px Inter, sans-serif`;
+    ctx.textAlign = "center";
+    const priceW = ctx.measureText(priceText).width;
+    const pillPad = W * 0.04;
+    const pillH = W * 0.09;
+    const pillY = imgBottom + H * 0.01;
 
-    // Price background pill
+    // Price pill background
     ctx.fillStyle = style.accent;
-    ctx.globalAlpha = 0.15;
+    ctx.globalAlpha = 0.12;
     ctx.beginPath();
-    ctx.roundRect(
-      (canvas.width - priceMetrics.width - pricePadX * 2) / 2,
-      priceY - canvas.width * 0.075 - pricePadY,
-      priceMetrics.width + pricePadX * 2,
-      canvas.width * 0.075 + pricePadY * 2,
-      14
-    );
+    ctx.roundRect((W - priceW - pillPad * 2) / 2, pillY, priceW + pillPad * 2, pillH, 12);
     ctx.fill();
     ctx.globalAlpha = 1;
 
     // Price text
     ctx.fillStyle = style.accent;
-    ctx.textAlign = "center";
-    ctx.fillText(priceText, canvas.width / 2, priceY);
+    ctx.fillText(priceText, W / 2, pillY + pillH * 0.7);
 
-    // ── Product Name ───────────────────────────────────────────────────
+    // ── Product Name ────────────────────────────────────────────────
     ctx.fillStyle = style.text;
-    ctx.font = `bold ${canvas.width * 0.058}px Inter, sans-serif`;
-    const nameLines = wrapText(ctx, product.name, canvas.width * 0.82);
-    const nameStartY = priceY + canvas.width * 0.085;
+    ctx.font = `bold ${W * 0.048}px Inter, sans-serif`;
+    const nameLines = wrapText(ctx, product.name, W * 0.85);
+    const nameY = pillY + pillH + H * 0.02;
     nameLines.forEach((line, i) => {
-      ctx.fillText(line, canvas.width / 2, nameStartY + i * canvas.width * 0.072);
+      ctx.fillText(line, W / 2, nameY + i * W * 0.06);
     });
+    const afterNameY = nameY + nameLines.length * W * 0.06;
 
-    // ── Category Badge ─────────────────────────────────────────────────
-    let afterNameY = nameStartY + nameLines.length * canvas.width * 0.072;
+    // ── Category badge ──────────────────────────────────────────────
+    let badgeBottom = afterNameY;
     if (product.category) {
-      const catY = afterNameY + canvas.height * 0.015;
-      ctx.fillStyle = style.accent;
-      ctx.globalAlpha = 0.18;
+      const catY = afterNameY + H * 0.012;
+      ctx.font = `600 ${W * 0.022}px Inter, sans-serif`;
       const catText = product.category.toUpperCase();
-      ctx.font = `600 ${canvas.width * 0.028}px Inter, sans-serif`;
-      const catMetrics = ctx.measureText(catText);
+      const catW = ctx.measureText(catText).width;
+      const catPad = W * 0.025;
+
+      ctx.fillStyle = style.accent;
+      ctx.globalAlpha = 0.15;
       ctx.beginPath();
-      ctx.roundRect(
-        (canvas.width - catMetrics.width - 48) / 2,
-        catY - canvas.width * 0.028,
-        catMetrics.width + 48,
-        canvas.width * 0.048,
-        22
-      );
+      ctx.roundRect((W - catW - catPad * 2) / 2, catY - W * 0.022, catW + catPad * 2, W * 0.04, 20);
       ctx.fill();
       ctx.globalAlpha = 1;
       ctx.fillStyle = style.accent;
-      ctx.fillText(catText, canvas.width / 2, catY + canvas.width * 0.006);
-      afterNameY = catY + canvas.width * 0.04;
+      ctx.textAlign = "center";
+      ctx.fillText(catText, W / 2, catY + W * 0.005);
+      badgeBottom = catY + W * 0.035;
     }
 
-    // ── Divider line ───────────────────────────────────────────────────
-    const divY = afterNameY + canvas.height * 0.035;
-    const divW = canvas.width * 0.3;
+    // ── Divider ─────────────────────────────────────────────────────
+    const divY = badgeBottom + H * 0.025;
     ctx.strokeStyle = style.accent;
     ctx.globalAlpha = 0.2;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo((canvas.width - divW) / 2, divY);
-    ctx.lineTo((canvas.width + divW) / 2, divY);
+    ctx.moveTo(W * 0.35, divY);
+    ctx.lineTo(W * 0.65, divY);
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    // ── Bottom Section ─────────────────────────────────────────────────
-    const bottomY = canvas.height * 0.78;
+    // ── Bottom section ──────────────────────────────────────────────
+    const bottomStart = H * 0.78;
 
-    // "ORDER NOW ON STALLHQ" — main CTA text
+    // CTA heading
     ctx.fillStyle = style.text;
     ctx.globalAlpha = 0.85;
-    ctx.font = `800 ${canvas.width * 0.038}px Inter, sans-serif`;
-    ctx.fillText("ORDER NOW ON STALLHQ", canvas.width / 2, bottomY);
+    ctx.font = `800 ${W * 0.032}px Inter, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText("ORDER NOW ON STALLHQ", W / 2, bottomStart);
     ctx.globalAlpha = 1;
 
     // Store name
     ctx.fillStyle = style.text;
-    ctx.globalAlpha = 0.55;
-    ctx.font = `500 ${canvas.width * 0.03}px Inter, sans-serif`;
-    ctx.fillText(store.name, canvas.width / 2, bottomY + canvas.width * 0.055);
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = 0.5;
+    ctx.font = `500 ${W * 0.026}px Inter, sans-serif`;
+    ctx.fillText(store.name, W / 2, bottomStart + W * 0.048);
 
-    // CTA Button with animated pulse
-    const ctaY = bottomY + canvas.width * 0.09;
-    const ctaW = canvas.width * 0.52;
-    const ctaH = canvas.width * 0.095;
+    // ── CTA Button ──────────────────────────────────────────────────
+    const btnW = W * 0.55;
+    const btnH = W * 0.09;
+    const btnY = bottomStart + W * 0.08;
 
-    // Pulse ring animation for video
+    // Pulse ring for animation
     if (animPhase > 0) {
-      const pulseProgress = (animPhase % 60) / 60;
-      const pulseScale = 1 + pulseProgress * 0.15;
-      const pulseAlpha = 0.3 * (1 - pulseProgress);
+      const pulse = (animPhase % 60) / 60;
+      const scale = 1 + pulse * 0.12;
+      const alpha = 0.3 * (1 - pulse);
       ctx.strokeStyle = style.accent;
-      ctx.lineWidth = 2;
-      ctx.globalAlpha = pulseAlpha;
+      ctx.lineWidth = 2.5;
+      ctx.globalAlpha = alpha;
       ctx.beginPath();
       ctx.roundRect(
-        (canvas.width - ctaW * pulseScale) / 2,
-        ctaY - (ctaH * (pulseScale - 1)) / 2,
-        ctaW * pulseScale,
-        ctaH * pulseScale,
-        18
+        (W - btnW * scale) / 2,
+        btnY - (btnH * (scale - 1)) / 2,
+        btnW * scale,
+        btnH * scale,
+        14
       );
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
 
-    // Button gradient
-    const ctaGrad = ctx.createLinearGradient(
-      (canvas.width - ctaW) / 2, ctaY,
-      (canvas.width + ctaW) / 2, ctaY
-    );
-    ctaGrad.addColorStop(0, style.accent);
-    ctaGrad.addColorStop(1, adjustColor(style.accent, 40));
-    ctx.fillStyle = ctaGrad;
+    // Button fill
+    const btnGrad = ctx.createLinearGradient((W - btnW) / 2, btnY, (W + btnW) / 2, btnY);
+    btnGrad.addColorStop(0, style.accent);
+    btnGrad.addColorStop(1, lighten(style.accent, 40));
+    ctx.fillStyle = btnGrad;
     ctx.beginPath();
-    ctx.roundRect((canvas.width - ctaW) / 2, ctaY, ctaW, ctaH, 16);
+    ctx.roundRect((W - btnW) / 2, btnY, btnW, btnH, 14);
     ctx.fill();
 
     // Button text
     ctx.fillStyle = "#ffffff";
-    ctx.font = `bold ${canvas.width * 0.036}px Inter, sans-serif`;
-    ctx.fillText("Shop Now", canvas.width / 2, ctaY + ctaH * 0.62);
+    ctx.font = `bold ${W * 0.032}px Inter, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText("Shop Now", W / 2, btnY + btnH * 0.62);
 
-    // ── QR Code Area ───────────────────────────────────────────────────
-    const qrSize = canvas.width * 0.11;
-    const qrY = canvas.height * 0.91;
+    // ── QR Code ─────────────────────────────────────────────────────
+    const qrSize = W * 0.12;
+    const qrY = H * 0.91;
 
-    // QR white background
+    // QR background
     ctx.fillStyle = "#ffffff";
-    ctx.shadowColor = "rgba(0,0,0,0.15)";
-    ctx.shadowBlur = 15;
+    ctx.shadowColor = "rgba(0,0,0,0.12)";
+    ctx.shadowBlur = 12;
     ctx.beginPath();
-    ctx.roundRect((canvas.width - qrSize - 24) / 2, qrY, qrSize + 24, qrSize + 24, 10);
+    ctx.roundRect((W - qrSize - 20) / 2, qrY, qrSize + 20, qrSize + 20, 8);
     ctx.fill();
     ctx.shadowColor = "transparent";
     ctx.shadowBlur = 0;
 
-    // QR placeholder pattern
+    // QR pattern
     ctx.fillStyle = style.bg === "#ffffff" ? "#111827" : style.bg;
-    const qrBlock = (qrSize + 24) * 0.08;
+    const block = (qrSize + 20) * 0.08;
     for (let r = 0; r < 5; r++) {
       for (let c = 0; c < 5; c++) {
         if ((r + c) % 2 === 0 || (r < 2 && c < 2) || (r < 2 && c > 2) || (r > 2 && c < 2)) {
           ctx.fillRect(
-            (canvas.width - qrSize - 24) / 2 + 12 + c * (qrSize / 5),
-            qrY + 12 + r * (qrSize / 5),
-            qrBlock,
-            qrBlock
+            (W - qrSize - 20) / 2 + 10 + c * (qrSize / 5),
+            qrY + 10 + r * (qrSize / 5),
+            block,
+            block
           );
         }
       }
     }
 
-    // "Scan to Shop" label
+    // Scan label
     ctx.fillStyle = style.text;
-    ctx.globalAlpha = 0.6;
-    ctx.font = `500 ${canvas.width * 0.022}px Inter, sans-serif`;
-    ctx.fillText("Scan to Shop", canvas.width / 2, qrY + qrSize + 38);
+    ctx.globalAlpha = 0.55;
+    ctx.font = `500 ${W * 0.02}px Inter, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText("Scan to Shop", W / 2, qrY + qrSize + 34);
     ctx.globalAlpha = 1;
   }, [product, store, format, style]);
 
-  // Draw card preview on mount and when style/format changes
+  // Draw card on mount and when settings change
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) drawCard(canvas, 0);
@@ -344,10 +344,8 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
   const handleDownloadImage = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     setDownloading(true);
     await drawCard(canvas, 0);
-
     canvas.toBlob((blob) => {
       if (blob) {
         const url = URL.createObjectURL(blob);
@@ -366,26 +364,22 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
   const handleDownloadGif = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     setDownloading(true);
 
     try {
-      // Render frames to an offscreen canvas and collect them
       const offscreen = document.createElement("canvas");
       offscreen.width = canvas.width;
       offscreen.height = canvas.height;
       const offCtx = offscreen.getContext("2d")!;
 
       const gifFrames: { canvas: HTMLCanvasElement; delay: number }[] = [];
-      const totalFrames = 20; // 20 frames × 150ms = 3 seconds
-      const frameDelay = 150; // ms per frame
+      const totalFrames = 20;
+      const frameDelay = 150;
 
       for (let i = 0; i < totalFrames; i++) {
         await drawCard(canvas, i);
-        // Copy to offscreen canvas
         offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
         offCtx.drawImage(canvas, 0, 0);
-        // Clone for GIF encoder (it needs its own canvas reference)
         const frameCanvas = document.createElement("canvas");
         frameCanvas.width = offscreen.width;
         frameCanvas.height = offscreen.height;
@@ -393,9 +387,7 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
         gifFrames.push({ canvas: frameCanvas, delay: frameDelay });
       }
 
-      // Encode as animated GIF
       const gifBlob = await encodeGif(gifFrames, { quality: 10 });
-
       const url = URL.createObjectURL(gifBlob);
       const a = document.createElement("a");
       a.href = url;
@@ -405,7 +397,6 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
       setDownloadedType("gif");
       setTimeout(() => setDownloadedType(null), 2000);
     } catch {
-      // Fallback: download single frame
       await handleDownloadImage();
     } finally {
       setDownloading(false);
@@ -673,8 +664,8 @@ function AutoPostButton({
   };
 
   const colors = platform === "whatsapp"
-    ? { bg: "rgba(37,211,102,0.15)", border: "rgba(37,211,102,0.3)", text: "#25d366", icon: "💬" }
-    : { bg: "rgba(225,48,108,0.15)", border: "rgba(225,48,108,0.3)", text: "#e1306c", icon: "📸" };
+    ? { bg: "rgba(37,211,102,0.15)", border: "rgba(37,211,102,0.3)", text: "#25d366", icon: "\uD83D\uDCAC" }
+    : { bg: "rgba(225,48,108,0.15)", border: "rgba(225,48,108,0.3)", text: "#e1306c", icon: "\uD83D\uDCF8" };
 
   return (
     <button
@@ -700,7 +691,6 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   const words = text.split(" ");
   const lines: string[] = [];
   let currentLine = "";
-
   for (const word of words) {
     const testLine = currentLine ? `${currentLine} ${word}` : word;
     if (ctx.measureText(testLine).width > maxWidth && currentLine) {
@@ -714,7 +704,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines.slice(0, 3);
 }
 
-function adjustColor(hex: string, amount: number): string {
+function lighten(hex: string, amount: number): string {
   const num = parseInt(hex.replace("#", ""), 16);
   const r = Math.min(255, ((num >> 16) & 0xff) + amount);
   const g = Math.min(255, ((num >> 8) & 0xff) + amount);
