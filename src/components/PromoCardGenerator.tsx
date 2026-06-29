@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Download, Image, Film, Sparkles, Check,
   Palette, Layout, X, RefreshCw
@@ -334,6 +334,12 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
     ctx.fillText("Scan to Shop", canvas.width / 2, qrY + qrSize + 38);
     ctx.globalAlpha = 1;
   }, [product, store, format, style]);
+
+  // Draw card preview on mount and when style/format changes
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) drawCard(canvas, 0);
+  }, [cardStyle, cardFormat, drawCard]);
 
   const handleDownloadImage = async () => {
     const canvas = canvasRef.current;
