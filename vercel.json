@@ -9,7 +9,7 @@
     },
     {
       "path": "/api/cron/marketing",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 10 * * *"
     }
   ]
 }
