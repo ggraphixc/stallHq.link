@@ -27,18 +27,19 @@ interface PromoCardGeneratorProps {
   };
 }
 
-type CardStyle = "modern" | "midnight" | "elegant" | "fresh" | "violet";
+type CardStyle = "aurora" | "neon" | "sunset" | "ocean" | "royal";
 type CardFormat = "status" | "story" | "post";
 
 const CARD_STYLES: Record<CardStyle, {
   label: string; bg: string; accent: string; accentEnd: string;
+  orb1: string; orb2: string; orb3: string;
   text: string; subtext: string;
 }> = {
-  modern:   { label: "Modern",   bg: "#0a0a0f", accent: "#a855f7", accentEnd: "#6366f1", text: "#f8fafc", subtext: "#94a3b8" },
-  midnight: { label: "Midnight", bg: "#0c0c1d", accent: "#818cf8", accentEnd: "#38bdf8", text: "#f1f5f9", subtext: "#94a3b8" },
-  elegant:  { label: "Elegant",  bg: "#0f0a0a", accent: "#f59e0b", accentEnd: "#ef4444", text: "#fefce8", subtext: "#d4a574" },
-  fresh:    { label: "Fresh",    bg: "#0a0f0a", accent: "#10b981", accentEnd: "#06b6d4", text: "#ecfdf5", subtext: "#6ee7b7" },
-  violet:   { label: "Violet",   bg: "#0d0a1a", accent: "#c084fc", accentEnd: "#e879f9", text: "#faf5ff", subtext: "#c4b5fd" },
+  aurora:  { label: "Aurora",  bg: "#050510", accent: "#a855f7", accentEnd: "#06b6d4", orb1: "#7c3aed", orb2: "#0ea5e9", orb3: "#d946ef", text: "#f8fafc", subtext: "#94a3b8" },
+  neon:    { label: "Neon",    bg: "#0a0a0a", accent: "#f43f5e", accentEnd: "#f59e0b", orb1: "#ef4444", orb2: "#f59e0b", orb3: "#f97316", text: "#fafafa", subtext: "#a1a1aa" },
+  sunset:  { label: "Sunset",  bg: "#0f0508", accent: "#f97316", accentEnd: "#ec4899", orb1: "#f97316", orb2: "#ec4899", orb3: "#8b5cf6", text: "#fff7ed", subtext: "#fdba74" },
+  ocean:   { label: "Ocean",   bg: "#020617", accent: "#06b6d4", accentEnd: "#3b82f6", orb1: "#06b6d4", orb2: "#3b82f6", orb3: "#8b5cf6", text: "#ecfeff", subtext: "#67e8f9" },
+  royal:   { label: "Royal",   bg: "#0a0510", accent: "#c084fc", accentEnd: "#f472b6", orb1: "#a855f7", orb2: "#f472b6", orb3: "#818cf8", text: "#faf5ff", subtext: "#c4b5fd" },
 };
 
 const CARD_FORMATS: Record<CardFormat, { label: string; width: number; height: number; icon: string }> = {
@@ -72,14 +73,6 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
 }
 
-function lighten(hex: string, amount: number): string {
-  const num = parseInt(hex.replace("#", ""), 16);
-  const r = Math.min(255, ((num >> 16) & 0xff) + amount);
-  const g = Math.min(255, ((num >> 8) & 0xff) + amount);
-  const b = Math.min(255, (num & 0xff) + amount);
-  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
-}
-
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const words = text.split(" ");
   const lines: string[] = [];
@@ -97,8 +90,14 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines.slice(0, 3);
 }
 
+// Pseudo-random seeded by index for consistent particle positions
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
 export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCardGeneratorProps) {
-  const [cardStyle, setCardStyle] = useState<CardStyle>("modern");
+  const [cardStyle, setCardStyle] = useState<CardStyle>("aurora");
   const [cardFormat, setCardFormat] = useState<CardFormat>("story");
   const [downloading, setDownloading] = useState(false);
   const [downloadedType, setDownloadedType] = useState<"image" | "gif" | null>(null);
@@ -117,139 +116,262 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
     canvas.width = W;
     canvas.height = H;
 
-    // ── Background ──────────────────────────────────────────────────
+    const t = animPhase / 60; // normalized 0-1 animation progress
+
+    // ════════════════════════════════════════════════════════════════
+    // BACKGROUND — deep dark with animated aurora orbs
+    // ════════════════════════════════════════════════════════════════
     ctx.fillStyle = style.bg;
     ctx.fillRect(0, 0, W, H);
 
-    // ── Card border (rounded rect with gradient stroke) ─────────────
-    const cardMargin = W * 0.04;
+    // Aurora orb 1 — large, top-right, slow drift
+    const orb1X = W * 0.75 + Math.sin(t * Math.PI * 2) * W * 0.08;
+    const orb1Y = H * 0.12 + Math.cos(t * Math.PI * 2) * H * 0.03;
+    const orb1R = W * 0.55;
+    const orb1Rgb = hexToRgb(style.orb1);
+    if (orb1Rgb) {
+      const g1 = ctx.createRadialGradient(orb1X, orb1Y, 0, orb1X, orb1Y, orb1R);
+      g1.addColorStop(0, `rgba(${orb1Rgb.r},${orb1Rgb.g},${orb1Rgb.b},0.18)`);
+      g1.addColorStop(0.4, `rgba(${orb1Rgb.r},${orb1Rgb.g},${orb1Rgb.b},0.06)`);
+      g1.addColorStop(1, "transparent");
+      ctx.fillStyle = g1;
+      ctx.fillRect(0, 0, W, H * 0.5);
+    }
+
+    // Aurora orb 2 — bottom-left
+    const orb2X = W * 0.2 + Math.cos(t * Math.PI * 2) * W * 0.06;
+    const orb2Y = H * 0.85 + Math.sin(t * Math.PI * 2) * H * 0.04;
+    const orb2R = W * 0.5;
+    const orb2Rgb = hexToRgb(style.orb2);
+    if (orb2Rgb) {
+      const g2 = ctx.createRadialGradient(orb2X, orb2Y, 0, orb2X, orb2Y, orb2R);
+      g2.addColorStop(0, `rgba(${orb2Rgb.r},${orb2Rgb.g},${orb2Rgb.b},0.14)`);
+      g2.addColorStop(0.4, `rgba(${orb2Rgb.r},${orb2Rgb.g},${orb2Rgb.b},0.04)`);
+      g2.addColorStop(1, "transparent");
+      ctx.fillStyle = g2;
+      ctx.fillRect(0, H * 0.5, W, H * 0.5);
+    }
+
+    // Aurora orb 3 — center accent
+    const orb3X = W * 0.5 + Math.sin(t * Math.PI * 4) * W * 0.04;
+    const orb3Y = H * 0.45 + Math.cos(t * Math.PI * 4) * H * 0.02;
+    const orb3R = W * 0.4;
+    const orb3Rgb = hexToRgb(style.orb3);
+    if (orb3Rgb) {
+      const g3 = ctx.createRadialGradient(orb3X, orb3Y, 0, orb3X, orb3Y, orb3R);
+      g3.addColorStop(0, `rgba(${orb3Rgb.r},${orb3Rgb.g},${orb3Rgb.b},0.1)`);
+      g3.addColorStop(0.5, `rgba(${orb3Rgb.r},${orb3Rgb.g},${orb3Rgb.b},0.02)`);
+      g3.addColorStop(1, "transparent");
+      ctx.fillStyle = g3;
+      ctx.fillRect(0, H * 0.2, W, H * 0.6);
+    }
+
+    // ── Particle/star field ────────────────────────────────────────
+    for (let i = 0; i < 60; i++) {
+      const px = seededRandom(i) * W;
+      const py = seededRandom(i + 100) * H;
+      const pSize = seededRandom(i + 200) * 2 + 0.5;
+      const flicker = 0.3 + 0.7 * Math.abs(Math.sin(t * Math.PI * 2 + i));
+      ctx.fillStyle = `rgba(255,255,255,${flicker * 0.5})`;
+      ctx.beginPath();
+      ctx.arc(px, py, pSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // GLASSMORPHISM CARD — inner frosted panel
+    // ════════════════════════════════════════════════════════════════
+    const cardMargin = W * 0.05;
     const cardW = W - cardMargin * 2;
     const cardH = H - cardMargin * 2;
     const cardR = W * 0.06;
 
-    // Subtle inner glow
-    const accentRgb = hexToRgb(style.accent);
-    if (accentRgb) {
-      const glow = ctx.createRadialGradient(W / 2, H * 0.35, 0, W / 2, H * 0.35, W * 0.7);
-      glow.addColorStop(0, `rgba(${accentRgb.r},${accentRgb.g},${accentRgb.b},0.06)`);
-      glow.addColorStop(1, "transparent");
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, W, H);
-    }
-
-    // Card border glow
-    const borderGrad = ctx.createLinearGradient(cardMargin, cardMargin, cardMargin + cardW, cardMargin + cardH);
-    borderGrad.addColorStop(0, `${style.accent}40`);
-    borderGrad.addColorStop(0.5, `${style.accentEnd}25`);
-    borderGrad.addColorStop(1, `${style.accent}40`);
-    ctx.strokeStyle = borderGrad;
-    ctx.lineWidth = 2;
+    // Glass fill
+    ctx.save();
     ctx.beginPath();
     ctx.roundRect(cardMargin, cardMargin, cardW, cardH, cardR);
+    ctx.clip();
+    ctx.fillStyle = "rgba(255,255,255,0.03)";
+    ctx.fillRect(cardMargin, cardMargin, cardW, cardH);
+    ctx.restore();
+
+    // Neon border glow (animated)
+    const borderAlpha = 0.4 + 0.2 * Math.sin(t * Math.PI * 2);
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(cardMargin, cardMargin, cardW, cardH, cardR);
+
+    // Outer glow
+    ctx.shadowColor = style.accent;
+    ctx.shadowBlur = 25 + 10 * Math.sin(t * Math.PI * 2);
+    ctx.strokeStyle = `${style.accent}${Math.round(borderAlpha * 255).toString(16).padStart(2, "0")}`;
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // ── Store logo top-left ────────────────────────────────────────
-    const topY = cardMargin + W * 0.05;
-    const iconSize = W * 0.07;
+    // Inner glow
+    ctx.shadowColor = style.accentEnd;
+    ctx.shadowBlur = 15 + 8 * Math.cos(t * Math.PI * 2);
+    ctx.strokeStyle = `${style.accentEnd}${Math.round(borderAlpha * 0.6 * 255).toString(16).padStart(2, "0")}`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
 
-    // Store icon circle
-    ctx.fillStyle = `${style.accent}20`;
-    ctx.beginPath();
-    ctx.arc(cardMargin + W * 0.08, topY + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
-    ctx.fill();
+    // ════════════════════════════════════════════════════════════════
+    // TOP SECTION — store logo + "Exclusive Offer" tag
+    // ════════════════════════════════════════════════════════════════
+    const topY = cardMargin + W * 0.045;
+    const iconSize = W * 0.065;
+    const iconX = cardMargin + W * 0.07;
 
-    // Store icon letter
-    ctx.fillStyle = style.accent;
-    ctx.font = `bold ${W * 0.028}px Inter, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(store.name.charAt(0).toUpperCase(), cardMargin + W * 0.08, topY + iconSize / 2 + 1);
-    ctx.textBaseline = "alphabetic";
-
-    // ── Share arrow top-right ──────────────────────────────────────
-    const arrowX = cardMargin + cardW - W * 0.08;
-    const arrowY = topY + iconSize / 2;
-    const arrowR = iconSize / 2;
-
+    // Store icon with glow
+    ctx.save();
+    ctx.shadowColor = style.accent;
+    ctx.shadowBlur = 12;
     ctx.fillStyle = `${style.accent}25`;
     ctx.beginPath();
-    ctx.arc(arrowX, arrowY, arrowR, 0, Math.PI * 2);
+    ctx.arc(iconX, topY + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
 
-    // Arrow icon
-    ctx.strokeStyle = style.accent;
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(arrowX - arrowR * 0.3, arrowY + arrowR * 0.2);
-    ctx.lineTo(arrowX + arrowR * 0.3, arrowY - arrowR * 0.2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(arrowX + arrowR * 0.3, arrowY - arrowR * 0.2);
-    ctx.lineTo(arrowX + arrowR * 0.3, arrowY + arrowR * 0.05);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(arrowX + arrowR * 0.3, arrowY - arrowR * 0.2);
-    ctx.lineTo(arrowX + arrowR * 0.1, arrowY - arrowR * 0.2);
-    ctx.stroke();
+    ctx.fillStyle = style.accent;
+    ctx.font = `bold ${W * 0.026}px Inter, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(store.name.charAt(0).toUpperCase(), iconX, topY + iconSize / 2 + 1);
+    ctx.textBaseline = "alphabetic";
 
-    // ── Product Name (large gradient text) ──────────────────────────
-    const nameY = topY + iconSize + H * 0.06;
-    const nameFontSize = W * 0.085;
-    ctx.font = `800 ${nameFontSize}px Inter, sans-serif`;
+    // "Exclusive Offer" tag — right side
+    const tagText = "EXCLUSIVE OFFER";
+    ctx.font = `700 ${W * 0.015}px Inter, sans-serif`;
+    const tagW = ctx.measureText(tagText).width;
+    const tagPad = W * 0.018;
+    const tagX = cardMargin + cardW - tagW - tagPad * 2 - W * 0.04;
+    const tagY = topY + iconSize * 0.15;
+
+    // Tag background with shimmer
+    const shimmerOffset = (t * 2) % 1;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(tagX, tagY, tagW + tagPad * 2, iconSize * 0.7, 20);
+    ctx.clip();
+    const tagGrad = ctx.createLinearGradient(tagX - tagW, tagY, tagX + tagW + tagPad * 2, tagY);
+    tagGrad.addColorStop(0, `${style.accent}30`);
+    tagGrad.addColorStop(shimmerOffset * 0.5, `${style.accent}50`);
+    tagGrad.addColorStop(shimmerOffset * 0.5 + 0.1, "rgba(255,255,255,0.15)");
+    tagGrad.addColorStop(shimmerOffset * 0.5 + 0.2, `${style.accent}30`);
+    tagGrad.addColorStop(1, `${style.accent}20`);
+    ctx.fillStyle = tagGrad;
+    ctx.fillRect(tagX, tagY, tagW + tagPad * 2, iconSize * 0.7);
+    ctx.restore();
+
+    ctx.fillStyle = style.accent;
+    ctx.font = `700 ${W * 0.015}px Inter, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText(tagText, tagX + (tagW + tagPad * 2) / 2, tagY + iconSize * 0.42);
+
+    // ════════════════════════════════════════════════════════════════
+    // PRODUCT NAME — huge dramatic gradient text
+    // ════════════════════════════════════════════════════════════════
+    const nameY = topY + iconSize + H * 0.04;
+    const nameFontSize = W * 0.095;
+    ctx.font = `900 ${nameFontSize}px Inter, sans-serif`;
     ctx.textAlign = "center";
 
-    const nameLines = wrapText(ctx, product.name.toUpperCase(), W * 0.75);
+    const nameLines = wrapText(ctx, product.name.toUpperCase(), W * 0.78);
 
-    // Create gradient for text
-    const textGrad = ctx.createLinearGradient(W * 0.2, nameY, W * 0.8, nameY + nameLines.length * nameFontSize * 1.1);
+    // Gradient text
+    const textGrad = ctx.createLinearGradient(W * 0.15, nameY, W * 0.85, nameY + nameLines.length * nameFontSize * 1.05);
     textGrad.addColorStop(0, style.accent);
-    textGrad.addColorStop(1, style.accentEnd);
+    textGrad.addColorStop(0.5, style.accentEnd);
+    textGrad.addColorStop(1, style.accent);
 
+    // Text glow
+    ctx.save();
+    ctx.shadowColor = style.accent;
+    ctx.shadowBlur = 30;
     ctx.fillStyle = textGrad;
     nameLines.forEach((line, i) => {
-      ctx.fillText(line, W / 2, nameY + i * nameFontSize * 1.1);
+      ctx.fillText(line, W / 2, nameY + i * nameFontSize * 1.05);
+    });
+    ctx.restore();
+
+    // Second pass — crisp text on top
+    ctx.fillStyle = textGrad;
+    nameLines.forEach((line, i) => {
+      ctx.fillText(line, W / 2, nameY + i * nameFontSize * 1.05);
     });
 
-    const afterNameY = nameY + nameLines.length * nameFontSize * 1.1 + H * 0.02;
+    const afterNameY = nameY + nameLines.length * nameFontSize * 1.05 + H * 0.015;
 
-    // ── Product Image ──────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════
+    // PRODUCT IMAGE — with neon glow border
+    // ════════════════════════════════════════════════════════════════
     const img = product.image_url ? await loadImageBlob(product.image_url) : null;
     let imgBottom = afterNameY;
 
     if (img) {
-      const maxW = W * 0.78;
-      const maxH = H * 0.38;
+      const maxW = W * 0.8;
+      const maxH = H * 0.36;
       const aspect = img.naturalWidth / img.naturalHeight;
       let drawW: number, drawH: number;
       if (aspect > maxW / maxH) { drawW = maxW; drawH = maxW / aspect; }
       else { drawH = maxH; drawW = maxH * aspect; }
       const imgX = (W - drawW) / 2;
       const imgY = afterNameY;
+      const imgR = W * 0.04;
 
-      // Image shadow
-      ctx.shadowColor = "rgba(0,0,0,0.6)";
-      ctx.shadowBlur = 50;
-      ctx.shadowOffsetY = 15;
-
-      // Rounded image
+      // Animated glow ring behind image
+      const glowPulse = 0.6 + 0.4 * Math.sin(t * Math.PI * 2);
       ctx.save();
+      ctx.shadowColor = style.accent;
+      ctx.shadowBlur = 40 * glowPulse;
+      ctx.fillStyle = `${style.accent}15`;
       ctx.beginPath();
-      ctx.roundRect(imgX, imgY, drawW, drawH, W * 0.035);
-      ctx.clip();
-      ctx.drawImage(img, imgX, imgY, drawW, drawH);
+      ctx.roundRect(imgX - 4, imgY - 4, drawW + 8, drawH + 8, imgR + 4);
+      ctx.fill();
       ctx.restore();
 
-      // Reset shadow
+      // Image shadow
+      ctx.shadowColor = "rgba(0,0,0,0.7)";
+      ctx.shadowBlur = 60;
+      ctx.shadowOffsetY = 20;
+
+      // Clip and draw image
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(imgX, imgY, drawW, drawH, imgR);
+      ctx.clip();
+      ctx.drawImage(img, imgX, imgY, drawW, drawH);
+
+      // Subtle gradient overlay on image (bottom fade)
+      const imgOverlay = ctx.createLinearGradient(imgX, imgY + drawH * 0.6, imgX, imgY + drawH);
+      imgOverlay.addColorStop(0, "transparent");
+      imgOverlay.addColorStop(1, "rgba(0,0,0,0.4)");
+      ctx.fillStyle = imgOverlay;
+      ctx.fillRect(imgX, imgY, drawW, drawH);
+      ctx.restore();
+
+      // Neon border on image
       ctx.shadowColor = "transparent";
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
+      ctx.save();
+      const imgBorderGrad = ctx.createLinearGradient(imgX, imgY, imgX + drawW, imgY + drawH);
+      imgBorderGrad.addColorStop(0, `${style.accent}60`);
+      imgBorderGrad.addColorStop(0.5, `${style.accentEnd}40`);
+      imgBorderGrad.addColorStop(1, `${style.accent}60`);
+      ctx.strokeStyle = imgBorderGrad;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(imgX, imgY, drawW, drawH, imgR);
+      ctx.stroke();
+      ctx.restore();
 
-      imgBottom = imgY + drawH + H * 0.025;
+      imgBottom = imgY + drawH + H * 0.02;
     } else {
-      // Placeholder
-      const phW = W * 0.65;
-      const phH = H * 0.25;
-      ctx.fillStyle = `${style.accent}10`;
+      const phW = W * 0.6;
+      const phH = H * 0.22;
+      ctx.fillStyle = `${style.accent}08`;
       ctx.beginPath();
       ctx.roundRect((W - phW) / 2, afterNameY, phW, phH, W * 0.035);
       ctx.fill();
@@ -257,100 +379,166 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
       ctx.textAlign = "center";
       ctx.fillStyle = style.subtext;
       ctx.fillText("\u{1F4E6}", W / 2, afterNameY + phH / 2 + W * 0.025);
-      imgBottom = afterNameY + phH + H * 0.025;
+      imgBottom = afterNameY + phH + H * 0.02;
     }
 
-    // ── Price ──────────────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════
+    // PRICE — glowing accent text
+    // ════════════════════════════════════════════════════════════════
     const priceText = `\u20A6${product.price.toLocaleString()}`;
-    ctx.font = `800 ${W * 0.065}px Inter, sans-serif`;
+    ctx.font = `900 ${W * 0.07}px Inter, sans-serif`;
     ctx.textAlign = "center";
+
+    // Price glow
+    ctx.save();
+    ctx.shadowColor = style.accent;
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = style.accent;
+    ctx.fillText(priceText, W / 2, imgBottom + H * 0.035);
+    ctx.restore();
+
+    // Crisp price on top
     ctx.fillStyle = style.accent;
     ctx.fillText(priceText, W / 2, imgBottom + H * 0.035);
 
-    // ── Description ────────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════
+    // DESCRIPTION — muted elegant text
+    // ════════════════════════════════════════════════════════════════
     const descY = imgBottom + H * 0.065;
     if (product.description) {
-      ctx.font = `400 ${W * 0.026}px Inter, sans-serif`;
+      ctx.font = `400 ${W * 0.025}px Inter, sans-serif`;
       ctx.fillStyle = style.subtext;
       ctx.textAlign = "center";
-      const descLines = wrapText(ctx, product.description, W * 0.7);
+      const descLines = wrapText(ctx, product.description, W * 0.68);
       descLines.forEach((line, i) => {
-        ctx.fillText(line, W / 2, descY + i * W * 0.038);
+        ctx.fillText(line, W / 2, descY + i * W * 0.036);
       });
     }
 
     // ── Category badge ─────────────────────────────────────────────
-    const catY = descY + (product.description ? W * 0.04 * Math.min(wrapText(ctx, product.description || "", W * 0.7).length, 3) + H * 0.01 : 0);
+    const catY = descY + (product.description ? W * 0.038 * Math.min(wrapText(ctx, product.description || "", W * 0.68).length, 3) + H * 0.008 : 0);
     if (product.category) {
-      ctx.font = `600 ${W * 0.018}px Inter, sans-serif`;
+      ctx.font = `600 ${W * 0.016}px Inter, sans-serif`;
       const catText = product.category.toUpperCase();
       const catW = ctx.measureText(catText).width;
-      const catPad = W * 0.02;
+      const catPad = W * 0.018;
 
-      ctx.fillStyle = `${style.accent}15`;
+      // Gradient badge
+      ctx.save();
+      const badgeGrad = ctx.createLinearGradient(
+        (W - catW - catPad * 2) / 2, catY,
+        (W - catW - catPad * 2) / 2 + catW + catPad * 2, catY
+      );
+      badgeGrad.addColorStop(0, `${style.accent}25`);
+      badgeGrad.addColorStop(1, `${style.accentEnd}20`);
+      ctx.fillStyle = badgeGrad;
       ctx.beginPath();
-      ctx.roundRect((W - catW - catPad * 2) / 2, catY, catW + catPad * 2, W * 0.032, 16);
+      ctx.roundRect((W - catW - catPad * 2) / 2, catY, catW + catPad * 2, W * 0.03, 16);
       ctx.fill();
+      ctx.restore();
+
       ctx.fillStyle = style.accent;
       ctx.textAlign = "center";
-      ctx.fillText(catText, W / 2, catY + W * 0.022);
+      ctx.fillText(catText, W / 2, catY + W * 0.021);
     }
 
-    // ── Bottom Section ─────────────────────────────────────────────
-    const bottomY = H * 0.85;
+    // ════════════════════════════════════════════════════════════════
+    // BOTTOM CTA SECTION
+    // ════════════════════════════════════════════════════════════════
+    const bottomY = H * 0.84;
+
+    // Decorative line
+    const lineGrad = ctx.createLinearGradient(W * 0.25, bottomY - H * 0.015, W * 0.75, bottomY - H * 0.015);
+    lineGrad.addColorStop(0, "transparent");
+    lineGrad.addColorStop(0.3, `${style.accent}30`);
+    lineGrad.addColorStop(0.7, `${style.accentEnd}30`);
+    lineGrad.addColorStop(1, "transparent");
+    ctx.strokeStyle = lineGrad;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(W * 0.2, bottomY - H * 0.015);
+    ctx.lineTo(W * 0.8, bottomY - H * 0.015);
+    ctx.stroke();
 
     // "ORDER NOW ON" heading
     ctx.fillStyle = style.text;
     ctx.globalAlpha = 0.85;
-    ctx.font = `700 ${W * 0.022}px Inter, sans-serif`;
+    ctx.font = `700 ${W * 0.02}px Inter, sans-serif`;
     ctx.textAlign = "center";
     ctx.fillText("ORDER NOW ON", W / 2, bottomY);
     ctx.globalAlpha = 1;
 
     // Store name
     ctx.fillStyle = style.subtext;
-    ctx.font = `500 ${W * 0.02}px Inter, sans-serif`;
-    ctx.fillText(store.name, W / 2, bottomY + W * 0.035);
+    ctx.font = `500 ${W * 0.019}px Inter, sans-serif`;
+    ctx.fillText(store.name, W / 2, bottomY + W * 0.032);
 
     // ── CTA Button ─────────────────────────────────────────────────
-    const btnW = W * 0.5;
-    const btnH = W * 0.08;
-    const btnY = bottomY + W * 0.06;
+    const btnW = W * 0.52;
+    const btnH = W * 0.082;
+    const btnY = bottomY + W * 0.055;
 
-    // Pulse ring (animated)
-    if (animPhase > 0) {
-      const pulse = (animPhase % 60) / 60;
-      const scale = 1 + pulse * 0.1;
-      const alpha = 0.35 * (1 - pulse);
-      ctx.strokeStyle = style.accent;
-      ctx.lineWidth = 2;
-      ctx.globalAlpha = alpha;
+    // Animated pulse rings
+    for (let ring = 0; ring < 2; ring++) {
+      const ringPhase = (t * 2 + ring * 0.5) % 1;
+      const ringScale = 1 + ringPhase * 0.15;
+      const ringAlpha = 0.3 * (1 - ringPhase);
+      ctx.strokeStyle = ring === 0 ? style.accent : style.accentEnd;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = ringAlpha;
       ctx.beginPath();
-      ctx.roundRect((W - btnW * scale) / 2, btnY - (btnH * (scale - 1)) / 2, btnW * scale, btnH * scale, 12);
+      ctx.roundRect(
+        (W - btnW * ringScale) / 2,
+        btnY - (btnH * (ringScale - 1)) / 2,
+        btnW * ringScale,
+        btnH * ringScale,
+        14
+      );
       ctx.stroke();
-      ctx.globalAlpha = 1;
     }
+    ctx.globalAlpha = 1;
 
-    // Button fill gradient
+    // Button fill with gradient
+    ctx.save();
+    ctx.shadowColor = style.accent;
+    ctx.shadowBlur = 20;
     const btnGrad = ctx.createLinearGradient((W - btnW) / 2, btnY, (W + btnW) / 2, btnY);
     btnGrad.addColorStop(0, style.accent);
-    btnGrad.addColorStop(1, style.accentEnd);
+    btnGrad.addColorStop(0.5, style.accentEnd);
+    btnGrad.addColorStop(1, style.accent);
     ctx.fillStyle = btnGrad;
     ctx.beginPath();
-    ctx.roundRect((W - btnW) / 2, btnY, btnW, btnH, 12);
+    ctx.roundRect((W - btnW) / 2, btnY, btnW, btnH, 14);
     ctx.fill();
+    ctx.restore();
+
+    // Button shimmer sweep
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect((W - btnW) / 2, btnY, btnW, btnH, 14);
+    ctx.clip();
+    const shimmerGrad = ctx.createLinearGradient(
+      (W - btnW) / 2 + btnW * (t * 2 - 0.3), btnY,
+      (W - btnW) / 2 + btnW * (t * 2 + 0.1), btnY
+    );
+    shimmerGrad.addColorStop(0, "transparent");
+    shimmerGrad.addColorStop(0.5, "rgba(255,255,255,0.2)");
+    shimmerGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = shimmerGrad;
+    ctx.fillRect((W - btnW) / 2, btnY, btnW, btnH);
+    ctx.restore();
 
     // Button text
     ctx.fillStyle = "#ffffff";
-    ctx.font = `bold ${W * 0.026}px Inter, sans-serif`;
+    ctx.font = `bold ${W * 0.027}px Inter, sans-serif`;
     ctx.textAlign = "center";
     ctx.fillText("Shop Now", W / 2, btnY + btnH * 0.62);
 
     // ── Store URL ──────────────────────────────────────────────────
-    ctx.fillStyle = `${style.subtext}80`;
-    ctx.font = `400 ${W * 0.016}px Inter, sans-serif`;
+    ctx.fillStyle = `${style.subtext}60`;
+    ctx.font = `400 ${W * 0.015}px Inter, sans-serif`;
     ctx.textAlign = "center";
-    ctx.fillText(`stallhq.com/${store.slug}`, W / 2, H * 0.95);
+    ctx.fillText(`stallhq.com/${store.slug}`, W / 2, H * 0.955);
   }, [product, store, format, style]);
 
   // Draw on mount and when settings change
@@ -424,7 +612,6 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
     try {
       await drawCard(canvas, 0);
 
-      // Try Web Share API first (mobile)
       if (navigator.share && navigator.canShare) {
         const blob = await new Promise<Blob | null>((resolve) =>
           canvas.toBlob(resolve, "image/png")
@@ -444,7 +631,6 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
         }
       }
 
-      // Fallback: download + open WhatsApp Status
       canvas.toBlob(async (blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
@@ -453,10 +639,7 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
           a.download = `${product.name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-stallhq.png`;
           a.click();
           URL.revokeObjectURL(url);
-
-          // Try opening WhatsApp Status
           window.location.href = "whatsapp://status";
-
           setDownloadedType("image");
           setTimeout(() => setDownloadedType(null), 2000);
         }
@@ -473,7 +656,7 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
     <div onClick={onClose} style={{
       position: "fixed", inset: 0, zIndex: 10000,
       display: "flex", alignItems: "center", justifyContent: "center",
-      background: "rgba(0,0,0,0.85)", backdropFilter: "blur(16px)",
+      background: "rgba(0,0,0,0.88)", backdropFilter: "blur(20px)",
       padding: "1rem",
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
