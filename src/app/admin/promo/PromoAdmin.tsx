@@ -134,8 +134,6 @@ function ConfigurationTab() {
     try {
       const res = await fetch("/api/admin/promo/refresh-token", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentToken: process.env.NEXT_PUBLIC_INSTAGRAM_TOKEN || "" }),
       });
       const data = await res.json();
       if (data.success) {

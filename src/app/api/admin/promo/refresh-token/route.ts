@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
-    const { currentToken } = await req.json();
+    const currentToken = process.env.INSTAGRAM_ACCESS_TOKEN;
 
     if (!currentToken) {
-      return NextResponse.json({ error: "Current token required" }, { status: 400 });
+      return NextResponse.json({ error: "INSTAGRAM_ACCESS_TOKEN not set in environment variables" }, { status: 400 });
     }
 
     const appId = process.env.FACEBOOK_APP_ID;
