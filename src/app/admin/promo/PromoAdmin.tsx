@@ -111,7 +111,7 @@ function ConfigurationTab() {
   const [platformStatus, setPlatformStatus] = useState<PlatformStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshingToken, setRefreshingToken] = useState(false);
-  const [tokenMessage, setTokenMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [tokenMessage, setTokenMessage] = useState<{ type: "success" | "error"; text: string; token?: string } | null>(null);
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   const fetchStatus = useCallback(async () => {
@@ -137,7 +137,7 @@ function ConfigurationTab() {
       });
       const data = await res.json();
       if (data.success) {
-        setTokenMessage({ type: "success", text: data.message });
+        setTokenMessage({ type: "success", text: data.message, token: data.accessToken });
       } else {
         setTokenMessage({ type: "error", text: data.error });
       }
@@ -240,9 +240,36 @@ function ConfigurationTab() {
                 {tokenMessage.text}
               </p>
               {tokenMessage.type === "success" && (
-                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.375rem" }}>
-                  Copy the new token and update INSTAGRAM_ACCESS_TOKEN in Vercel env vars, then redeploy.
-                </p>
+                <div style={{ marginTop: "0.5rem" }}>
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.375rem" }}>
+                    Copy this token and update INSTAGRAM_ACCESS_TOKEN in Vercel, then redeploy:
+                  </p>
+                  <div style={{ display: "flex", gap: "0.375rem" }}>
+                    <input
+                      readOnly
+                      value={tokenMessage.token || ""}
+                      style={{
+                        flex: 1, padding: "0.5rem 0.625rem", borderRadius: "0.375rem",
+                        background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)",
+                        color: "var(--text-primary)", fontSize: "0.6875rem", fontFamily: "monospace",
+                      }}
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(tokenMessage.token || "");
+                      }}
+                      style={{
+                        padding: "0.5rem 0.75rem", borderRadius: "0.375rem",
+                        background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.2)",
+                        color: "#10b981", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           )}
