@@ -110,6 +110,8 @@ export default function PromoAdmin() {
 function ConfigurationTab() {
   const [platformStatus, setPlatformStatus] = useState<PlatformStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshingToken, setRefreshingToken] = useState(false);
+  const [tokenMessage, setTokenMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   const fetchStatus = useCallback(async () => {
@@ -125,6 +127,27 @@ function ConfigurationTab() {
   }, []);
 
   useEffect(() => { fetchStatus(); }, [fetchStatus]);
+
+  const handleRefreshToken = async () => {
+    setRefreshingToken(true);
+    setTokenMessage(null);
+    try {
+      const res = await fetch("/api/admin/promo/refresh-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentToken: process.env.NEXT_PUBLIC_INSTAGRAM_TOKEN || "" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTokenMessage({ type: "success", text: data.message });
+      } else {
+        setTokenMessage({ type: "error", text: data.error });
+      }
+    } catch (e) {
+      setTokenMessage({ type: "error", text: "Failed to refresh token" });
+    }
+    setRefreshingToken(false);
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
@@ -169,7 +192,7 @@ function ConfigurationTab() {
                   <p style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Instagram Graph API</p>
                   <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
                     {platformStatus.instagram.configured
-                      ? "Connected"
+                      ? "Connected — token valid for ~60 days"
                       : "Platform-level — set INSTAGRAM_ACCESS_TOKEN in Vercel env"}
                   </p>
                 </div>
@@ -182,6 +205,50 @@ function ConfigurationTab() {
             Could not load platform status.
           </p>
         )}
+      </Section>
+
+      {/* Instagram Token Management */}
+      <Section title="Instagram Token Management" icon={<RefreshCw size={14} />}>
+        <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+            Instagram access tokens expire after ~60 days. Use this to exchange your current token for a new long-lived token.
+            You need <code style={{ background: "var(--bg-secondary)", padding: "0.125rem 0.375rem", borderRadius: "0.25rem", fontSize: "0.75rem" }}>FACEBOOK_APP_ID</code> and <code style={{ background: "var(--bg-secondary)", padding: "0.125rem 0.375rem", borderRadius: "0.25rem", fontSize: "0.75rem" }}>FACEBOOK_APP_SECRET</code> in your Vercel env vars.
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              onClick={handleRefreshToken}
+              disabled={refreshingToken}
+              style={{
+                display: "flex", alignItems: "center", gap: "0.5rem",
+                padding: "0.5rem 1rem", borderRadius: "0.5rem",
+                background: refreshingToken ? "var(--bg-secondary)" : "rgba(168,133,247,0.15)",
+                border: "1px solid rgba(168,133,247,0.2)",
+                color: refreshingToken ? "var(--text-muted)" : "var(--glow-purple)",
+                cursor: refreshingToken ? "not-allowed" : "pointer",
+                fontSize: "0.8125rem", fontWeight: 600,
+              }}
+            >
+              <RefreshCw size={14} className={refreshingToken ? "animate-spin" : ""} />
+              {refreshingToken ? "Refreshing..." : "Refresh Instagram Token"}
+            </button>
+          </div>
+          {tokenMessage && (
+            <div style={{
+              padding: "0.75rem 1rem", borderRadius: "0.5rem",
+              background: tokenMessage.type === "success" ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)",
+              border: `1px solid ${tokenMessage.type === "success" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`,
+            }}>
+              <p style={{ fontSize: "0.8125rem", color: tokenMessage.type === "success" ? "#10b981" : "#ef4444" }}>
+                {tokenMessage.text}
+              </p>
+              {tokenMessage.type === "success" && (
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.375rem" }}>
+                  Copy the new token and update INSTAGRAM_ACCESS_TOKEN in Vercel env vars, then redeploy.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </Section>
 
       {/* Auto-Post Settings */}
