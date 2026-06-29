@@ -481,6 +481,32 @@ auth.users (Supabase Auth)
 | updated_by | uuid → auth.users | Last editor |
 | updated_at | timestamptz | Last modified |
 
+#### `promo_posts` — Posted promo log
+| Column | Type | Purpose |
+|--------|------|---------|
+| id | uuid | Primary key |
+| store_id | uuid → stores | Parent store |
+| product_id | uuid → products | Promoted product |
+| platform | varchar(20) | whatsapp/instagram |
+| status | varchar(20) | posted/failed |
+| message_id | varchar(100) | Platform message ID |
+| error | text | Error message if failed |
+| caption | text | Post caption |
+| posted_at | timestamptz | When posted |
+
+#### `scheduled_promo_posts` — Scheduled promo queue
+| Column | Type | Purpose |
+|--------|------|---------|
+| id | uuid | Primary key |
+| store_id | uuid → stores | Parent store |
+| product_id | uuid → products | Product to promote |
+| platform | varchar(20) | whatsapp/instagram |
+| scheduled_at | timestamptz | When to post |
+| status | varchar(20) | pending/posted/failed |
+| error | text | Error message if failed |
+| posted_at | timestamptz | Actual post time |
+| created_at | timestamptz | When scheduled |
+
 ### Indexes
 
 | Table | Index | Purpose |
@@ -686,6 +712,37 @@ Admin check: isAdmin(userId) → userId matches any admin UUID
 | System Settings | DONE | 6-tab config (General, Branding, Email, Payments, AI, Security) |
 | Mobile Responsive | DONE | Card-based layouts, responsive padding, hidden columns on mobile |
 | Dynamic Branding | DONE | Logo/favicon upload, platform name, public API |
+| Promo Admin Panel | DONE | Config/Monitoring/Generate tabs for promo card management |
+
+### Promo Card System
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| PromoCardGenerator | DONE | Canvas-based promo card generator with 5 styles × 3 formats |
+| Image Aspect Ratio | FIXED | Product images maintain aspect ratio with cover-crop (no squishing) |
+| Animated GIF Export | DONE | 3-second animated GIF with CTA pulse animation (20 frames, 150ms each) |
+| Auto-Post to WhatsApp | DONE | Posts promo cards to WhatsApp Status via WhatsApp Cloud API |
+| Auto-Post to Instagram | DONE | Posts promo cards to Instagram Story via Instagram Graph API |
+| Scheduled Posting | FIXED | Cron-based scheduled posting processes pending posts every 15 minutes |
+| Promo Posts Logging | DONE | All posts logged to `promo_posts` table with status tracking |
+
+#### Card Styles
+
+| Style | Background | Accent | Best For |
+|-------|-----------|--------|----------|
+| Modern | Dark (#0f0f1a) | Purple (#a855f7) | General products |
+| Gradient | Blue→Purple gradient | White | Premium/luxury items |
+| Minimal | White | Dark (#111827) | Clean, professional |
+| Bold | Black | Gold (#f59e0b) | High-impact sales |
+| Neon | Dark (#0a0a0a) | Cyan (#06b6d4) | Tech/modern products |
+
+#### Card Formats
+
+| Format | Dimensions | Platform |
+|--------|-----------|----------|
+| WhatsApp Status | 1080×1920 | WhatsApp |
+| Instagram Story | 1080×1920 | Instagram |
+| Instagram Post | 1080×1080 | Instagram feed |
 
 ### AI Features
 
@@ -886,6 +943,7 @@ Used on pricing/plan cards to highlight the recommended plan:
 | `/admin/support` | `src/app/admin/support/page.tsx` | CSR | Support ticket panel |
 | `/admin/notifications` | `src/app/admin/notifications/page.tsx` | CSR | Notification composer |
 | `/admin/settings` | `src/app/admin/settings/page.tsx` | CSR | Platform settings (6 tabs: General, Branding, Email, Payments, AI, Security) |
+| `/admin/promo` | `src/app/admin/promo/page.tsx` | CSR | Promo card management (Config, Monitoring, Generate tabs) |
 | `/admin/system` | `src/app/admin/system/page.tsx` | CSR | System health |
 
 ### Static/Utility
@@ -1002,6 +1060,18 @@ Used on pricing/plan cards to highlight the recommended plan:
 | POST | `/api/upload` | Yes | Image upload + compression |
 | GET | `/api/inventory/check` | Yes | Check low stock items |
 | GET | `/api/cron/check-expiry` | Cron | Daily subscription expiry check |
+| GET | `/api/cron/marketing` | Cron | Marketing automation (trial nurture, win-back, digest, scheduled promo posts) |
+
+### Promo API
+
+| Method | Route | Auth | Purpose |
+|--------|-------|------|---------|
+| POST | `/api/promo/auto-post` | No | Post promo card to WhatsApp/Instagram immediately |
+| GET | `/api/promo/scheduled` | No | Fetch scheduled posts for a store |
+| POST | `/api/promo/scheduled` | No | Create a scheduled promo post |
+| DELETE | `/api/promo/scheduled` | No | Remove a scheduled post |
+| GET | `/api/admin/promo/config` | Admin | Platform connection status + database stats |
+| GET | `/api/admin/promo/posts` | Admin | List all promo posts across all stores |
 
 ### Branding API
 
@@ -1057,6 +1127,15 @@ Used on pricing/plan cards to highlight the recommended plan:
 | AdminSupport | `src/app/admin/support/page.tsx` | Support panel — 2-column detail view (collapses on mobile) |
 | AdminNotifications | `src/app/admin/notifications/page.tsx` | Notification composer with email editor integration |
 | AdminSettings | `src/app/admin/settings/page.tsx` | Platform settings — 6 tab components (General, Branding, Email, Payments, AI, Security) |
+| AdminPromo | `src/app/admin/promo/PromoAdmin.tsx` | Promo card management — Config (platform status), Monitoring (all posts), Generate (store/product picker + card generator) |
+
+### Promo Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| PromoCardGenerator | `src/components/PromoCardGenerator.tsx` | Canvas-based promo card generator — 5 styles × 3 formats, image with aspect-ratio-aware cover crop, animated GIF export, auto-post to WhatsApp/Instagram |
+| AutoPostButton | `src/components/PromoCardGenerator.tsx` | Inline auto-post button for WhatsApp Status / Instagram Story |
+| PromoClient | `src/app/dashboard/promo/PromoClient.tsx` | Vendor promo dashboard shell — promo card generator entry point |
 
 ### Onboarding Components
 
@@ -1095,6 +1174,7 @@ Used on pricing/plan cards to highlight the recommended plan:
 | Subscription | `src/lib/subscription.ts` | Plan definitions, limits, helpers |
 | Paystack | `src/lib/paystack.ts` | Payment init, verify, webhook sig |
 | Email | `src/lib/email.ts` | Brevo API, 8 email templates, dynamic platform name |
+| GIF Encoder | `src/lib/gif-encoder.ts` | Pure JS GIF89a encoder with LZW compression, median cut color quantization, animated GIF support |
 | WhatsApp | `src/lib/whatsapp.ts` | Order message generation |
 | Admin | `src/lib/admin.ts` | Admin verification helper |
 | SEO | `src/lib/seo.ts` | GEO/AEO schema generators (StoreWithGeo, ProductWithRatings) |
@@ -1534,6 +1614,7 @@ All admin pages use:
 | Job | Schedule | Purpose |
 |-----|----------|---------|
 | `/api/cron/check-expiry` | Daily 9am UTC | Check subscription/trial expiry, send reminders |
+| `/api/cron/marketing` | Every 15 min | Trial nurture emails, win-back, weekly digest, scheduled promo posts |
 
 ### Environment
 
@@ -1607,6 +1688,7 @@ stallHq/
 │   │   │   │   ├── signup/route.ts
 │   │   │   │   └── verify-email/route.ts
 │   │   │   ├── cron/check-expiry/route.ts
+│   │   │   ├── cron/marketing/route.ts             # Marketing automation + scheduled promo posts
 │   │   │   ├── favorites/route.ts
 │   │   │   ├── ai/
 │   │   │   │   └── generate-description/route.ts # AI product description generator
@@ -1619,6 +1701,9 @@ stallHq/
 │   │   │   ├── products/route.ts
 │   │   │   ├── products/[id]/route.ts
 │   │   │   ├── products/recommended/route.ts    # Recommended products (trial store fallback)
+│   │   │   ├── promo/
+│   │   │   │   ├── auto-post/route.ts            # Post promo card to WhatsApp/Instagram
+│   │   │   │   └── scheduled/route.ts            # Scheduled promo post CRUD
 │   │   │   ├── reviews/route.ts
 │   │   │   ├── reviews/batch/route.ts
 │   │   │   ├── stores/route.ts
@@ -1643,6 +1728,9 @@ stallHq/
 │   │   │   ├── products/page.tsx
 │   │   │   ├── products/new/page.tsx
 │   │   │   ├── products/[id]/page.tsx
+│   │   │   ├── promo/
+│   │   │   │   └── page.tsx                       # Promo card generator page
+│   │   │   │   └── PromoClient.tsx                # Promo client shell
 │   │   │   └── support/page.tsx
 │   │   │   └── support/SupportDashboard.tsx
 │   │   ├── about/
@@ -1673,6 +1761,7 @@ stallHq/
 │   │   ├── Particles.tsx
 │   │   ├── ProductCard.tsx
 │   │   ├── ProductGrid.tsx
+│   │   ├── PromoCardGenerator.tsx                # Canvas-based promo card generator
 │   │   ├── ReviewForm.tsx
 │   │   ├── ReviewList.tsx
 │   │   ├── SearchInput.tsx
@@ -1930,6 +2019,9 @@ Every file in `src/` has been documented in the Component Map, Library Map, and 
 
 ### Phase 5 — Launch & Growth
 
+- [x] Promo card generator with 5 styles × 3 formats
+- [x] Auto-post to WhatsApp Status and Instagram Story
+- [x] Scheduled promo posting via cron
 - [ ] Vendor onboarding email sequence
 - [ ] Customer referral program
 - [ ] Store analytics dashboard enhancements
@@ -1948,6 +2040,10 @@ Every file in `src/` has been documented in the Component Map, Library Map, and 
 - [ ] Marketplace discovery (top vendors, trending products)
 - [ ] API for third-party integrations
 - [ ] Webhook system for external integrations
+- [ ] Promo card in admin panel (currently only in vendor dashboard)
+- [ ] Richer promo card design with more visual elements
+- [ ] Animated GIF export (currently exports WebM video)
+- [ ] Instagram Reels support for promo cards
 
 ### Phase 6 — Scale
 
@@ -1964,6 +2060,6 @@ Every file in `src/` has been documented in the Component Map, Library Map, and 
 
 ---
 
-*Last updated: June 2026*
+*Last updated: June 29, 2026*
 *Version: 0.1.0*
 *Status: MVP Complete — Launching*

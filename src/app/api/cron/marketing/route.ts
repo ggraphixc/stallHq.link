@@ -264,9 +264,166 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // ─── Scheduled Promo Posts ─────────────────────────────────────────────
+  const { data: duePosts } = await supabase
+    .from("scheduled_promo_posts")
+    .select(`
+      id,
+      store_id,
+      product_id,
+      platform,
+      scheduled_at,
+      stores (slug, whatsapp_number, instagram_handle),
+      products (name, image_url, price)
+    `)
+    .eq("status", "pending")
+    .lte("scheduled_at", now.toISOString());
+
+  let scheduled_posted = 0;
+  let scheduled_failed = 0;
+
+  if (duePosts && duePosts.length > 0) {
+    for (const post of duePosts) {
+      const store = (Array.isArray(post.stores) ? post.stores[0] : post.stores) as Record<string, unknown> | null;
+      const product = (Array.isArray(post.products) ? post.products[0] : post.products) as Record<string, unknown> | null;
+      if (!store || !product) {
+        // Mark as failed — missing store or product
+        await supabase
+          .from("scheduled_promo_posts")
+          .update({ status: "failed", error: "Store or product not found" })
+          .eq("id", post.id);
+        scheduled_failed++;
+        continue;
+      }
+
+      try {
+        const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://stallhq.com"}/${store.slug}/product/${post.product_id}`;
+        const caption = `🛍️ ${product.name}\n💰 ₦${Number(product.price).toLocaleString()}\n\nShop now on ${store.name || "StallHq"} via StallHq\n${shareUrl}`;
+
+        let postResult: { success: boolean; messageId?: string; error?: string };
+
+        if (post.platform === "whatsapp") {
+          postResult = await postToWhatsApp(store, caption, shareUrl);
+        } else {
+          postResult = await postToInstagram(store, product, caption, shareUrl);
+        }
+
+        await supabase
+          .from("scheduled_promo_posts")
+          .update({
+            status: postResult.success ? "posted" : "failed",
+            error: postResult.error || null,
+            posted_at: now.toISOString(),
+          })
+          .eq("id", post.id);
+
+        if (postResult.success) scheduled_posted++;
+        else scheduled_failed++;
+      } catch {
+        await supabase
+          .from("scheduled_promo_posts")
+          .update({ status: "failed", error: "Posting exception" })
+          .eq("id", post.id);
+        scheduled_failed++;
+      }
+    }
+  }
+
   return NextResponse.json({
     success: true,
     ...results,
+    scheduled_posted,
+    scheduled_failed,
     timestamp: now.toISOString(),
   });
+}
+
+async function postToWhatsApp(
+  store: Record<string, unknown>,
+  caption: string,
+  _shareUrl: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const token = (store.whatsapp_access_token as string) || process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const whatsappNumber = store.whatsapp_number as string;
+
+  if (!token || !phoneNumberId || !whatsappNumber) {
+    return { success: false, error: "WhatsApp Business API not configured" };
+  }
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: whatsappNumber.replace(/\D/g, ""),
+          type: "text",
+          text: { body: caption },
+        }),
+      }
+    );
+
+    const data = await response.json();
+    if (data.messages?.[0]?.id) {
+      return { success: true, messageId: data.messages[0].id };
+    }
+    return { success: false, error: data.error?.message || "Failed to send" };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}
+
+async function postToInstagram(
+  store: Record<string, unknown>,
+  product: Record<string, unknown>,
+  caption: string,
+  _shareUrl: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const token = (store.instagram_access_token as string) || process.env.INSTAGRAM_ACCESS_TOKEN;
+
+  if (!token) {
+    return { success: false, error: "Instagram Graph API not configured" };
+  }
+
+  try {
+    const containerResponse = await fetch(
+      `https://graph.facebook.com/v19.0/me/media?access_token=${token}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image_url: product.image_url,
+          caption: caption,
+        }),
+      }
+    );
+
+    const containerData = await containerResponse.json();
+    if (!containerData.id) {
+      return { success: false, error: containerData.error?.message || "Failed to create container" };
+    }
+
+    const publishResponse = await fetch(
+      `https://graph.facebook.com/v19.0/me/media_publish?access_token=${token}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ creation_id: containerData.id }),
+      }
+    );
+
+    const publishData = await publishResponse.json();
+    if (publishData.id) {
+      return { success: true, messageId: publishData.id };
+    }
+    return { success: false, error: publishData.error?.message || "Failed to publish" };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
 }

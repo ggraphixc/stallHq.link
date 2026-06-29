@@ -2,9 +2,10 @@
 
 import { useState, useRef, useCallback } from "react";
 import {
-  Download, Image, Film, Share2, Sparkles, Check,
-  ChevronDown, Palette, Type, Layout, X, RefreshCw
+  Download, Image, Film, Sparkles, Check,
+  Palette, Layout, X, RefreshCw
 } from "lucide-react";
+import { encodeGif } from "@/lib/gif-encoder";
 
 interface PromoCardGeneratorProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ interface PromoCardGeneratorProps {
 type CardStyle = "modern" | "gradient" | "minimal" | "bold" | "neon";
 type CardFormat = "status" | "story" | "post";
 
-const CARD_STYLES: Record<CardStyle, { label: string; bg: string; accent: string; text: string }> = {
+const CARD_STYLES: Record<CardStyle, { label: string; bg: string; accent: string; text: string; gradient?: string }> = {
   modern: { label: "Modern", bg: "#0f0f1a", accent: "#a855f7", text: "#f1f5f9" },
   gradient: { label: "Gradient", bg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", accent: "#ffffff", text: "#ffffff" },
   minimal: { label: "Minimal", bg: "#ffffff", accent: "#111827", text: "#111827" },
@@ -53,7 +54,7 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
   const format = CARD_FORMATS[cardFormat];
   const style = CARD_STYLES[cardStyle];
 
-  const drawCard = useCallback(async (canvas: HTMLCanvasElement, animated = false) => {
+  const drawCard = useCallback(async (canvas: HTMLCanvasElement, animPhase = 0) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -71,186 +72,275 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
     }
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Decorative circles
-    ctx.globalAlpha = 0.08;
+    // Decorative elements — subtle ambient glow circles
+    ctx.globalAlpha = 0.06;
     ctx.fillStyle = style.accent;
     ctx.beginPath();
-    ctx.arc(canvas.width * 0.8, canvas.height * 0.15, 300, 0, Math.PI * 2);
+    ctx.arc(canvas.width * 0.85, canvas.height * 0.12, 350, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(canvas.width * 0.2, canvas.height * 0.85, 250, 0, Math.PI * 2);
+    ctx.arc(canvas.width * 0.15, canvas.height * 0.88, 280, 0, Math.PI * 2);
     ctx.fill();
+    // Top-left corner glow
+    const cornerGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, canvas.width * 0.4);
+    cornerGrad.addColorStop(0, style.accent);
+    cornerGrad.addColorStop(1, "transparent");
+    ctx.globalAlpha = 0.04;
+    ctx.fillStyle = cornerGrad;
+    ctx.fillRect(0, 0, canvas.width * 0.5, canvas.height * 0.3);
     ctx.globalAlpha = 1;
 
-    // Product image
+    // Product image — maintain aspect ratio with cover crop
+    let imageBottomY = canvas.height * 0.12;
     if (product.image_url) {
       try {
         const img = new window.Image();
         img.crossOrigin = "anonymous";
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>((resolve) => {
           img.onload = () => resolve();
           img.onerror = () => resolve();
           img.src = product.image_url!;
         });
         if (img.complete && img.naturalWidth > 0) {
-          const imgW = canvas.width * 0.75;
-          const imgH = imgW;
+          const maxImgW = canvas.width * 0.78;
+          const maxImgH = canvas.height * 0.4;
+          const imgAspect = img.naturalWidth / img.naturalHeight;
+          let imgW: number;
+          let imgH: number;
+          if (imgAspect > maxImgW / maxImgH) {
+            imgW = maxImgW;
+            imgH = maxImgW / imgAspect;
+          } else {
+            imgH = maxImgH;
+            imgW = maxImgH * imgAspect;
+          }
           const imgX = (canvas.width - imgW) / 2;
-          const imgY = canvas.height * 0.12;
+          const imgY = canvas.height * 0.08;
+
+          // Subtle shadow under image
+          ctx.shadowColor = "rgba(0,0,0,0.3)";
+          ctx.shadowBlur = 40;
+          ctx.shadowOffsetY = 10;
 
           // Image container with rounded corners
           ctx.save();
           ctx.beginPath();
-          ctx.roundRect(imgX, imgY, imgW, imgH, 24);
+          ctx.roundRect(imgX, imgY, imgW, imgH, 20);
           ctx.clip();
           ctx.drawImage(img, imgX, imgY, imgW, imgH);
           ctx.restore();
 
+          // Reset shadow
+          ctx.shadowColor = "transparent";
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetY = 0;
+
           // Image border glow
           ctx.strokeStyle = style.accent;
-          ctx.lineWidth = 3;
-          ctx.globalAlpha = 0.4;
+          ctx.lineWidth = 2.5;
+          ctx.globalAlpha = 0.35;
           ctx.beginPath();
-          ctx.roundRect(imgX, imgY, imgW, imgH, 24);
+          ctx.roundRect(imgX, imgY, imgW, imgH, 20);
           ctx.stroke();
           ctx.globalAlpha = 1;
+
+          imageBottomY = imgY + imgH + canvas.height * 0.03;
         }
       } catch {
         // Fallback placeholder
         ctx.fillStyle = style.accent;
-        ctx.globalAlpha = 0.15;
+        ctx.globalAlpha = 0.12;
+        const phW = canvas.width * 0.78;
+        const phH = canvas.height * 0.35;
+        const phX = (canvas.width - phW) / 2;
+        const phY = canvas.height * 0.08;
         ctx.beginPath();
-        ctx.roundRect(canvas.width * 0.125, canvas.height * 0.12, canvas.width * 0.75, canvas.width * 0.75, 24);
+        ctx.roundRect(phX, phY, phW, phH, 20);
         ctx.fill();
         ctx.globalAlpha = 1;
         ctx.fillStyle = style.accent;
-        ctx.font = `bold ${canvas.width * 0.06}px Inter, sans-serif`;
+        ctx.font = `bold ${canvas.width * 0.08}px Inter, sans-serif`;
         ctx.textAlign = "center";
-        ctx.fillText("📦", canvas.width / 2, canvas.height * 0.5);
+        ctx.fillText("📦", canvas.width / 2, phY + phH / 2 + canvas.width * 0.03);
+        imageBottomY = phY + phH + canvas.height * 0.03;
       }
     }
 
-    // Price tag
-    const priceY = canvas.height * 0.56;
-    ctx.fillStyle = style.accent;
-    ctx.globalAlpha = 0.12;
+    // ── Price Tag ──────────────────────────────────────────────────────
+    const priceY = imageBottomY + canvas.height * 0.01;
     const priceText = `₦${product.price.toLocaleString()}`;
-    ctx.font = `bold ${canvas.width * 0.07}px Inter, sans-serif`;
+    ctx.font = `800 ${canvas.width * 0.075}px Inter, sans-serif`;
     const priceMetrics = ctx.measureText(priceText);
-    const pricePadX = canvas.width * 0.04;
-    const pricePadY = canvas.height * 0.015;
+    const pricePadX = canvas.width * 0.05;
+    const pricePadY = canvas.height * 0.012;
+
+    // Price background pill
+    ctx.fillStyle = style.accent;
+    ctx.globalAlpha = 0.15;
     ctx.beginPath();
     ctx.roundRect(
       (canvas.width - priceMetrics.width - pricePadX * 2) / 2,
-      priceY - canvas.width * 0.07 - pricePadY,
+      priceY - canvas.width * 0.075 - pricePadY,
       priceMetrics.width + pricePadX * 2,
-      canvas.width * 0.07 + pricePadY * 2,
-      12
+      canvas.width * 0.075 + pricePadY * 2,
+      14
     );
     ctx.fill();
     ctx.globalAlpha = 1;
 
+    // Price text
     ctx.fillStyle = style.accent;
     ctx.textAlign = "center";
     ctx.fillText(priceText, canvas.width / 2, priceY);
 
-    // Product name
+    // ── Product Name ───────────────────────────────────────────────────
     ctx.fillStyle = style.text;
-    ctx.font = `bold ${canvas.width * 0.055}px Inter, sans-serif`;
-    const nameLines = wrapText(ctx, product.name, canvas.width * 0.8);
+    ctx.font = `bold ${canvas.width * 0.058}px Inter, sans-serif`;
+    const nameLines = wrapText(ctx, product.name, canvas.width * 0.82);
+    const nameStartY = priceY + canvas.width * 0.085;
     nameLines.forEach((line, i) => {
-      ctx.fillText(line, canvas.width / 2, priceY + canvas.width * 0.08 + i * canvas.width * 0.07);
+      ctx.fillText(line, canvas.width / 2, nameStartY + i * canvas.width * 0.072);
     });
 
-    // Category badge
+    // ── Category Badge ─────────────────────────────────────────────────
+    let afterNameY = nameStartY + nameLines.length * canvas.width * 0.072;
     if (product.category) {
-      const catY = priceY + canvas.width * 0.08 + nameLines.length * canvas.width * 0.07 + canvas.height * 0.02;
+      const catY = afterNameY + canvas.height * 0.015;
       ctx.fillStyle = style.accent;
-      ctx.globalAlpha = 0.2;
+      ctx.globalAlpha = 0.18;
       const catText = product.category.toUpperCase();
       ctx.font = `600 ${canvas.width * 0.028}px Inter, sans-serif`;
       const catMetrics = ctx.measureText(catText);
       ctx.beginPath();
       ctx.roundRect(
-        (canvas.width - catMetrics.width - 40) / 2,
+        (canvas.width - catMetrics.width - 48) / 2,
         catY - canvas.width * 0.028,
-        catMetrics.width + 40,
-        canvas.width * 0.045,
-        20
+        catMetrics.width + 48,
+        canvas.width * 0.048,
+        22
       );
       ctx.fill();
       ctx.globalAlpha = 1;
       ctx.fillStyle = style.accent;
-      ctx.fillText(catText, canvas.width / 2, catY + canvas.width * 0.005);
+      ctx.fillText(catText, canvas.width / 2, catY + canvas.width * 0.006);
+      afterNameY = catY + canvas.width * 0.04;
     }
 
-    // Bottom section - store info & CTA
-    const bottomY = canvas.height * 0.82;
+    // ── Divider line ───────────────────────────────────────────────────
+    const divY = afterNameY + canvas.height * 0.035;
+    const divW = canvas.width * 0.3;
+    ctx.strokeStyle = style.accent;
+    ctx.globalAlpha = 0.2;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo((canvas.width - divW) / 2, divY);
+    ctx.lineTo((canvas.width + divW) / 2, divY);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // ── Bottom Section ─────────────────────────────────────────────────
+    const bottomY = canvas.height * 0.78;
+
+    // "ORDER NOW ON STALLHQ" — main CTA text
+    ctx.fillStyle = style.text;
+    ctx.globalAlpha = 0.85;
+    ctx.font = `800 ${canvas.width * 0.038}px Inter, sans-serif`;
+    ctx.fillText("ORDER NOW ON STALLHQ", canvas.width / 2, bottomY);
+    ctx.globalAlpha = 1;
 
     // Store name
     ctx.fillStyle = style.text;
-    ctx.globalAlpha = 0.7;
-    ctx.font = `500 ${canvas.width * 0.032}px Inter, sans-serif`;
-    ctx.fillText(store.name, canvas.width / 2, bottomY);
+    ctx.globalAlpha = 0.55;
+    ctx.font = `500 ${canvas.width * 0.03}px Inter, sans-serif`;
+    ctx.fillText(store.name, canvas.width / 2, bottomY + canvas.width * 0.055);
     ctx.globalAlpha = 1;
 
-    // "Powered by StallHq"
-    ctx.fillStyle = style.accent;
-    ctx.globalAlpha = 0.5;
-    ctx.font = `500 ${canvas.width * 0.025}px Inter, sans-serif`;
-    ctx.fillText("Powered by StallHq", canvas.width / 2, bottomY + canvas.width * 0.05);
-    ctx.globalAlpha = 1;
+    // CTA Button with animated pulse
+    const ctaY = bottomY + canvas.width * 0.09;
+    const ctaW = canvas.width * 0.52;
+    const ctaH = canvas.width * 0.095;
 
-    // CTA Button
-    const ctaY = bottomY + canvas.width * 0.1;
-    const ctaW = canvas.width * 0.5;
-    const ctaH = canvas.width * 0.09;
+    // Pulse ring animation for video
+    if (animPhase > 0) {
+      const pulseProgress = (animPhase % 60) / 60;
+      const pulseScale = 1 + pulseProgress * 0.15;
+      const pulseAlpha = 0.3 * (1 - pulseProgress);
+      ctx.strokeStyle = style.accent;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = pulseAlpha;
+      ctx.beginPath();
+      ctx.roundRect(
+        (canvas.width - ctaW * pulseScale) / 2,
+        ctaY - (ctaH * (pulseScale - 1)) / 2,
+        ctaW * pulseScale,
+        ctaH * pulseScale,
+        18
+      );
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // Button gradient
     const ctaGrad = ctx.createLinearGradient(
       (canvas.width - ctaW) / 2, ctaY,
       (canvas.width + ctaW) / 2, ctaY
     );
     ctaGrad.addColorStop(0, style.accent);
-    ctaGrad.addColorStop(1, adjustColor(style.accent, 30));
+    ctaGrad.addColorStop(1, adjustColor(style.accent, 40));
     ctx.fillStyle = ctaGrad;
     ctx.beginPath();
     ctx.roundRect((canvas.width - ctaW) / 2, ctaY, ctaW, ctaH, 16);
     ctx.fill();
 
-    ctx.fillStyle = cardStyle === "minimal" ? "#ffffff" : style.bg === "#ffffff" ? "#ffffff" : "#ffffff";
-    ctx.font = `bold ${canvas.width * 0.035}px Inter, sans-serif`;
-    ctx.fillText("Shop Now", canvas.width / 2, ctaY + ctaH * 0.65);
+    // Button text
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `bold ${canvas.width * 0.036}px Inter, sans-serif`;
+    ctx.fillText("Shop Now", canvas.width / 2, ctaY + ctaH * 0.62);
 
-    // Animated pulse ring for GIF
-    if (animated) {
-      const pulseRadius = 20 + Math.sin(Date.now() / 300) * 8;
-      ctx.strokeStyle = style.accent;
-      ctx.lineWidth = 3;
-      ctx.globalAlpha = 0.3 + Math.sin(Date.now() / 300) * 0.2;
-      ctx.beginPath();
-      ctx.arc(canvas.width / 2, ctaY + ctaH / 2, ctaW / 2 + pulseRadius, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
+    // ── QR Code Area ───────────────────────────────────────────────────
+    const qrSize = canvas.width * 0.11;
+    const qrY = canvas.height * 0.91;
+
+    // QR white background
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowColor = "rgba(0,0,0,0.15)";
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.roundRect((canvas.width - qrSize - 24) / 2, qrY, qrSize + 24, qrSize + 24, 10);
+    ctx.fill();
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+
+    // QR placeholder pattern
+    ctx.fillStyle = style.bg === "#ffffff" ? "#111827" : style.bg;
+    const qrBlock = (qrSize + 24) * 0.08;
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if ((r + c) % 2 === 0 || (r < 2 && c < 2) || (r < 2 && c > 2) || (r > 2 && c < 2)) {
+          ctx.fillRect(
+            (canvas.width - qrSize - 24) / 2 + 12 + c * (qrSize / 5),
+            qrY + 12 + r * (qrSize / 5),
+            qrBlock,
+            qrBlock
+          );
+        }
+      }
     }
 
-    // QR code area
-    const qrSize = canvas.width * 0.12;
-    const qrY = canvas.height * 0.92;
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.roundRect((canvas.width - qrSize - 20) / 2, qrY, qrSize + 20, qrSize + 20, 8);
-    ctx.fill();
-
-    ctx.fillStyle = style.bg === "#ffffff" ? "#111827" : style.bg;
-    ctx.font = `500 ${canvas.width * 0.02}px Inter, sans-serif`;
-    ctx.fillText("Scan to Shop", canvas.width / 2, qrY + qrSize + 35);
-  }, [product, store, format, style, cardStyle]);
+    // "Scan to Shop" label
+    ctx.fillStyle = style.text;
+    ctx.globalAlpha = 0.6;
+    ctx.font = `500 ${canvas.width * 0.022}px Inter, sans-serif`;
+    ctx.fillText("Scan to Shop", canvas.width / 2, qrY + qrSize + 38);
+    ctx.globalAlpha = 1;
+  }, [product, store, format, style]);
 
   const handleDownloadImage = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     setDownloading(true);
-    await drawCard(canvas, false);
+    await drawCard(canvas, 0);
 
     canvas.toBlob((blob) => {
       if (blob) {
@@ -273,39 +363,47 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
 
     setDownloading(true);
 
-    // Create animated GIF using frame-by-frame canvas capture
-    const frames: Blob[] = [];
-    const totalFrames = 30;
-    const frameDelay = 100;
+    try {
+      // Render frames to an offscreen canvas and collect them
+      const offscreen = document.createElement("canvas");
+      offscreen.width = canvas.width;
+      offscreen.height = canvas.height;
+      const offCtx = offscreen.getContext("2d")!;
 
-    for (let i = 0; i < totalFrames; i++) {
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => {
-          drawCard(canvas, true);
-          canvas.toBlob((blob) => {
-            if (blob) frames.push(blob);
-            resolve();
-          }, "image/png");
-        });
-      });
-      await new Promise((r) => setTimeout(r, frameDelay));
-    }
+      const gifFrames: { canvas: HTMLCanvasElement; delay: number }[] = [];
+      const totalFrames = 20; // 20 frames × 150ms = 3 seconds
+      const frameDelay = 150; // ms per frame
 
-    // Use a simple approach: download as animated WebP or fallback to single frame
-    // For production, use a GIF library like gif.js
-    if (frames.length > 0) {
-      // Fallback: download the last frame as PNG with animation hint
-      const lastFrame = frames[frames.length - 1];
-      const url = URL.createObjectURL(lastFrame);
+      for (let i = 0; i < totalFrames; i++) {
+        await drawCard(canvas, i);
+        // Copy to offscreen canvas
+        offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
+        offCtx.drawImage(canvas, 0, 0);
+        // Clone for GIF encoder (it needs its own canvas reference)
+        const frameCanvas = document.createElement("canvas");
+        frameCanvas.width = offscreen.width;
+        frameCanvas.height = offscreen.height;
+        frameCanvas.getContext("2d")!.drawImage(offscreen, 0, 0);
+        gifFrames.push({ canvas: frameCanvas, delay: frameDelay });
+      }
+
+      // Encode as animated GIF
+      const gifBlob = await encodeGif(gifFrames, { quality: 10 });
+
+      const url = URL.createObjectURL(gifBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${product.name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-stallhq-animated.png`;
+      a.download = `${product.name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-stallhq-animated.gif`;
       a.click();
       URL.revokeObjectURL(url);
       setDownloadedType("gif");
       setTimeout(() => setDownloadedType(null), 2000);
+    } catch {
+      // Fallback: download single frame
+      await handleDownloadImage();
+    } finally {
+      setDownloading(false);
     }
-    setDownloading(false);
   };
 
   if (!isOpen) return null;
@@ -384,7 +482,7 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
                 <Layout size={12} /> Card Format
               </label>
               <div style={{ display: "flex", gap: "0.5rem" }}>
-                {(Object.entries(CARD_FORMATS) as [CardFormat, typeof CARD_FORMATS[CardFormat]][]).map(([key, fmt]) => (
+                {(Object.entries(CARD_FORMATS) as [CardFormat, (typeof CARD_FORMATS)[CardFormat]][]).map(([key, fmt]) => (
                   <button
                     key={key}
                     onClick={() => setCardFormat(key)}
@@ -410,7 +508,7 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
                 <Palette size={12} /> Card Style
               </label>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                {(Object.entries(CARD_STYLES) as [CardStyle, typeof CARD_STYLES[CardStyle]][]).map(([key, s]) => (
+                {(Object.entries(CARD_STYLES) as [CardStyle, (typeof CARD_STYLES)[CardStyle]][]).map(([key, s]) => (
                   <button
                     key={key}
                     onClick={() => setCardStyle(key)}
@@ -497,7 +595,7 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
                 }}
               >
                 {downloadedType === "gif" ? <Check size={18} /> : <Film size={18} />}
-                {downloadedType === "gif" ? "Downloaded!" : downloading ? "Generating..." : "Download as Animated"}
+                {downloadedType === "gif" ? "Downloaded!" : downloading ? "Generating..." : "Download as GIF"}
               </button>
             </div>
 
