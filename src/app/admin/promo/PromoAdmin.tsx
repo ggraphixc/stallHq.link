@@ -150,7 +150,7 @@ function ConfigurationTab() {
                   <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
                     {platformStatus.whatsapp.configured
                       ? `Connected${platformStatus.whatsapp.phone_number_id ? ` — ${platformStatus.whatsapp.phone_number_id}` : ""}`
-                      : "Not configured — set WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID env vars"}
+                      : "Platform-level — set WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID in Vercel env"}
                   </p>
                 </div>
               </div>
@@ -170,7 +170,7 @@ function ConfigurationTab() {
                   <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
                     {platformStatus.instagram.configured
                       ? "Connected"
-                      : "Not configured — set INSTAGRAM_ACCESS_TOKEN env var"}
+                      : "Platform-level — set INSTAGRAM_ACCESS_TOKEN in Vercel env"}
                   </p>
                 </div>
               </div>
