@@ -1,10 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { authRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 import crypto from "crypto";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const rl = await authRateLimit(request);
+    if (!rl.success) return rl.response!;
+
     const { email } = await request.json();
 
     if (!email) {
@@ -28,7 +32,7 @@ export async function POST(request: Request) {
     const user = users.users.find((u) => u.email === email);
     if (!user) {
       // Don't reveal whether a user exists
-      return NextResponse.json({ success: true });
+      return addRateLimitHeaders(NextResponse.json({ success: true }), rl.headers);
     }
 
     // Invalidate any existing unused reset tokens for this user
@@ -59,7 +63,7 @@ export async function POST(request: Request) {
     const name = user.user_metadata?.name || user.user_metadata?.full_name;
     await sendPasswordResetEmail({ email, token, name });
 
-    return NextResponse.json({ success: true });
+    return addRateLimitHeaders(NextResponse.json({ success: true }), rl.headers);
   } catch (error) {
     console.error("Forgot password error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
