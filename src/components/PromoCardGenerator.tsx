@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Download, Image, Film, Sparkles, Check,
-  Palette, Layout, X, RefreshCw, Share2
+  Palette, Layout, X, RefreshCw, Share2, AlertTriangle
 } from "lucide-react";
 import { encodeGif } from "@/lib/gif-encoder";
 
@@ -31,15 +31,14 @@ type CardStyle = "aurora" | "neon" | "sunset" | "ocean" | "royal";
 type CardFormat = "status" | "story" | "post";
 
 const CARD_STYLES: Record<CardStyle, {
-  label: string; bg: string; accent: string; accentEnd: string;
-  orb1: string; orb2: string; orb3: string;
-  text: string; subtext: string;
+  label: string; bgTop: string; bgBot: string; accent: string; accentEnd: string;
+  orb1: string; orb2: string; orb3: string; text: string; subtext: string;
 }> = {
-  aurora:  { label: "Aurora",  bg: "#050510", accent: "#a855f7", accentEnd: "#06b6d4", orb1: "#7c3aed", orb2: "#0ea5e9", orb3: "#d946ef", text: "#f8fafc", subtext: "#94a3b8" },
-  neon:    { label: "Neon",    bg: "#0a0a0a", accent: "#f43f5e", accentEnd: "#f59e0b", orb1: "#ef4444", orb2: "#f59e0b", orb3: "#f97316", text: "#fafafa", subtext: "#a1a1aa" },
-  sunset:  { label: "Sunset",  bg: "#0f0508", accent: "#f97316", accentEnd: "#ec4899", orb1: "#f97316", orb2: "#ec4899", orb3: "#8b5cf6", text: "#fff7ed", subtext: "#fdba74" },
-  ocean:   { label: "Ocean",   bg: "#020617", accent: "#06b6d4", accentEnd: "#3b82f6", orb1: "#06b6d4", orb2: "#3b82f6", orb3: "#8b5cf6", text: "#ecfeff", subtext: "#67e8f9" },
-  royal:   { label: "Royal",   bg: "#0a0510", accent: "#c084fc", accentEnd: "#f472b6", orb1: "#a855f7", orb2: "#f472b6", orb3: "#818cf8", text: "#faf5ff", subtext: "#c4b5fd" },
+  aurora:  { label: "Aurora",  bgTop: "#0b0820", bgBot: "#050410", accent: "#a855f7", accentEnd: "#06b6d4", orb1: "#7c3aed", orb2: "#0ea5e9", orb3: "#d946ef", text: "#f8fafc", subtext: "#cbd5e1" },
+  neon:    { label: "Neon",    bgTop: "#1a0612", bgBot: "#080406", accent: "#f43f5e", accentEnd: "#f59e0b", orb1: "#ef4444", orb2: "#f59e0b", orb3: "#ec4899", text: "#fafafa", subtext: "#d4d4d8" },
+  sunset:  { label: "Sunset",  bgTop: "#1f0814", bgBot: "#0a0306", accent: "#f97316", accentEnd: "#ec4899", orb1: "#f97316", orb2: "#ec4899", orb3: "#8b5cf6", text: "#fff7ed", subtext: "#fed7aa" },
+  ocean:   { label: "Ocean",   bgTop: "#04101f", bgBot: "#020812", accent: "#06b6d4", accentEnd: "#3b82f6", orb1: "#06b6d4", orb2: "#3b82f6", orb3: "#8b5cf6", text: "#ecfeff", subtext: "#a5f3fc" },
+  royal:   { label: "Royal",   bgTop: "#160624", bgBot: "#08030f", accent: "#c084fc", accentEnd: "#f472b6", orb1: "#a855f7", orb2: "#f472b6", orb3: "#818cf8", text: "#faf5ff", subtext: "#ddd6fe" },
 };
 
 const CARD_FORMATS: Record<CardFormat, { label: string; width: number; height: number; icon: string }> = {
@@ -73,7 +72,14 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
 }
 
-function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+/** rgba() string from a hex color + 0..1 alpha. */
+function hexA(hex: string, a: number): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  return `rgba(${rgb.r},${rgb.g},${rgb.b},${a})`;
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines = 3): string[] {
   const words = text.split(" ");
   const lines: string[] = [];
   let currentLine = "";
@@ -87,7 +93,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
     }
   }
   if (currentLine) lines.push(currentLine);
-  return lines.slice(0, 3);
+  return lines.slice(0, maxLines);
 }
 
 // Pseudo-random seeded by index for consistent particle positions
@@ -106,6 +112,8 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
 
   const format = CARD_FORMATS[cardFormat];
   const style = CARD_STYLES[cardStyle];
+  // square "post" format — tighter layout than the tall status/story formats
+  const compact = format.height / format.width < 1.3;
 
   const drawCard = useCallback(async (canvas: HTMLCanvasElement, animPhase = 0) => {
     const ctx = canvas.getContext("2d");
@@ -116,430 +124,402 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
     canvas.width = W;
     canvas.height = H;
 
-    const t = animPhase / 60; // normalized 0-1 animation progress
+    const t = animPhase / 60; // normalized 0..1 animation progress
 
     // ════════════════════════════════════════════════════════════════
-    // BACKGROUND — deep dark with animated aurora orbs
+    // BASE — vibrant two-tone diagonal gradient
     // ════════════════════════════════════════════════════════════════
-    ctx.fillStyle = style.bg;
+    const baseGrad = ctx.createLinearGradient(0, 0, W, H);
+    baseGrad.addColorStop(0, style.bgTop);
+    baseGrad.addColorStop(1, style.bgBot);
+    ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // Aurora orb 1 — large, top-right, slow drift
-    const orb1X = W * 0.75 + Math.sin(t * Math.PI * 2) * W * 0.08;
-    const orb1Y = H * 0.12 + Math.cos(t * Math.PI * 2) * H * 0.03;
-    const orb1R = W * 0.55;
-    const orb1Rgb = hexToRgb(style.orb1);
-    if (orb1Rgb) {
-      const g1 = ctx.createRadialGradient(orb1X, orb1Y, 0, orb1X, orb1Y, orb1R);
-      g1.addColorStop(0, `rgba(${orb1Rgb.r},${orb1Rgb.g},${orb1Rgb.b},0.18)`);
-      g1.addColorStop(0.4, `rgba(${orb1Rgb.r},${orb1Rgb.g},${orb1Rgb.b},0.06)`);
-      g1.addColorStop(1, "transparent");
-      ctx.fillStyle = g1;
-      ctx.fillRect(0, 0, W, H * 0.5);
-    }
+    // ════════════════════════════════════════════════════════════════
+    // AURORA ORBS — large soft drifting color clouds
+    // ════════════════════════════════════════════════════════════════
+    const drawOrb = (cx: number, cy: number, r: number, color: string, alpha: number) => {
+      const rgb = hexToRgb(color);
+      if (!rgb) return;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha})`);
+      g.addColorStop(0.45, `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha * 0.35})`);
+      g.addColorStop(1, "transparent");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    };
+    drawOrb(W * 0.8 + Math.sin(t * Math.PI * 2) * W * 0.06, H * 0.14 + Math.cos(t * Math.PI * 2) * H * 0.03, W * 0.62, style.orb1, 0.24);
+    drawOrb(W * 0.16 + Math.cos(t * Math.PI * 2) * W * 0.05, H * 0.88 + Math.sin(t * Math.PI * 2) * H * 0.04, W * 0.56, style.orb2, 0.20);
+    drawOrb(W * 0.5 + Math.sin(t * Math.PI * 4) * W * 0.05, H * 0.5 + Math.cos(t * Math.PI * 4) * H * 0.03, W * 0.46, style.orb3, 0.13);
 
-    // Aurora orb 2 — bottom-left
-    const orb2X = W * 0.2 + Math.cos(t * Math.PI * 2) * W * 0.06;
-    const orb2Y = H * 0.85 + Math.sin(t * Math.PI * 2) * H * 0.04;
-    const orb2R = W * 0.5;
-    const orb2Rgb = hexToRgb(style.orb2);
-    if (orb2Rgb) {
-      const g2 = ctx.createRadialGradient(orb2X, orb2Y, 0, orb2X, orb2Y, orb2R);
-      g2.addColorStop(0, `rgba(${orb2Rgb.r},${orb2Rgb.g},${orb2Rgb.b},0.14)`);
-      g2.addColorStop(0.4, `rgba(${orb2Rgb.r},${orb2Rgb.g},${orb2Rgb.b},0.04)`);
-      g2.addColorStop(1, "transparent");
-      ctx.fillStyle = g2;
-      ctx.fillRect(0, H * 0.5, W, H * 0.5);
-    }
+    // ════════════════════════════════════════════════════════════════
+    // HOLOGRAPHIC SHEEN — signature iridescent sweep (screen blend)
+    // ════════════════════════════════════════════════════════════════
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    const sweep = ((t * 1.4) % 1.5) - 0.25; // -0.25 .. 1.25
+    const sx = -W * 0.4 + sweep * W * 1.8;
+    const sheen = ctx.createLinearGradient(sx, 0, sx + W * 0.9, H);
+    const holo = ["#ff0080", "#a855f7", "#3b82f6", "#06b6d4", "#10b981", "#facc15", "#ff0080"];
+    holo.forEach((c, i) => {
+      const rgb = hexToRgb(c);
+      if (rgb) sheen.addColorStop(i / (holo.length - 1), `rgba(${rgb.r},${rgb.g},${rgb.b},0.13)`);
+    });
+    ctx.fillStyle = sheen;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
 
-    // Aurora orb 3 — center accent
-    const orb3X = W * 0.5 + Math.sin(t * Math.PI * 4) * W * 0.04;
-    const orb3Y = H * 0.45 + Math.cos(t * Math.PI * 4) * H * 0.02;
-    const orb3R = W * 0.4;
-    const orb3Rgb = hexToRgb(style.orb3);
-    if (orb3Rgb) {
-      const g3 = ctx.createRadialGradient(orb3X, orb3Y, 0, orb3X, orb3Y, orb3R);
-      g3.addColorStop(0, `rgba(${orb3Rgb.r},${orb3Rgb.g},${orb3Rgb.b},0.1)`);
-      g3.addColorStop(0.5, `rgba(${orb3Rgb.r},${orb3Rgb.g},${orb3Rgb.b},0.02)`);
-      g3.addColorStop(1, "transparent");
-      ctx.fillStyle = g3;
-      ctx.fillRect(0, H * 0.2, W, H * 0.6);
-    }
-
-    // ── Particle/star field ────────────────────────────────────────
-    for (let i = 0; i < 60; i++) {
+    // ── Particle / bokeh starfield ──────────────────────────────────
+    for (let i = 0; i < 46; i++) {
       const px = seededRandom(i) * W;
       const py = seededRandom(i + 100) * H;
-      const pSize = seededRandom(i + 200) * 2 + 0.5;
-      const flicker = 0.3 + 0.7 * Math.abs(Math.sin(t * Math.PI * 2 + i));
-      ctx.fillStyle = `rgba(255,255,255,${flicker * 0.5})`;
+      const pSize = seededRandom(i + 200) * 2.2 + 0.6;
+      const flicker = 0.25 + 0.75 * Math.abs(Math.sin(t * Math.PI * 2 + i * 0.7));
+      ctx.fillStyle = `rgba(255,255,255,${flicker * 0.45})`;
       ctx.beginPath();
       ctx.arc(px, py, pSize, 0, Math.PI * 2);
       ctx.fill();
     }
 
     // ════════════════════════════════════════════════════════════════
-    // GLASSMORPHISM CARD — inner frosted panel
+    // FROSTED GLASS PANEL
     // ════════════════════════════════════════════════════════════════
-    const cardMargin = W * 0.05;
-    const cardW = W - cardMargin * 2;
-    const cardH = H - cardMargin * 2;
+    const m = W * 0.055;
+    const cardW = W - m * 2;
+    const cardH = H - m * 2;
     const cardR = W * 0.06;
 
-    // Glass fill
     ctx.save();
     ctx.beginPath();
-    ctx.roundRect(cardMargin, cardMargin, cardW, cardH, cardR);
+    ctx.roundRect(m, m, cardW, cardH, cardR);
     ctx.clip();
-    ctx.fillStyle = "rgba(255,255,255,0.03)";
-    ctx.fillRect(cardMargin, cardMargin, cardW, cardH);
+    // frosted fill
+    ctx.fillStyle = "rgba(255,255,255,0.035)";
+    ctx.fillRect(m, m, cardW, cardH);
+    // top sheen highlight
+    const innerG = ctx.createLinearGradient(0, m, 0, m + cardH * 0.5);
+    innerG.addColorStop(0, "rgba(255,255,255,0.07)");
+    innerG.addColorStop(1, "transparent");
+    ctx.fillStyle = innerG;
+    ctx.fillRect(m, m, cardW, cardH);
     ctx.restore();
 
-    // Neon border glow (animated)
-    const borderAlpha = 0.4 + 0.2 * Math.sin(t * Math.PI * 2);
+    // Holographic animated rainbow border
     ctx.save();
-    ctx.beginPath();
-    ctx.roundRect(cardMargin, cardMargin, cardW, cardH, cardR);
-
-    // Outer glow
-    ctx.shadowColor = style.accent;
-    ctx.shadowBlur = 25 + 10 * Math.sin(t * Math.PI * 2);
-    ctx.strokeStyle = `${style.accent}${Math.round(borderAlpha * 255).toString(16).padStart(2, "0")}`;
+    const bAlpha = 0.5 + 0.25 * Math.sin(t * Math.PI * 2);
+    const borderGrad = ctx.createLinearGradient(m, m, m + cardW, m + cardH);
+    borderGrad.addColorStop(0, hexA(style.accent, bAlpha));
+    borderGrad.addColorStop(0.5, hexA(style.accentEnd, bAlpha));
+    borderGrad.addColorStop(1, hexA(style.orb3, bAlpha));
+    ctx.strokeStyle = borderGrad;
     ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    // Inner glow
-    ctx.shadowColor = style.accentEnd;
-    ctx.shadowBlur = 15 + 8 * Math.cos(t * Math.PI * 2);
-    ctx.strokeStyle = `${style.accentEnd}${Math.round(borderAlpha * 0.6 * 255).toString(16).padStart(2, "0")}`;
-    ctx.lineWidth = 1.5;
+    ctx.shadowColor = style.accent;
+    ctx.shadowBlur = 22 + 8 * Math.sin(t * Math.PI * 2);
+    ctx.beginPath();
+    ctx.roundRect(m, m, cardW, cardH, cardR);
     ctx.stroke();
     ctx.restore();
 
     // ════════════════════════════════════════════════════════════════
-    // TOP SECTION — store logo + "Exclusive Offer" tag
+    // CONTENT
     // ════════════════════════════════════════════════════════════════
-    const topY = cardMargin + W * 0.045;
-    const iconSize = W * 0.065;
-    const iconX = cardMargin + W * 0.07;
+    const padX = m + W * 0.065;
+    const contentW = W - padX * 2;
 
-    // Store icon with glow
+    // ── Top row: store avatar (left) + "Exclusive" pill (right) ──────
+    const topY = m + W * 0.055;
+    const avatarD = W * 0.075;
+    const avatarX = padX + avatarD / 2;
+    const avatarCY = topY + avatarD / 2;
+
+    // avatar glow ring
     ctx.save();
     ctx.shadowColor = style.accent;
-    ctx.shadowBlur = 12;
-    ctx.fillStyle = `${style.accent}25`;
+    ctx.shadowBlur = 16;
+    const avatarGrad = ctx.createLinearGradient(avatarX - avatarD / 2, avatarCY - avatarD / 2, avatarX + avatarD / 2, avatarCY + avatarD / 2);
+    avatarGrad.addColorStop(0, style.accent);
+    avatarGrad.addColorStop(1, style.accentEnd);
+    ctx.fillStyle = avatarGrad;
     ctx.beginPath();
-    ctx.arc(iconX, topY + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
+    ctx.arc(avatarX, avatarCY, avatarD / 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    ctx.fillStyle = style.accent;
-    ctx.font = `bold ${W * 0.026}px Inter, sans-serif`;
+    // store initial
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `800 ${avatarD * 0.42}px Inter, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(store.name.charAt(0).toUpperCase(), iconX, topY + iconSize / 2 + 1);
+    ctx.fillText(store.name.charAt(0).toUpperCase(), avatarX, avatarCY + 1);
     ctx.textBaseline = "alphabetic";
 
-    // "Exclusive Offer" tag — right side
-    const tagText = "EXCLUSIVE OFFER";
-    ctx.font = `700 ${W * 0.015}px Inter, sans-serif`;
+    // store name next to avatar
+    ctx.fillStyle = style.text;
+    ctx.font = `700 ${W * 0.026}px Inter, sans-serif`;
+    ctx.textAlign = "left";
+    ctx.fillText(store.name, avatarX + avatarD / 2 + W * 0.022, avatarCY - W * 0.004);
+    ctx.fillStyle = style.subtext;
+    ctx.font = `500 ${W * 0.017}px Inter, sans-serif`;
+    ctx.fillText("StallHq Store", avatarX + avatarD / 2 + W * 0.022, avatarCY + W * 0.022);
+
+    // "Exclusive" pill — right aligned
+    const tagText = "EXCLUSIVE";
+    ctx.font = `800 ${W * 0.016}px Inter, sans-serif`;
     const tagW = ctx.measureText(tagText).width;
-    const tagPad = W * 0.018;
-    const tagX = cardMargin + cardW - tagW - tagPad * 2 - W * 0.04;
-    const tagY = topY + iconSize * 0.15;
-
-    // Tag background with shimmer
-    const shimmerOffset = (t * 2) % 1;
+    const tagPad = W * 0.022;
+    const tagH = W * 0.038;
+    const tagX = W - padX - tagW - tagPad * 2;
+    const tagY = avatarCY - tagH / 2;
     ctx.save();
-    ctx.beginPath();
-    ctx.roundRect(tagX, tagY, tagW + tagPad * 2, iconSize * 0.7, 20);
-    ctx.clip();
-    const tagGrad = ctx.createLinearGradient(tagX - tagW, tagY, tagX + tagW + tagPad * 2, tagY);
-    tagGrad.addColorStop(0, `${style.accent}30`);
-    tagGrad.addColorStop(shimmerOffset * 0.5, `${style.accent}50`);
-    tagGrad.addColorStop(shimmerOffset * 0.5 + 0.1, "rgba(255,255,255,0.15)");
-    tagGrad.addColorStop(shimmerOffset * 0.5 + 0.2, `${style.accent}30`);
-    tagGrad.addColorStop(1, `${style.accent}20`);
+    const tagGrad = ctx.createLinearGradient(tagX, tagY, tagX + tagW + tagPad * 2, tagY);
+    tagGrad.addColorStop(0, hexA(style.accent, 0.35));
+    tagGrad.addColorStop(1, hexA(style.accentEnd, 0.35));
     ctx.fillStyle = tagGrad;
-    ctx.fillRect(tagX, tagY, tagW + tagPad * 2, iconSize * 0.7);
+    ctx.beginPath();
+    ctx.roundRect(tagX, tagY, tagW + tagPad * 2, tagH, tagH / 2);
+    ctx.fill();
     ctx.restore();
-
-    ctx.fillStyle = style.accent;
-    ctx.font = `700 ${W * 0.015}px Inter, sans-serif`;
+    ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
-    ctx.fillText(tagText, tagX + (tagW + tagPad * 2) / 2, tagY + iconSize * 0.42);
+    ctx.textBaseline = "middle";
+    ctx.fillText(tagText, tagX + (tagW + tagPad * 2) / 2, tagY + tagH / 2 + 0.5);
+    ctx.textBaseline = "alphabetic";
 
-    // ════════════════════════════════════════════════════════════════
-    // PRODUCT NAME — huge dramatic gradient text
-    // ════════════════════════════════════════════════════════════════
-    const nameY = topY + iconSize + H * 0.04;
-    const nameFontSize = W * 0.095;
-    ctx.font = `900 ${nameFontSize}px Inter, sans-serif`;
-    ctx.textAlign = "center";
-
-    const nameLines = wrapText(ctx, product.name.toUpperCase(), W * 0.78);
-
-    // Gradient text
-    const textGrad = ctx.createLinearGradient(W * 0.15, nameY, W * 0.85, nameY + nameLines.length * nameFontSize * 1.05);
-    textGrad.addColorStop(0, style.accent);
-    textGrad.addColorStop(0.5, style.accentEnd);
-    textGrad.addColorStop(1, style.accent);
-
-    // Text glow
-    ctx.save();
-    ctx.shadowColor = style.accent;
-    ctx.shadowBlur = 30;
-    ctx.fillStyle = textGrad;
-    nameLines.forEach((line, i) => {
-      ctx.fillText(line, W / 2, nameY + i * nameFontSize * 1.05);
-    });
-    ctx.restore();
-
-    // Second pass — crisp text on top
-    ctx.fillStyle = textGrad;
-    nameLines.forEach((line, i) => {
-      ctx.fillText(line, W / 2, nameY + i * nameFontSize * 1.05);
-    });
-
-    const afterNameY = nameY + nameLines.length * nameFontSize * 1.05 + H * 0.015;
-
-    // ════════════════════════════════════════════════════════════════
-    // PRODUCT IMAGE — with neon glow border
-    // ════════════════════════════════════════════════════════════════
+    // ── Product image (visual anchor) ───────────────────────────────
     const img = product.image_url ? await loadImageBlob(product.image_url) : null;
-    let imgBottom = afterNameY;
+    const imgMaxW = W * 0.8;
+    const imgMaxH = compact ? H * 0.3 : H * 0.32;
+    let imgW = 0, imgH = 0, imgX = 0, imgY = 0;
+    if (img) {
+      const aspect = img.naturalWidth / img.naturalHeight;
+      if (aspect > imgMaxW / imgMaxH) { imgW = imgMaxW; imgH = imgMaxW / aspect; }
+      else { imgH = imgMaxH; imgW = imgMaxH * aspect; }
+      imgX = (W - imgW) / 2;
+    }
+    const imgTop = topY + avatarD + W * (compact ? 0.05 : 0.06);
+    imgY = imgTop;
 
     if (img) {
-      const maxW = W * 0.8;
-      const maxH = H * 0.36;
-      const aspect = img.naturalWidth / img.naturalHeight;
-      let drawW: number, drawH: number;
-      if (aspect > maxW / maxH) { drawW = maxW; drawH = maxW / aspect; }
-      else { drawH = maxH; drawW = maxH * aspect; }
-      const imgX = (W - drawW) / 2;
-      const imgY = afterNameY;
-      const imgR = W * 0.04;
-
-      // Animated glow ring behind image
+      const imgR = W * 0.045;
       const glowPulse = 0.6 + 0.4 * Math.sin(t * Math.PI * 2);
+      // holo glow ring behind image
       ctx.save();
       ctx.shadowColor = style.accent;
-      ctx.shadowBlur = 40 * glowPulse;
-      ctx.fillStyle = `${style.accent}15`;
+      ctx.shadowBlur = 45 * glowPulse;
+      const ringGrad = ctx.createLinearGradient(imgX, imgY, imgX + imgW, imgY + imgH);
+      ringGrad.addColorStop(0, hexA(style.accent, 0.5));
+      ringGrad.addColorStop(0.5, hexA(style.accentEnd, 0.4));
+      ringGrad.addColorStop(1, hexA(style.orb3, 0.5));
+      ctx.fillStyle = ringGrad;
       ctx.beginPath();
-      ctx.roundRect(imgX - 4, imgY - 4, drawW + 8, drawH + 8, imgR + 4);
+      ctx.roundRect(imgX - W * 0.012, imgY - W * 0.012, imgW + W * 0.024, imgH + W * 0.024, imgR + W * 0.012);
       ctx.fill();
       ctx.restore();
 
-      // Image shadow
-      ctx.shadowColor = "rgba(0,0,0,0.7)";
-      ctx.shadowBlur = 60;
-      ctx.shadowOffsetY = 20;
-
-      // Clip and draw image
+      // image shadow + clip
       ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.6)";
+      ctx.shadowBlur = 50;
+      ctx.shadowOffsetY = 18;
       ctx.beginPath();
-      ctx.roundRect(imgX, imgY, drawW, drawH, imgR);
+      ctx.roundRect(imgX, imgY, imgW, imgH, imgR);
       ctx.clip();
-      ctx.drawImage(img, imgX, imgY, drawW, drawH);
-
-      // Subtle gradient overlay on image (bottom fade)
-      const imgOverlay = ctx.createLinearGradient(imgX, imgY + drawH * 0.6, imgX, imgY + drawH);
-      imgOverlay.addColorStop(0, "transparent");
-      imgOverlay.addColorStop(1, "rgba(0,0,0,0.4)");
-      ctx.fillStyle = imgOverlay;
-      ctx.fillRect(imgX, imgY, drawW, drawH);
+      ctx.drawImage(img, imgX, imgY, imgW, imgH);
+      // bottom fade overlay for text legibility
+      const fade = ctx.createLinearGradient(imgX, imgY + imgH * 0.55, imgX, imgY + imgH);
+      fade.addColorStop(0, "transparent");
+      fade.addColorStop(1, "rgba(0,0,0,0.45)");
+      ctx.fillStyle = fade;
+      ctx.fillRect(imgX, imgY, imgW, imgH);
       ctx.restore();
 
-      // Neon border on image
-      ctx.shadowColor = "transparent";
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetY = 0;
+      // hairline holo border on image
       ctx.save();
-      const imgBorderGrad = ctx.createLinearGradient(imgX, imgY, imgX + drawW, imgY + drawH);
-      imgBorderGrad.addColorStop(0, `${style.accent}60`);
-      imgBorderGrad.addColorStop(0.5, `${style.accentEnd}40`);
-      imgBorderGrad.addColorStop(1, `${style.accent}60`);
-      ctx.strokeStyle = imgBorderGrad;
+      const ibGrad = ctx.createLinearGradient(imgX, imgY, imgX + imgW, imgY + imgH);
+      ibGrad.addColorStop(0, hexA(style.accent, 0.7));
+      ibGrad.addColorStop(1, hexA(style.accentEnd, 0.5));
+      ctx.strokeStyle = ibGrad;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.roundRect(imgX, imgY, drawW, drawH, imgR);
+      ctx.roundRect(imgX, imgY, imgW, imgH, imgR);
       ctx.stroke();
       ctx.restore();
-
-      imgBottom = imgY + drawH + H * 0.02;
-    } else {
-      const phW = W * 0.6;
-      const phH = H * 0.22;
-      ctx.fillStyle = `${style.accent}08`;
-      ctx.beginPath();
-      ctx.roundRect((W - phW) / 2, afterNameY, phW, phH, W * 0.035);
-      ctx.fill();
-      ctx.font = `${W * 0.08}px Inter, sans-serif`;
-      ctx.textAlign = "center";
-      ctx.fillStyle = style.subtext;
-      ctx.fillText("\u{1F4E6}", W / 2, afterNameY + phH / 2 + W * 0.025);
-      imgBottom = afterNameY + phH + H * 0.02;
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // PRICE — glowing accent text
-    // ════════════════════════════════════════════════════════════════
-    const priceText = `\u20A6${product.price.toLocaleString()}`;
-    ctx.font = `900 ${W * 0.07}px Inter, sans-serif`;
-    ctx.textAlign = "center";
+    // ── Product name (bold gradient) ────────────────────────────────
+    let nameY = img ? imgY + imgH + W * 0.05 : imgTop + W * 0.06;
+    if (!img) {
+      // placeholder box when no image
+      const phW = W * 0.62, phH = compact ? H * 0.22 : H * 0.26;
+      const phX = (W - phW) / 2;
+      ctx.save();
+      ctx.fillStyle = hexA(style.accent, 0.08);
+      ctx.beginPath();
+      ctx.roundRect(phX, imgTop, phW, phH, W * 0.04);
+      ctx.fill();
+      ctx.strokeStyle = hexA(style.accent, 0.25);
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = style.subtext;
+      ctx.font = `${W * 0.07}px Inter, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText("\u{1F4E6}", W / 2, imgTop + phH / 2 + W * 0.022);
+      nameY = imgTop + phH + W * 0.05;
+    }
 
-    // Price glow
+    const nameFontSize = compact ? W * 0.07 : W * 0.085;
+    ctx.font = `900 ${nameFontSize}px Inter, sans-serif`;
+    ctx.textAlign = "center";
+    const nameLines = wrapText(ctx, product.name.toUpperCase(), contentW, 2);
+
+    const textGrad = ctx.createLinearGradient(W * 0.2, nameY, W * 0.8, nameY + nameLines.length * nameFontSize * 1.02);
+    textGrad.addColorStop(0, style.accent);
+    textGrad.addColorStop(0.5, "#ffffff");
+    textGrad.addColorStop(1, style.accentEnd);
+
     ctx.save();
     ctx.shadowColor = style.accent;
-    ctx.shadowBlur = 20;
-    ctx.fillStyle = style.accent;
-    ctx.fillText(priceText, W / 2, imgBottom + H * 0.035);
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = textGrad;
+    nameLines.forEach((line, i) => {
+      ctx.fillText(line, W / 2, nameY + i * nameFontSize * 1.02);
+    });
     ctx.restore();
+    // crisp second pass
+    ctx.fillStyle = textGrad;
+    nameLines.forEach((line, i) => {
+      ctx.fillText(line, W / 2, nameY + i * nameFontSize * 1.02);
+    });
 
-    // Crisp price on top
-    ctx.fillStyle = style.accent;
-    ctx.fillText(priceText, W / 2, imgBottom + H * 0.035);
+    let afterNameY = nameY + nameLines.length * nameFontSize * 1.02 + W * 0.025;
 
-    // ════════════════════════════════════════════════════════════════
-    // DESCRIPTION — muted elegant text
-    // ════════════════════════════════════════════════════════════════
-    const descY = imgBottom + H * 0.065;
+    // ── Price + description block ───────────────────────────────────
+    const priceText = `\u20A6${product.price.toLocaleString()}`;
+    const priceFontSize = compact ? W * 0.06 : W * 0.072;
+    ctx.font = `900 ${priceFontSize}px Inter, sans-serif`;
+    ctx.textAlign = "center";
+
+    ctx.save();
+    ctx.shadowColor = style.accent;
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = style.accentEnd;
+    ctx.fillText(priceText, W / 2, afterNameY + priceFontSize);
+    ctx.restore();
+    ctx.fillStyle = style.accentEnd;
+    ctx.fillText(priceText, W / 2, afterNameY + priceFontSize);
+
+    // "Offer price" eyebrow above the number
+    ctx.fillStyle = style.subtext;
+    ctx.font = `700 ${W * 0.016}px Inter, sans-serif`;
+    ctx.fillText("OFFER PRICE", W / 2, afterNameY - W * 0.006);
+
+    let descY = afterNameY + priceFontSize + W * 0.04;
     if (product.description) {
-      ctx.font = `400 ${W * 0.025}px Inter, sans-serif`;
+      ctx.font = `400 ${W * 0.024}px Inter, sans-serif`;
       ctx.fillStyle = style.subtext;
-      ctx.textAlign = "center";
-      const descLines = wrapText(ctx, product.description, W * 0.68);
+      const descLines = wrapText(ctx, product.description, contentW * 0.92, 2);
       descLines.forEach((line, i) => {
-        ctx.fillText(line, W / 2, descY + i * W * 0.036);
+        ctx.fillText(line, W / 2, descY + i * W * 0.034);
       });
+      descY += descLines.length * W * 0.034 + W * 0.02;
     }
 
-    // ── Category badge ─────────────────────────────────────────────
-    const catY = descY + (product.description ? W * 0.038 * Math.min(wrapText(ctx, product.description || "", W * 0.68).length, 3) + H * 0.008 : 0);
+    // category chip
     if (product.category) {
-      ctx.font = `600 ${W * 0.016}px Inter, sans-serif`;
       const catText = product.category.toUpperCase();
+      ctx.font = `700 ${W * 0.015}px Inter, sans-serif`;
       const catW = ctx.measureText(catText).width;
-      const catPad = W * 0.018;
-
-      // Gradient badge
+      const catPad = W * 0.02;
+      const chipW = catW + catPad * 2;
+      const chipH = W * 0.03;
+      const chipX = (W - chipW) / 2;
       ctx.save();
-      const badgeGrad = ctx.createLinearGradient(
-        (W - catW - catPad * 2) / 2, catY,
-        (W - catW - catPad * 2) / 2 + catW + catPad * 2, catY
-      );
-      badgeGrad.addColorStop(0, `${style.accent}25`);
-      badgeGrad.addColorStop(1, `${style.accentEnd}20`);
-      ctx.fillStyle = badgeGrad;
+      ctx.fillStyle = hexA(style.accent, 0.16);
       ctx.beginPath();
-      ctx.roundRect((W - catW - catPad * 2) / 2, catY, catW + catPad * 2, W * 0.03, 16);
+      ctx.roundRect(chipX, descY, chipW, chipH, chipH / 2);
       ctx.fill();
       ctx.restore();
-
       ctx.fillStyle = style.accent;
       ctx.textAlign = "center";
-      ctx.fillText(catText, W / 2, catY + W * 0.021);
+      ctx.textBaseline = "middle";
+      ctx.fillText(catText, W / 2, descY + chipH / 2 + 0.5);
+      ctx.textBaseline = "alphabetic";
     }
 
     // ════════════════════════════════════════════════════════════════
-    // BOTTOM CTA SECTION
+    // BOTTOM CTA (pinned)
     // ════════════════════════════════════════════════════════════════
-    const bottomY = H * 0.84;
+    const btnW = W * 0.56;
+    const btnH = W * 0.085;
+    const btnX = (W - btnW) / 2;
+    const btnY = H - m - W * 0.13 - btnH;
 
-    // Decorative line
-    const lineGrad = ctx.createLinearGradient(W * 0.25, bottomY - H * 0.015, W * 0.75, bottomY - H * 0.015);
-    lineGrad.addColorStop(0, "transparent");
-    lineGrad.addColorStop(0.3, `${style.accent}30`);
-    lineGrad.addColorStop(0.7, `${style.accentEnd}30`);
-    lineGrad.addColorStop(1, "transparent");
-    ctx.strokeStyle = lineGrad;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(W * 0.2, bottomY - H * 0.015);
-    ctx.lineTo(W * 0.8, bottomY - H * 0.015);
-    ctx.stroke();
-
-    // "ORDER NOW ON" heading
-    ctx.fillStyle = style.text;
-    ctx.globalAlpha = 0.85;
-    ctx.font = `700 ${W * 0.02}px Inter, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.fillText("ORDER NOW ON", W / 2, bottomY);
-    ctx.globalAlpha = 1;
-
-    // Store name
-    ctx.fillStyle = style.subtext;
-    ctx.font = `500 ${W * 0.019}px Inter, sans-serif`;
-    ctx.fillText(store.name, W / 2, bottomY + W * 0.032);
-
-    // ── CTA Button ─────────────────────────────────────────────────
-    const btnW = W * 0.52;
-    const btnH = W * 0.082;
-    const btnY = bottomY + W * 0.055;
-
-    // Animated pulse rings
+    // pulse rings
     for (let ring = 0; ring < 2; ring++) {
-      const ringPhase = (t * 2 + ring * 0.5) % 1;
-      const ringScale = 1 + ringPhase * 0.15;
-      const ringAlpha = 0.3 * (1 - ringPhase);
-      ctx.strokeStyle = ring === 0 ? style.accent : style.accentEnd;
+      const rp = (t * 1.8 + ring * 0.5) % 1;
+      const scale = 1 + rp * 0.14;
+      ctx.strokeStyle = ring === 0 ? hexA(style.accent, 0.3 * (1 - rp)) : hexA(style.accentEnd, 0.3 * (1 - rp));
       ctx.lineWidth = 1.5;
-      ctx.globalAlpha = ringAlpha;
       ctx.beginPath();
       ctx.roundRect(
-        (W - btnW * ringScale) / 2,
-        btnY - (btnH * (ringScale - 1)) / 2,
-        btnW * ringScale,
-        btnH * ringScale,
-        14
+        (W - btnW * scale) / 2,
+        btnY - (btnH * (scale - 1)) / 2,
+        btnW * scale,
+        btnH * scale,
+        btnH * 0.5
       );
       ctx.stroke();
     }
-    ctx.globalAlpha = 1;
 
-    // Button fill with gradient
+    // button body — full holographic gradient
     ctx.save();
     ctx.shadowColor = style.accent;
-    ctx.shadowBlur = 20;
-    const btnGrad = ctx.createLinearGradient((W - btnW) / 2, btnY, (W + btnW) / 2, btnY);
+    ctx.shadowBlur = 24;
+    const btnGrad = ctx.createLinearGradient(btnX, btnY, btnX + btnW, btnY + btnH);
     btnGrad.addColorStop(0, style.accent);
     btnGrad.addColorStop(0.5, style.accentEnd);
-    btnGrad.addColorStop(1, style.accent);
+    btnGrad.addColorStop(1, style.orb3);
     ctx.fillStyle = btnGrad;
     ctx.beginPath();
-    ctx.roundRect((W - btnW) / 2, btnY, btnW, btnH, 14);
+    ctx.roundRect(btnX, btnY, btnW, btnH, btnH * 0.5);
     ctx.fill();
     ctx.restore();
 
-    // Button shimmer sweep
+    // shimmer sweep across button
     ctx.save();
     ctx.beginPath();
-    ctx.roundRect((W - btnW) / 2, btnY, btnW, btnH, 14);
+    ctx.roundRect(btnX, btnY, btnW, btnH, btnH * 0.5);
     ctx.clip();
-    const shimmerGrad = ctx.createLinearGradient(
-      (W - btnW) / 2 + btnW * (t * 2 - 0.3), btnY,
-      (W - btnW) / 2 + btnW * (t * 2 + 0.1), btnY
-    );
-    shimmerGrad.addColorStop(0, "transparent");
-    shimmerGrad.addColorStop(0.5, "rgba(255,255,255,0.2)");
-    shimmerGrad.addColorStop(1, "transparent");
-    ctx.fillStyle = shimmerGrad;
-    ctx.fillRect((W - btnW) / 2, btnY, btnW, btnH);
+    const shX = btnX + btnW * ((t * 2) % 1.6 - 0.3);
+    const shGrad = ctx.createLinearGradient(shX - btnW * 0.2, btnY, shX + btnW * 0.1, btnY);
+    shGrad.addColorStop(0, "transparent");
+    shGrad.addColorStop(0.5, "rgba(255,255,255,0.28)");
+    shGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = shGrad;
+    ctx.fillRect(btnX, btnY, btnW, btnH);
     ctx.restore();
 
-    // Button text
+    // button label
     ctx.fillStyle = "#ffffff";
-    ctx.font = `bold ${W * 0.027}px Inter, sans-serif`;
+    ctx.font = `800 ${W * 0.028}px Inter, sans-serif`;
     ctx.textAlign = "center";
-    ctx.fillText("Shop Now", W / 2, btnY + btnH * 0.62);
+    ctx.textBaseline = "middle";
+    ctx.fillText("Shop Now", W / 2, btnY + btnH / 2 + 1);
+    ctx.textBaseline = "alphabetic";
 
-    // ── Store URL ──────────────────────────────────────────────────
-    ctx.fillStyle = `${style.subtext}60`;
-    ctx.font = `400 ${W * 0.015}px Inter, sans-serif`;
+    // "Order now on" eyebrow above button
+    ctx.fillStyle = hexA(style.text, 0.7);
+    ctx.font = `700 ${W * 0.018}px Inter, sans-serif`;
     ctx.textAlign = "center";
-    ctx.fillText(`stallhq.com/${store.slug}`, W / 2, H * 0.955);
-  }, [product, store, format, style]);
+    ctx.fillText("ORDER NOW ON", W / 2, btnY - W * 0.028);
+
+    // store url footer
+    ctx.fillStyle = hexA(style.subtext, 0.65);
+    ctx.font = `500 ${W * 0.017}px Inter, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText(`stallhq.com/${store.slug}`, W / 2, H - m - W * 0.055);
+  }, [product, store, format, style, compact]);
 
   // Draw on mount and when settings change
   useEffect(() => {
@@ -862,17 +842,28 @@ function AutoPostButton({ platform, productId, storeSlug }: {
 }) {
   const [posting, setPosting] = useState(false);
   const [posted, setPosted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handlePost = async () => {
     setPosting(true);
+    setError(null);
     try {
       const res = await fetch("/api/promo/auto-post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, storeSlug, platform }),
       });
-      if (res.ok) setPosted(true);
-    } catch {} finally { setPosting(false); }
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setPosted(true);
+      } else {
+        setError(data.error || `Failed (${res.status})`);
+      }
+    } catch {
+      setError("Network error — check your connection and retry.");
+    } finally {
+      setPosting(false);
+    }
   };
 
   const colors = platform === "whatsapp"
@@ -880,18 +871,36 @@ function AutoPostButton({ platform, productId, storeSlug }: {
     : { bg: "rgba(225,48,108,0.12)", border: "rgba(225,48,108,0.25)", text: "#e1306c", icon: "\uD83D\uDCF8" };
 
   return (
-    <button onClick={handlePost} disabled={posting || posted} style={{
-      flex: 1, padding: "0.375rem", borderRadius: "0.375rem",
-      background: posted ? `${colors.text}15` : colors.bg,
-      border: `1px solid ${posted ? `${colors.text}30` : colors.border}`,
-      color: colors.text, fontSize: "0.6875rem", fontWeight: 600,
-      cursor: posting || posted ? "default" : "pointer",
-      display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem",
-      opacity: posting ? 0.7 : 1, transition: "all 0.15s",
-    }}>
-      {posted ? <Check size={10} /> : posting ? <RefreshCw size={10} className="animate-spin" /> : null}
-      {posted ? "Sent!" : posting ? "Sending..." : `${colors.icon} ${platform === "whatsapp" ? "WhatsApp" : "Instagram"}`}
-    </button>
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", flex: 1 }}>
+      <button onClick={handlePost} disabled={posting || posted} style={{
+        padding: "0.375rem", borderRadius: "0.375rem",
+        background: posted ? `${colors.text}15` : colors.bg,
+        border: `1px solid ${posted ? `${colors.text}30` : colors.border}`,
+        color: colors.text, fontSize: "0.6875rem", fontWeight: 600,
+        cursor: posting || posted ? "default" : "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem",
+        opacity: posting ? 0.7 : 1, transition: "all 0.15s",
+      }}>
+        {posted ? <Check size={10} /> : posting ? <RefreshCw size={10} className="animate-spin" /> : null}
+        {posted ? "Sent!" : posting ? "Sending..." : `${colors.icon} ${platform === "whatsapp" ? "WhatsApp" : "Instagram"}`}
+      </button>
+      {error && (
+        <button
+          onClick={() => { setError(null); handlePost(); }}
+          title={error}
+          style={{
+            display: "flex", alignItems: "flex-start", gap: "0.25rem",
+            padding: "0.3rem 0.5rem", borderRadius: "0.3rem",
+            background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+            color: "#ef4444", fontSize: "0.625rem", fontWeight: 500,
+            cursor: "pointer", lineHeight: 1.3, textAlign: "left",
+          }}
+        >
+          <AlertTriangle size={10} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{error}</span>
+        </button>
+      )}
+    </div>
   );
 }
 
