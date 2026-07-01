@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createAuthClient } from "@/lib/supabase/api";
 import { sendOrderNotification } from "@/lib/email";
+import { rateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
+
+const orderRateLimit = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: 10, // 10 orders per minute per IP
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -57,6 +63,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rl = await orderRateLimit(request);
+    if (!rl.success) return rl.response!;
+
     const body = await request.json();
 
     // Validate required fields
@@ -111,7 +120,7 @@ export async function POST(request: NextRequest) {
       }).catch(() => {});
     }
 
-    return NextResponse.json(order, { status: 201 });
+    return addRateLimitHeaders(NextResponse.json(order, { status: 201 }), rl.headers);
   } catch (error) {
     console.error("Error creating order:", error);
     return NextResponse.json(

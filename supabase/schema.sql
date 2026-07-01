@@ -13,12 +13,17 @@ create table if not exists stores (
   name varchar(255) not null,
   description text,
   whatsapp_number varchar(50) not null,
+  instagram_handle varchar(100),
   logo_url text,
   banner_url text,
   category varchar(100),
   theme jsonb,
   store_hours jsonb,
   email varchar(255),
+  plan varchar(50) default 'trial',
+  trial_ends_at timestamp with time zone,
+  subscription_expires_at timestamp with time zone,
+  verified boolean default false,
   setup_complete boolean default false not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
@@ -251,12 +256,12 @@ on conflict (id) do nothing;
 -- Storage policy: Public read access for products
 create policy "Public read access for products"
   on storage.objects for select
-  using (bucket_id = 'products' and auth.role() = 'authenticated');
+  using (bucket_id = 'products');
 
 -- Storage policy: Public read access for store assets
 create policy "Public read access for store assets"
   on storage.objects for select
-  using (bucket_id = 'store-assets' and auth.role() = 'authenticated');
+  using (bucket_id = 'store-assets');
 
 -- Storage policy: Authenticated upload to products
 create policy "Authenticated upload to products"

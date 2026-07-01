@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin, postPromo, buildCaption, logPromoPost, type Platform } from "@/lib/social-post";
+import { createClient } from "@/lib/supabase/api";
 
 interface AutoPostRequest {
   productId: string;
@@ -9,6 +10,13 @@ interface AutoPostRequest {
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth check: user must be logged in and own the store
+    const supabaseAuth = await createClient();
+    const { data: { user } } = await supabaseAuth.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body: AutoPostRequest = await req.json();
     const { productId, storeSlug, platform } = body;
 
@@ -22,14 +30,19 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
+    // Verify user owns this store
     const { data: store, error: storeError } = await supabase
       .from("stores")
-      .select("id, name, slug, whatsapp_number, instagram_handle")
+      .select("id, name, slug, whatsapp_number, instagram_handle, user_id")
       .eq("slug", storeSlug)
       .single();
 
     if (storeError || !store) {
       return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    }
+
+    if (store.user_id !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { data: product, error: productError } = await supabase

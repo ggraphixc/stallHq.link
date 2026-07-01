@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { authRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const rl = await authRateLimit(request);
+    if (!rl.success) return rl.response!;
+
     const { token, password } = await request.json();
 
     if (!token || !password) {
@@ -50,7 +54,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to reset password" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    return addRateLimitHeaders(NextResponse.json({ success: true }), rl.headers);
   } catch (error) {
     console.error("Reset password error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

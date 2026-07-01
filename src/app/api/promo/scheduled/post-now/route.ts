@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin, postPromo, buildCaption, logPromoPost } from "@/lib/social-post";
+import { createClient } from "@/lib/supabase/api";
 
 // POST - Immediately post a scheduled promo post
 export async function POST(req: NextRequest) {
   try {
+    // Auth check
+    const supabaseAuth = await createClient();
+    const { data: { user } } = await supabaseAuth.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { postId } = body;
 
@@ -41,6 +49,17 @@ export async function POST(req: NextRequest) {
         .update({ status: "failed", error: "Store or product not found" })
         .eq("id", postId);
       return NextResponse.json({ error: "Store or product not found" }, { status: 404 });
+    }
+
+    // Verify user owns this store
+    const { data: storeOwnership } = await supabase
+      .from("stores")
+      .select("user_id")
+      .eq("id", store.id)
+      .single();
+
+    if (!storeOwnership || storeOwnership.user_id !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const caption = buildCaption(product, store);

@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendVerificationEmail } from "@/lib/email";
+import { authRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 import crypto from "crypto";
 
 function generateCode(): string {
@@ -8,8 +9,11 @@ function generateCode(): string {
   return crypto.randomInt(100000, 999999).toString();
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const rl = await authRateLimit(request);
+    if (!rl.success) return rl.response!;
+
     const { email, type = "signup" } = await request.json();
 
     if (!email) {
@@ -65,9 +69,8 @@ export async function POST(request: Request) {
     // Send the email
     const name = user.user_metadata?.name || user.user_metadata?.full_name;
     const emailSent = await sendVerificationEmail({ email, code, name });
-    console.log("[send-verification] Email sent:", emailSent);
 
-    return NextResponse.json({ success: true, emailSent });
+    return addRateLimitHeaders(NextResponse.json({ success: true, emailSent }), rl.headers);
   } catch (error) {
     console.error("Send verification error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

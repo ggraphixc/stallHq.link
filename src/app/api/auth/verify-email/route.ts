@@ -1,9 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendWelcomeEmail } from "@/lib/email";
+import { authRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const rl = await authRateLimit(request);
+    if (!rl.success) return rl.response!;
+
     const { email, code, type = "signup" } = await request.json();
 
     if (!email || !code) {
@@ -54,7 +58,7 @@ export async function POST(request: Request) {
     const name = user?.user?.user_metadata?.name || user?.user?.user_metadata?.full_name;
     await sendWelcomeEmail({ email, name });
 
-    return NextResponse.json({ success: true });
+    return addRateLimitHeaders(NextResponse.json({ success: true }), rl.headers);
   } catch (error) {
     console.error("Verify email error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

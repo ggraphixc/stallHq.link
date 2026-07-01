@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { authRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   try {
+    const rl = await authRateLimit(req);
+    if (!rl.success) return rl.response!;
+
     const { email, password } = await req.json();
 
     if (!email || !password) {
@@ -44,7 +48,10 @@ export async function POST(req: NextRequest) {
 
     // Return JSON success — cookies are set on this response
     // Client will navigate to /dashboard after receiving this
-    const response = NextResponse.json({ success: true });
+    const response = addRateLimitHeaders(
+      NextResponse.json({ success: true }),
+      rl.headers
+    );
 
     for (const cookie of cookiesToSet) {
       response.cookies.set(cookie.name, cookie.value, cookie.options as any);

@@ -1,10 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createAuthClient } from "@/lib/supabase/api";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+async function verifyStoreOwner(storeId: string) {
+  const supabaseAuth = await createAuthClient();
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return null;
+
+  const { data: store } = await supabase
+    .from("stores")
+    .select("id")
+    .eq("id", storeId)
+    .eq("user_id", user.id)
+    .single();
+
+  return store ? user : null;
+}
 
 // GET - Fetch scheduled posts
 export async function GET(req: NextRequest) {
@@ -14,6 +30,11 @@ export async function GET(req: NextRequest) {
 
     if (!storeId) {
       return NextResponse.json({ error: "store_id required" }, { status: 400 });
+    }
+
+    const user = await verifyStoreOwner(storeId);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { data: posts, error } = await supabase
@@ -55,6 +76,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    const user = await verifyStoreOwner(storeId);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { data, error } = await supabase
       .from("scheduled_promo_posts")
       .insert({
@@ -84,6 +110,22 @@ export async function DELETE(req: NextRequest) {
 
     if (!postId) {
       return NextResponse.json({ error: "Post ID required" }, { status: 400 });
+    }
+
+    // Verify ownership via the post's store
+    const { data: existingPost } = await supabase
+      .from("scheduled_promo_posts")
+      .select("store_id")
+      .eq("id", postId)
+      .single();
+
+    if (!existingPost) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    const user = await verifyStoreOwner(existingPost.store_id);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { error } = await supabase

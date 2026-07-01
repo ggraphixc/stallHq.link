@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { authRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +9,9 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
+    const rl = await authRateLimit(req);
+    if (!rl.success) return rl.response!;
+
     const { email, password, name } = await req.json();
 
     if (!email || !password) {
@@ -29,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: createError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ user: data.user });
+    return addRateLimitHeaders(NextResponse.json({ user: data.user }), rl.headers);
   } catch {
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }

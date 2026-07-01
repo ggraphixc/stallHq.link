@@ -108,6 +108,14 @@ export const uploadRateLimit = rateLimit({
   maxRequests: 20,
 });
 
+// Auth endpoints — tighter to blunt brute-force / email-bombing.
+// NOTE: in-memory, so per-instance on Vercel serverless; still raises the bar
+// and protects single-instance (dev/preview) deployments.
+export const authRateLimit = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: 8,
+});
+
 // Helper to add rate limit headers to response
 export function addRateLimitHeaders(
   response: NextResponse,

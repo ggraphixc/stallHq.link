@@ -3,8 +3,7 @@
 -- or after signing up via /auth/signup
 
 -- Step 1: Create the admin user via Supabase Dashboard > Auth > Users
--- Email: zerupth@gmail.com
--- Password: zerupthcodes#
+-- Use the Supabase dashboard to create the user with a secure password.
 -- Or sign up via the app and note the user ID
 
 -- Step 2: Get the user ID and set it as ADMIN_USER_ID in Vercel env vars

@@ -4,9 +4,11 @@ import { createClient } from "@supabase/supabase-js";
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Read-only public data — use the anon key (RLS-respecting), not the service
+  // role key. Avoids shipping a privileged credential into the sitemap path.
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
   // Static pages

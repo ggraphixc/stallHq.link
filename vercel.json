@@ -5,11 +5,17 @@
   "crons": [
     {
       "path": "/api/cron/check-expiry",
-      "schedule": "0 9 * * *"
+      "schedule": "0 9 * * *",
+      "headers": {
+        "Authorization": "Bearer ${CRON_SECRET}"
+      }
     },
     {
       "path": "/api/cron/marketing",
-      "schedule": "0 10 * * *"
+      "schedule": "0 10 * * *",
+      "headers": {
+        "Authorization": "Bearer ${CRON_SECRET}"
+      }
     }
   ]
 }
