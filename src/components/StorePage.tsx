@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Store, Product } from "@/types";
+import { CartProvider } from "@/contexts/CartContext";
 import { StoreHeader } from "@/components/StoreHeader";
 import { ProductGrid } from "@/components/ProductGrid";
 import { StoreFooter } from "@/components/StoreFooter";
@@ -192,6 +193,7 @@ export function StorePage({ store, products }: StorePageProps) {
   }, [store.theme]);
 
   return (
+    <CartProvider>
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)", position: "relative", ...themeStyles }}>
       <Particles />
 
@@ -673,5 +675,6 @@ export function StorePage({ store, products }: StorePageProps) {
         </a>
       )}
     </div>
+    </CartProvider>
   );
 }

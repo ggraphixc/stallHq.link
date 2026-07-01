@@ -1,36 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import { Users } from "lucide-react";
+import { useRealtimeVisitors } from "@/hooks/useRealtimeVisitors";
 
 interface VisitorBadgeProps {
   storeId: string;
-  polling?: boolean;
 }
 
-export function VisitorBadge({ storeId, polling = true }: VisitorBadgeProps) {
-  const [count, setCount] = useState<number | null>(null);
-
-  const fetchCount = useCallback(async () => {
-    try {
-      const response = await fetch(
-        `/api/analytics/visitors?store_id=${storeId}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setCount(data.count);
-      }
-    } catch {
-      // Silently fail
-    }
-  }, [storeId]);
-
-  useEffect(() => {
-    fetchCount();
-    if (!polling) return;
-    const interval = setInterval(fetchCount, 30000);
-    return () => clearInterval(interval);
-  }, [fetchCount, polling]);
+export function VisitorBadge({ storeId }: VisitorBadgeProps) {
+  const count = useRealtimeVisitors({ storeId });
 
   if (count === null) return null;
 

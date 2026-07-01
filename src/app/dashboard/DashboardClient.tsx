@@ -15,6 +15,7 @@ import { OrderManager } from "@/components/OrderManager";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { createClient } from "@/lib/supabase/client";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useRealtimeVisitors } from "@/hooks/useRealtimeVisitors";
 import { useAlert } from "@/contexts/AlertContext";
 import { getProductLimit, getDaysRemaining, isTrial, formatNaira, getPlanName, hasReachedProductLimit, getPlanUsagePercent } from "@/lib/subscription";
 import {
@@ -171,7 +172,7 @@ export function DashboardClient({
   const [showOrders, setShowOrders] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [visitorCount, setVisitorCount] = useState<number | null>(null);
+  const visitorCount = useRealtimeVisitors({ storeId: store.id });
   const [origin, setOrigin] = useState("");
 
   const supabase = createClient();
@@ -195,22 +196,6 @@ export function DashboardClient({
   useEffect(() => {
     fetchProducts();
   }, []);
-
-  // Visitor count with polling
-  useEffect(() => {
-    const fetchVisitors = async () => {
-      try {
-        const res = await fetch(`/api/analytics/visitors?store_id=${store.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setVisitorCount(data.count);
-        }
-      } catch {}
-    };
-    fetchVisitors();
-    const interval = setInterval(fetchVisitors, 30000);
-    return () => clearInterval(interval);
-  }, [store.id]);
 
   const fetchProducts = async () => {
     try {
