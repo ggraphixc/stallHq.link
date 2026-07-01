@@ -599,10 +599,19 @@ export function PromoCardGenerator({ isOpen, onClose, product, store }: PromoCar
         if (blob) {
           const file = new File([blob], `${product.name.replace(/[^a-z0-9]/gi, "-")}-stallhq.png`, { type: "image/png" });
           if (navigator.canShare({ files: [file] })) {
+            const caption = [
+              `\uD83D\uDD25 *${product.name}*`,
+              ``,
+              `\uD83D\uDCB0 Price: *\u20A6${product.price.toLocaleString()}*`,
+              `\uD83C\uDFEA Store: *${store.name}*`,
+              ``,
+              `\u2705 Available now!`,
+              `\uD83D\uDCDE Order direct or click link below \uD83D\uDC47`,
+            ].join("\n");
             await navigator.share({
               files: [file],
               title: product.name,
-              text: `${product.name} - \u20A6${product.price.toLocaleString()} on ${store.name}`,
+              text: caption,
             });
             setDownloadedType("image");
             setTimeout(() => setDownloadedType(null), 2000);

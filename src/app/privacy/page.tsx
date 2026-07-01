@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description:
     "stallHq privacy policy. Learn how we handle your data, cookies, and protect your privacy.",
   robots: { index: true, follow: true },
-  alternates: { canonical: "https://hqlink.vercel.app/privacy" },
+  alternates: { canonical: "https://stallhq.com/privacy" },
 };
 
 export default function PrivacyPage() {
@@ -25,8 +25,8 @@ export default function PrivacyPage() {
           <p style={pStyle}>
             stallHq (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) is a digital storefront platform operated for vendors in Nigeria and across Africa.
             Our website is{" "}
-            <a href="https://hqlink.vercel.app" style={{ color: "var(--glow-purple)", textDecoration: "none" }}>
-              hqlink.vercel.app
+            <a href="https://stallhq.com" style={{ color: "var(--glow-purple)", textDecoration: "none" }}>
+              stallhq.com
             </a>.
           </p>
         </div>
@@ -106,8 +106,32 @@ export default function PrivacyPage() {
           </p>
         </div>
 
+        <div style={sectionStyle} id="data-deletion">
+          <h2 style={h2Style}>8. Data Deletion Instructions</h2>
+          <p style={pStyle}>
+            You can request deletion of your account and all associated data at any time.
+          </p>
+          <ul style={ulStyle}>
+            <li><strong>Self-service:</strong> Go to Account Settings → Delete Account. Your data will be removed within 24 hours.</li>
+            <li><strong>Email request:</strong> Send a deletion request to{" "}
+              <a href="mailto:support@hqlink.vercel.app" style={{ color: "var(--glow-purple)", textDecoration: "none" }}>
+                support@hqlink.vercel.app
+              </a>{" "}
+              with your account email. We will process your request within 7 business days.
+            </li>
+            <li><strong>What gets deleted:</strong> Account credentials, store data, products, orders, analytics (anonymized counts may be retained), and all third-party tokens (Instagram, WhatsApp).</li>
+            <li><strong>Exceptions:</strong> Transaction records required by law may be retained in encrypted backup storage for up to 90 days before permanent deletion.</li>
+          </ul>
+          <p style={pStyle}>
+            To exercise any of these rights, email us at{" "}
+            <a href="mailto:support@hqlink.vercel.app" style={{ color: "var(--glow-purple)", textDecoration: "none" }}>
+              support@hqlink.vercel.app
+            </a>.
+          </p>
+        </div>
+
         <div style={sectionStyle}>
-          <h2 style={h2Style}>8. Data Security</h2>
+          <h2 style={h2Style}>9. Data Security</h2>
           <p style={pStyle}>
             We use industry-standard encryption (TLS in transit, encrypted at rest via Supabase), row-level security policies,
             and role-based access control. Passwords are hashed with bcrypt. Service-role keys are never exposed to the client.
@@ -115,21 +139,21 @@ export default function PrivacyPage() {
         </div>
 
         <div style={sectionStyle}>
-          <h2 style={h2Style}>9. Children&apos;s Privacy</h2>
+          <h2 style={h2Style}>10. Children&apos;s Privacy</h2>
           <p style={pStyle}>
             stallHq is not intended for children under 13. We do not knowingly collect data from children.
           </p>
         </div>
 
         <div style={sectionStyle}>
-          <h2 style={h2Style}>10. Changes to This Policy</h2>
+          <h2 style={h2Style}>11. Changes to This Policy</h2>
           <p style={pStyle}>
             We may update this policy from time to time. Changes will be posted on this page with an updated &quot;Last updated&quot; date.
           </p>
         </div>
 
         <div style={sectionStyle}>
-          <h2 style={h2Style}>11. Contact Us</h2>
+          <h2 style={h2Style}>12. Contact Us</h2>
           <p style={pStyle}>
             Questions about this policy? Email{" "}
             <a href="mailto:support@hqlink.vercel.app" style={{ color: "var(--glow-purple)", textDecoration: "none" }}>

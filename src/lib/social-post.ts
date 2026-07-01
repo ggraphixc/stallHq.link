@@ -43,7 +43,21 @@ export function getSupabaseAdmin() {
 export function buildCaption(product: SocialProduct, store: SocialStore): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://stallhq.com";
   const shareUrl = `${appUrl}/${store.slug}/product/${product.id}`;
-  return `🛍️ ${product.name}\n💰 ₦${product.price.toLocaleString()}\n\nShop now on ${store.name} via StallHq\n${shareUrl}`;
+  const price = `₦${product.price.toLocaleString()}`;
+
+  return [
+    `🔥 *${product.name}*`,
+    ``,
+    `💰 Price: *${price}*`,
+    `🏪 Store: *${store.name}*`,
+    ``,
+    `✅ Available now!`,
+    `📞 Order direct or click link below 👇`,
+    ``,
+    `${shareUrl}`,
+    ``,
+    `_Powered by StallHq_`,
+  ].join("\n");
 }
 
 // ─── Instagram ───────────────────────────────────────────────────────────────
