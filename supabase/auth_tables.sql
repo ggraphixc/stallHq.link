@@ -32,21 +32,11 @@ create index if not exists idx_password_resets_user_id on password_resets(user_i
 create index if not exists idx_password_resets_token on password_resets(token);
 create index if not exists idx_password_resets_email on password_resets(email);
 
--- RLS
+-- RLS — enabled but NO policies = only service-role (bypasses RLS) can access.
+-- Anonymous/auth users cannot read or write these tables.
 alter table email_verifications enable row level security;
 alter table password_resets enable row level security;
 
--- Drop existing policies
+-- Drop any existing permissive policies
 drop policy if exists "Service role can manage email_verifications" on email_verifications;
 drop policy if exists "Service role can manage password_resets" on password_resets;
-
--- Only service role (API routes) can access these tables
-create policy "Service role can manage email_verifications"
-  on email_verifications for all
-  using (true)
-  with check (true);
-
-create policy "Service role can manage password_resets"
-  on password_resets for all
-  using (true)
-  with check (true);

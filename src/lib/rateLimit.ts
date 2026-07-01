@@ -1,122 +1,101 @@
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
 
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-}
+// Upstash Redis client — reads UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN from env.
+// Falls back to in-memory if env vars are missing (local dev convenience).
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      })
+    : null;
 
-const rateLimitMap = new Map<string, RateLimitEntry>();
-
-// Clean up old entries periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitMap.entries()) {
-    if (now > entry.resetTime) {
-      rateLimitMap.delete(key);
-    }
+function createLimiter(windowSec: number, maxReqs: number) {
+  if (redis) {
+    const r = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(maxReqs, `${windowSec}s`),
+      analytics: true,
+      prefix: "stallhq:ratelimit",
+    });
+    return r;
   }
-}, 60000); // Clean up every minute
-
-interface RateLimitOptions {
-  windowMs: number; // Time window in milliseconds
-  maxRequests: number; // Maximum requests per window
-  keyGenerator?: (request: Request) => string; // Custom key generator
+  return null;
 }
 
-export function rateLimit(options: RateLimitOptions) {
-  const { windowMs, maxRequests, keyGenerator } = options;
+// Pre-configured limiters (sliding window, per IP)
+export const apiLimiter = createLimiter(60, 60);       // 60 req / min
+export const strictLimiter = createLimiter(60, 10);    // 10 req / min
+export const authLimiter = createLimiter(60, 8);       // 8 req / min
+export const orderLimiter = createLimiter(60, 10);     // 10 req / min
 
-  return async function rateLimitMiddleware(
-    request: Request
-  ): Promise<{ success: boolean; response?: NextResponse; headers?: Record<string, string> }> {
-    // Generate key from IP or custom generator
-    const forwarded = request.headers.get("x-forwarded-for");
-    const ip = forwarded?.split(",")[0] || "unknown";
-    const key = keyGenerator ? keyGenerator(request) : ip;
+interface RateLimitResult {
+  success: boolean;
+  response?: NextResponse;
+  headers?: Record<string, string>;
+}
 
-    const now = Date.now();
-    const entry = rateLimitMap.get(key);
+/**
+ * Check rate limit for a given key (usually IP address).
+ * Returns { success: true } if allowed, or { success: false, response } with 429.
+ */
+export async function checkRateLimit(
+  limiter: Ratelimit | null,
+  key: string
+): Promise<RateLimitResult> {
+  // No Redis configured — allow through (dev mode)
+  if (!limiter) {
+    return { success: true };
+  }
 
-    if (!entry || now > entry.resetTime) {
-      // First request or window expired
-      rateLimitMap.set(key, {
-        count: 1,
-        resetTime: now + windowMs,
-      });
+  const { success, limit, remaining, reset } = await limiter.limit(key);
 
-      return {
-        success: true,
-        headers: {
-          "X-RateLimit-Limit": maxRequests.toString(),
-          "X-RateLimit-Remaining": (maxRequests - 1).toString(),
-          "X-RateLimit-Reset": Math.ceil((now + windowMs) / 1000).toString(),
-        },
-      };
-    }
+  const headers: Record<string, string> = {
+    "X-RateLimit-Limit": limit.toString(),
+    "X-RateLimit-Remaining": remaining.toString(),
+    "X-RateLimit-Reset": reset.toString(),
+  };
 
-    if (entry.count >= maxRequests) {
-      // Rate limit exceeded
-      const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
-
-      return {
-        success: false,
-        response: NextResponse.json(
-          {
-            error: "Too many requests. Please try again later.",
-            retryAfter,
-          },
-          {
-            status: 429,
-            headers: {
-              "X-RateLimit-Limit": maxRequests.toString(),
-              "X-RateLimit-Remaining": "0",
-              "X-RateLimit-Reset": Math.ceil(entry.resetTime / 1000).toString(),
-              "Retry-After": retryAfter.toString(),
-            },
-          }
-        ),
-      };
-    }
-
-    // Increment counter
-    entry.count++;
-
+  if (!success) {
+    const retryAfter = Math.max(0, Math.ceil((reset - Date.now()) / 1000));
     return {
-      success: true,
-      headers: {
-        "X-RateLimit-Limit": maxRequests.toString(),
-        "X-RateLimit-Remaining": (maxRequests - entry.count).toString(),
-        "X-RateLimit-Reset": Math.ceil(entry.resetTime / 1000).toString(),
-      },
+      success: false,
+      response: NextResponse.json(
+        { error: "Too many requests. Please try again later.", retryAfter },
+        {
+          status: 429,
+          headers: { ...headers, "Retry-After": retryAfter.toString() },
+        }
+      ),
+      headers,
     };
+  }
+
+  return { success: true, headers };
+}
+
+/**
+ * Get client IP from request headers.
+ */
+export function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  return forwarded?.split(",")[0]?.trim() || "unknown";
+}
+
+// Backward-compatible wrapper: returns (request) => { success, response?, headers? }
+// so existing routes (apiRateLimit(request), authRateLimit(request)) work unchanged.
+function wrapLimiter(limiter: Ratelimit | null) {
+  return async (request: Request) => {
+    const ip = getClientIp(request);
+    return checkRateLimit(limiter, ip);
   };
 }
 
-// Pre-configured rate limiters
-export const apiRateLimit = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  maxRequests: 60,
-});
-
-export const strictRateLimit = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  maxRequests: 10,
-});
-
-export const uploadRateLimit = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  maxRequests: 20,
-});
-
-// Auth endpoints — tighter to blunt brute-force / email-bombing.
-// NOTE: in-memory, so per-instance on Vercel serverless; still raises the bar
-// and protects single-instance (dev/preview) deployments.
-export const authRateLimit = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  maxRequests: 8,
-});
-
-// Helper to add rate limit headers to response
+export const apiRateLimit = wrapLimiter(apiLimiter);
+export const authRateLimit = wrapLimiter(authLimiter);
+export const orderRateLimit = wrapLimiter(orderLimiter);
 export function addRateLimitHeaders(
   response: NextResponse,
   headers?: Record<string, string>

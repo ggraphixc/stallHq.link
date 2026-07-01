@@ -26,7 +26,7 @@ export function getSubscriptionExpiry(plan: SubscriptionPlan): Date {
     case "quarterly":
       return new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
     case "annual":
-      return new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
+      return new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
     default:
       return now;
   }
