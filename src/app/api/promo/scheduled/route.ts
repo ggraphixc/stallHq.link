@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
       platform: p.platform,
       scheduled_at: p.scheduled_at,
       status: p.status,
+      error: p.error || null,
       created_at: p.created_at,
     }));
 

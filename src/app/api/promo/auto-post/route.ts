@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (platform !== "whatsapp" && platform !== "instagram") {
+    if (platform !== "whatsapp" && platform !== "instagram" && platform !== "both") {
       return NextResponse.json({ error: "Invalid platform" }, { status: 400 });
     }
 

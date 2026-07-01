@@ -425,6 +425,7 @@ function MonitoringTab() {
                   <th style={thStyle}>Product</th>
                   <th style={thStyle}>Platform</th>
                   <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Error</th>
                   <th style={thStyle}>Posted At</th>
                 </tr>
               </thead>
@@ -451,6 +452,9 @@ function MonitoringTab() {
                     </td>
                     <td style={tdStyle}>
                       <StatusDot status={post.status} />
+                    </td>
+                    <td style={{ ...tdStyle, color: "var(--glow-red)", fontSize: "0.6875rem", maxWidth: "14rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={post.error || ""}>
+                      {post.error || "—"}
                     </td>
                     <td style={{ ...tdStyle, color: "var(--text-muted)", fontSize: "0.75rem" }}>
                       {post.posted_at ? new Date(post.posted_at).toLocaleString() : "—"}
@@ -704,6 +708,7 @@ function PlatformBadge({ platform }: { platform: string }) {
   const colors: Record<string, { bg: string; color: string; icon: string }> = {
     whatsapp: { bg: "rgba(37,211,102,0.1)", color: "#25d366", icon: "💬" },
     instagram: { bg: "rgba(225,48,108,0.1)", color: "#e1306c", icon: "📸" },
+    both: { bg: "rgba(168,133,247,0.1)", color: "var(--glow-purple)", icon: "🌐" },
   };
   const c = colors[platform] || { bg: "var(--bg-secondary)", color: "var(--text-muted)", icon: "?" };
   return (

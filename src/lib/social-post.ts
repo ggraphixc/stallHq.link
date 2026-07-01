@@ -270,11 +270,12 @@ function userFriendlyWaError(msg: string, to: string): string {
 
 // ─── Orchestration ───────────────────────────────────────────────────────────
 
-export type Platform = "whatsapp" | "instagram";
+export type Platform = "whatsapp" | "instagram" | "both";
 
 /**
  * Post to a platform using store + product data.
  * Pulls credentials from env (platform-level), so any connected store can post.
+ * When platform is "both", posts to WhatsApp first, then Instagram.
  */
 export async function postPromo(args: {
   platform: Platform;
@@ -285,6 +286,51 @@ export async function postPromo(args: {
   const { platform, store, product } = args;
   const caption = args.caption || buildCaption(product, store);
 
+  // ── "both" → post to WhatsApp + Instagram, return composite result ──
+  if (platform === "both") {
+    const results: PostResult[] = [];
+
+    // WhatsApp (non-fatal if store has no number)
+    if (store.whatsapp_number) {
+      results.push(
+        await postToWhatsApp({
+          token: process.env.WHATSAPP_ACCESS_TOKEN!,
+          phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID!,
+          toNumber: store.whatsapp_number,
+          caption,
+          imageUrl: product.image_url,
+        })
+      );
+    } else {
+      results.push({ success: false, error: "No WhatsApp number on this store" });
+    }
+
+    // Instagram (non-fatal if store has no handle)
+    if (store.instagram_handle) {
+      results.push(
+        await postToInstagram({
+          token: process.env.INSTAGRAM_ACCESS_TOKEN!,
+          caption,
+          imageUrl: product.image_url,
+        })
+      );
+    } else {
+      results.push({ success: false, error: "No Instagram handle on this store" });
+    }
+
+    const anySuccess = results.some((r) => r.success);
+    const failures = results.filter((r) => !r.success);
+
+    return {
+      success: anySuccess,
+      messageId: results.find((r) => r.messageId)?.messageId,
+      error: failures.length > 0
+        ? failures.map((f) => f.error).join("; ")
+        : undefined,
+    };
+  }
+
+  // ── Single platform ──
   if (platform === "whatsapp") {
     if (!store.whatsapp_number) {
       return { success: false, error: "No WhatsApp number set on this store." };
@@ -298,6 +344,7 @@ export async function postPromo(args: {
     });
   }
 
+  // instagram
   if (!store.instagram_handle) {
     return { success: false, error: "No Instagram handle set on this store." };
   }
