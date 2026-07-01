@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { AlertProvider } from "@/contexts/AlertContext";
 import { DynamicBranding } from "@/components/DynamicBranding";
+import CookieConsent from "@/components/CookieConsent";
 import {
   generateOrganizationSchema,
   generateWebSiteSchema,
@@ -137,6 +138,7 @@ export default function RootLayout({
       <body>
         <DynamicBranding />
         <AlertProvider>{children}</AlertProvider>
+        <CookieConsent />
         <script
           dangerouslySetInnerHTML={{
             __html: `
