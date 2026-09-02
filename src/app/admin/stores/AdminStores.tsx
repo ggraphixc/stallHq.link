@@ -9,6 +9,8 @@ import {
   ShieldOff, Clock, Crown, Loader2, ChevronDown, Eye, Trash2, Mail
 } from "lucide-react";
 import { SendStoreEmail } from "@/components/admin/SendStoreEmail";
+import { EmailHistory } from "@/components/admin/EmailHistory";
+import { BulkEmailModal } from "@/components/admin/BulkEmailModal";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
@@ -28,6 +30,9 @@ export function AdminStores() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [emailStoreId, setEmailStoreId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkEmail, setShowBulkEmail] = useState(false);
+  const [bulkSending, setBulkSending] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isSmall = useMediaQuery("(max-width: 480px)");
 
@@ -79,6 +84,47 @@ export function AdminStores() {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === stores.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(stores.map(s => s.id)));
+    }
+  };
+
+  const handleBulkEmail = async (subject: string, message: string, type: string) => {
+    setBulkSending(true);
+    try {
+      const res = await fetch("/api/admin/stores/bulk-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storeIds: Array.from(selectedIds), subject, message, type }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showError(data.error || "Failed to send bulk email");
+        return false;
+      }
+      showSuccess(`Email sent to ${data.sent} stores${data.failed ? `, ${data.failed} failed` : ""}`);
+      setSelectedIds(new Set());
+      setShowBulkEmail(false);
+      return true;
+    } catch {
+      showError("Network error");
+      return false;
+    } finally {
+      setBulkSending(false);
+    }
+  };
+
   const getPlanColor = (plan: SubscriptionPlan) => {
     switch (plan) {
       case "trial": return "var(--text-muted)";
@@ -106,6 +152,35 @@ export function AdminStores() {
           <RefreshCw size={14} /> Refresh
         </button>
       </div>
+
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0.75rem 1rem", marginBottom: "0.75rem",
+          background: "rgba(168,133,247,0.08)", border: "1px solid rgba(168,133,247,0.2)",
+          borderRadius: "0.5rem",
+        }}>
+          <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--glow-purple)" }}>
+            {selectedIds.size} store{selectedIds.size !== 1 ? "s" : ""} selected
+          </span>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button onClick={() => setSelectedIds(new Set())} style={{
+              padding: "0.5rem 0.75rem", fontSize: "0.75rem", background: "transparent",
+              border: "1px solid var(--border-subtle)", borderRadius: "0.375rem",
+              color: "var(--text-muted)", cursor: "pointer", minHeight: "44px",
+            }}>Clear</button>
+            <button onClick={() => setShowBulkEmail(true)} style={{
+              display: "flex", alignItems: "center", gap: "0.375rem",
+              padding: "0.5rem 0.75rem", fontSize: "0.75rem",
+              background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.2)",
+              borderRadius: "0.375rem", color: "var(--glow-cyan)", cursor: "pointer", minHeight: "44px",
+            }}>
+              <Mail size={12} /> Email Selected
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <form onSubmit={handleSearch} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
@@ -159,12 +234,23 @@ export function AdminStores() {
                 {/* Store Row */}
                 <div
                   style={{
-                    display: "grid", gridTemplateColumns: "1fr auto",
+                    display: "grid", gridTemplateColumns: selectedIds.size > 0 || stores.some(s => selectedIds.has(s.id)) ? "auto 1fr auto" : "1fr auto",
                     alignItems: "center", gap: "0.5rem", padding: "0.875rem 1rem",
                     cursor: "pointer", minHeight: "44px",
                   }}
                   onClick={() => setExpandedId(isExpanded ? null : store.id)}
                 >
+                  {/* Select checkbox */}
+                  {selectedIds.size > 0 && (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(store.id)}
+                      onChange={() => toggleSelect(store.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ width: "1rem", height: "1rem", accentColor: "var(--glow-purple)" }}
+                    />
+                  )}
+
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>{store.name || "Unnamed"}</span>
@@ -258,6 +344,11 @@ export function AdminStores() {
                         {store.verified ? "Remove Badge" : "Verify"}
                       </button>
                     </div>
+
+                    {/* Email History */}
+                    <div style={{ marginTop: "1rem", borderTop: "1px solid var(--border-subtle)", paddingTop: "0.75rem" }}>
+                      <EmailHistory storeId={store.id} />
+                    </div>
                   </div>
                 )}
               </div>
@@ -266,7 +357,7 @@ export function AdminStores() {
         </div>
       )}
 
-      {/* Email Modal */}
+      {/* Single Email Modal */}
       {emailStoreId && (() => {
         const s = stores.find(st => st.id === emailStoreId);
         if (!s) return null;
@@ -279,6 +370,16 @@ export function AdminStores() {
           />
         );
       })()}
+
+      {/* Bulk Email Modal */}
+      {showBulkEmail && (
+        <BulkEmailModal
+          storeCount={selectedIds.size}
+          onSend={handleBulkEmail}
+          onClose={() => setShowBulkEmail(false)}
+          sending={bulkSending}
+        />
+      )}
 
       {/* Pagination */}
       {total > 50 && (
