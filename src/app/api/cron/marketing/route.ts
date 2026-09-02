@@ -9,6 +9,7 @@ import {
   sendWinBackEmail,
   sendWeeklyDigest,
   sendWeeklyAnalyticsSummary,
+  sendMonthlyAnalyticsSummary,
 } from "@/lib/email";
 import { postPromo, buildCaption, type SocialStore, type SocialProduct } from "@/lib/social-post";
 
@@ -378,6 +379,204 @@ export async function GET(request: NextRequest) {
               },
             });
             results.weekly_digest++;
+          }
+        } catch {
+          results.errors++;
+        }
+      }
+    }
+  }
+
+  // ─── Monthly Analytics Summary (1st of month) ────────────────────────────
+  const dayOfMonth = now.getDate();
+  if (dayOfMonth === 1) {
+    // Get all active stores (not trial)
+    const { data: monthlyStores } = await supabase
+      .from("stores")
+      .select("id, user_id, name, slug, plan")
+      .neq("plan", "trial")
+      .not("setup_complete", "is", null);
+
+    if (monthlyStores) {
+      const monthlyUserIds = [...new Set(monthlyStores.map((s) => s.user_id).filter(Boolean))] as string[];
+      const monthlyUserMap = new Map<string, { email: string; name?: string }>();
+
+      for (let i = 0; i < monthlyUserIds.length; i += 100) {
+        const chunk = monthlyUserIds.slice(i, i + 100);
+        const batchResults = await Promise.allSettled(
+          chunk.map(async (uid) => {
+            const { data } = await supabase.auth.admin.getUserById(uid);
+            if (data?.user?.email) {
+              return { uid, email: data.user.email, name: data.user.user_metadata?.name };
+            }
+            return null;
+          })
+        );
+        for (const r of batchResults) {
+          if (r.status === "fulfilled" && r.value) {
+            monthlyUserMap.set(r.value.uid, { email: r.value.email, name: r.value.name });
+          }
+        }
+      }
+
+      // Last month date range
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastMonthStartStr = lastMonthStart.toISOString().split("T")[0];
+      const lastMonthEndStr = lastMonthEnd.toISOString().split("T")[0];
+      const monthName = lastMonthStart.toLocaleDateString("en", { month: "long", year: "numeric" });
+
+      // Previous month for comparison
+      const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      const prevMonthStartStr = prevMonthStart.toISOString().split("T")[0];
+
+      for (const store of monthlyStores) {
+        if (!store.user_id) continue;
+        const userInfo = monthlyUserMap.get(store.user_id);
+        if (!userInfo?.email) continue;
+
+        try {
+          // Get aggregated data for last month
+          const { data: monthAgg } = await supabase
+            .from("analytics_aggregates")
+            .select("visits, whatsapp_clicks")
+            .eq("store_id", store.id)
+            .gte("date", lastMonthStartStr)
+            .lt("date", lastMonthEndStr);
+
+          let visits = 0;
+          let clicks = 0;
+          if (monthAgg) {
+            for (const row of monthAgg) {
+              visits += row.visits || 0;
+              clicks += row.whatsapp_clicks || 0;
+            }
+          }
+
+          // Get orders for last month
+          const { count: orderCount } = await supabase
+            .from("orders")
+            .select("*", { count: "exact", head: true })
+            .eq("store_id", store.id)
+            .gte("created_at", lastMonthStart.toISOString())
+            .lt("created_at", lastMonthEnd.toISOString());
+
+          // Get previous month for comparison
+          const { data: prevMonthAgg } = await supabase
+            .from("analytics_aggregates")
+            .select("visits, whatsapp_clicks")
+            .eq("store_id", store.id)
+            .gte("date", prevMonthStartStr)
+            .lt("date", lastMonthStartStr);
+
+          let prevVisits = 0;
+          let prevClicks = 0;
+          let prevOrders = 0;
+          if (prevMonthAgg) {
+            for (const row of prevMonthAgg) {
+              prevVisits += row.visits || 0;
+              prevClicks += row.whatsapp_clicks || 0;
+            }
+          }
+
+          // Previous month orders
+          const prevMonthStart2 = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          const { count: prevOrderCount } = await supabase
+            .from("orders")
+            .select("*", { count: "exact", head: true })
+            .eq("store_id", store.id)
+            .gte("created_at", prevMonthStart2.toISOString())
+            .lt("created_at", lastMonthStart.toISOString());
+          prevOrders = prevOrderCount || 0;
+
+          // Best day of week
+          const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+          const dayTotals: Record<number, { visits: number; count: number }> = {};
+          if (monthAgg) {
+            // Need daily data for best day
+            const { data: dailyData } = await supabase
+              .from("analytics_aggregates")
+              .select("date, visits")
+              .eq("store_id", store.id)
+              .gte("date", lastMonthStartStr)
+              .lt("date", lastMonthEndStr);
+
+            if (dailyData) {
+              for (const row of dailyData) {
+                const dow = new Date(row.date).getDay();
+                if (!dayTotals[dow]) dayTotals[dow] = { visits: 0, count: 0 };
+                dayTotals[dow].visits += row.visits || 0;
+                dayTotals[dow].count++;
+              }
+            }
+          }
+
+          const dayOfWeekArr = dayNames.map((name, i) => {
+            const t = dayTotals[i];
+            if (!t || t.count === 0) return { day: name, avgVisits: 0 };
+            return { day: name, avgVisits: Math.round(t.visits / t.count) };
+          });
+          const sortedDays = [...dayOfWeekArr].filter((d) => d.avgVisits > 0).sort((a, b) => b.avgVisits - a.avgVisits);
+          const bestDay = sortedDays[0] || null;
+
+          // Top products
+          const topProductsList: Array<{ name: string; count: number }> = [];
+          const { data: topProdData } = await supabase
+            .from("analytics")
+            .select("product_id")
+            .eq("store_id", store.id)
+            .eq("event_type", "product_view")
+            .gte("created_at", lastMonthStart.toISOString())
+            .lt("created_at", lastMonthEnd.toISOString())
+            .not("product_id", "is", null)
+            .limit(200);
+
+          if (topProdData && topProdData.length > 0) {
+            const viewCounts = new Map<string, number>();
+            for (const pv of topProdData) {
+              viewCounts.set(pv.product_id, (viewCounts.get(pv.product_id) || 0) + 1);
+            }
+            const sorted = [...viewCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+            for (const [id, count] of sorted) {
+              const { data: prod } = await supabase
+                .from("products")
+                .select("name")
+                .eq("id", id)
+                .single();
+              if (prod?.name) topProductsList.push({ name: prod.name, count });
+            }
+          }
+
+          const calcTrend = (current: number, previous: number): number | undefined => {
+            if (previous === 0) return current > 0 ? 100 : undefined;
+            return Math.round(((current - previous) / previous) * 100);
+          };
+
+          const conversionRate = visits > 0 ? ((clicks / visits) * 100).toFixed(1) : "0";
+
+          // Only send if there was any activity
+          if (visits > 0 || (orderCount || 0) > 0 || clicks > 0) {
+            await sendMonthlyAnalyticsSummary({
+              email: userInfo.email,
+              name: userInfo.name,
+              storeName: store.name,
+              storeSlug: store.slug,
+              month: monthName,
+              stats: {
+                visits,
+                clicks,
+                orders: orderCount || 0,
+                conversionRate,
+                monthOverMonth: {
+                  visits: { current: visits, previous: prevVisits, trend: calcTrend(visits, prevVisits) },
+                  clicks: { current: clicks, previous: prevClicks, trend: calcTrend(clicks, prevClicks) },
+                  orders: { current: orderCount || 0, previous: prevOrders, trend: calcTrend(orderCount || 0, prevOrders) },
+                },
+                bestDay,
+                topProducts: topProductsList.length > 0 ? topProductsList : undefined,
+              },
+            });
+            results.weekly_digest++; // reuse counter
           }
         } catch {
           results.errors++;

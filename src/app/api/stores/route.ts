@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/api";
 import { apiRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 import { canCustomizeTheme } from "@/lib/subscription";
 import { normalizeWhatsAppNumber } from "@/lib/channel";
+import { sendOnboardingChecklist } from "@/lib/email";
 
 export async function GET(request: Request) {
   const rateLimitResult = await apiRateLimit(request);
@@ -100,6 +101,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) throw insertError;
+
+    // Send onboarding checklist email (fire and forget)
+    sendOnboardingChecklist({
+      email: user.email!,
+      name: user.user_metadata?.name,
+      storeName: store.name,
+      storeSlug: store.slug,
+    }).catch(() => {});
 
     return NextResponse.json(store, { status: 201 });
   } catch (error) {

@@ -1679,3 +1679,308 @@ export async function sendWeeklyAnalyticsSummary({
     },
   });
 }
+
+// ─── Monthly Analytics Summary ───────────────────────────────────────────────
+
+export async function sendMonthlyAnalyticsSummary({
+  email,
+  name,
+  storeName,
+  storeSlug,
+  month,
+  stats,
+}: {
+  email: string;
+  name?: string;
+  storeName: string;
+  storeSlug: string;
+  month: string; // e.g. "August 2026"
+  stats: {
+    visits: number;
+    clicks: number;
+    orders: number;
+    conversionRate: string;
+    monthOverMonth?: {
+      visits: { current: number; previous: number; trend?: number };
+      clicks: { current: number; previous: number; trend?: number };
+      orders: { current: number; previous: number; trend?: number };
+    };
+    bestDay?: { day: string; avgVisits: number } | null;
+    topProducts?: Array<{ name: string; count: number }>;
+  };
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
+
+  const trendBadge = (trend?: number) => {
+    if (trend === undefined || trend === null) return '<span style="color:#94a3b8;font-size:11px;">—</span>';
+    const color = trend >= 0 ? "#10b981" : "#ef4444";
+    const arrow = trend >= 0 ? "&#8593;" : "&#8595;";
+    return `<span style="color:${color};font-size:11px;font-weight:600;">${arrow} ${Math.abs(trend)}%</span>`;
+  };
+
+  // MoM comparison rows
+  const momRows = stats.monthOverMonth
+    ? `
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0 0 8px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">vs Last Month</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.12);border-radius:12px;overflow:hidden;">
+            <tr>
+              <td style="padding:12px 16px;font-size:13px;color:#94a3b8;">Visits</td>
+              <td style="padding:12px 16px;text-align:right;font-size:14px;font-weight:600;color:#f1f5f9;">${stats.monthOverMonth.visits.current.toLocaleString()}</td>
+              <td style="padding:12px 16px;text-align:right;">${trendBadge(stats.monthOverMonth.visits.trend)}</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 16px;font-size:13px;color:#94a3b8;border-top:1px solid rgba(255,255,255,0.06);">Channel Clicks</td>
+              <td style="padding:12px 16px;text-align:right;font-size:14px;font-weight:600;color:#f1f5f9;border-top:1px solid rgba(255,255,255,0.06);">${stats.monthOverMonth.clicks.current.toLocaleString()}</td>
+              <td style="padding:12px 16px;text-align:right;border-top:1px solid rgba(255,255,255,0.06);">${trendBadge(stats.monthOverMonth.clicks.trend)}</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 16px;font-size:13px;color:#94a3b8;border-top:1px solid rgba(255,255,255,0.06);">Orders</td>
+              <td style="padding:12px 16px;text-align:right;font-size:14px;font-weight:600;color:#f1f5f9;border-top:1px solid rgba(255,255,255,0.06);">${stats.monthOverMonth.orders.current.toLocaleString()}</td>
+              <td style="padding:12px 16px;text-align:right;border-top:1px solid rgba(255,255,255,0.06);">${trendBadge(stats.monthOverMonth.orders.trend)}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `
+    : "";
+
+  // Best day section
+  const bestDaySection = stats.bestDay
+    ? `
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <div style="padding:14px 18px;background:rgba(16,185,129,0.06);border-left:3px solid #10b981;border-radius:0 8px 8px 0;">
+            <p style="margin:0;font-size:14px;color:#e0e0e0;line-height:1.5;"><strong style="color:#10b981;">Best day:</strong> ${stats.bestDay.day} — averaging ${stats.bestDay.avgVisits} visits</p>
+          </div>
+        </td>
+      </tr>
+    `
+    : "";
+
+  // Top products section
+  const topProductsSection =
+    stats.topProducts && stats.topProducts.length > 0
+      ? `
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0 0 8px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Top Products This Month</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;overflow:hidden;">
+            ${stats.topProducts
+              .slice(0, 5)
+              .map(
+                (p, i) => `
+              <tr>
+                <td style="padding:10px 16px;border-bottom:${i < stats.topProducts!.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none"};">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="width:20px;height:20px;border-radius:4px;background:${i === 0 ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.04)"};text-align:center;line-height:20px;font-size:10px;font-weight:700;color:${i === 0 ? "#a78bfa" : "#94a3b8"};">${i + 1}</span>
+                    <span style="flex:1;font-size:13px;color:#e0e0e0;">${p.name}</span>
+                    <span style="font-size:12px;color:#94a3b8;">${p.count} views</span>
+                  </div>
+                </td>
+              </tr>
+            `
+              )
+              .join("")}
+          </table>
+        </td>
+      </tr>
+    `
+      : "";
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#128202;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">${month} Analytics</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting}, here's your monthly performance summary.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);border-radius:12px;">
+            <tr>
+              <td style="padding:20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:8px 0;width:25%;text-align:center;">
+                      <p style="margin:0;font-size:24px;font-weight:700;color:#a78bfa;">${stats.visits.toLocaleString()}</p>
+                      <p style="margin:4px 0 0;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Visits</p>
+                    </td>
+                    <td style="padding:8px 0;width:25%;text-align:center;">
+                      <p style="margin:0;font-size:24px;font-weight:700;color:#10b981;">${stats.clicks.toLocaleString()}</p>
+                      <p style="margin:4px 0 0;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Clicks</p>
+                    </td>
+                    <td style="padding:8px 0;width:25%;text-align:center;">
+                      <p style="margin:0;font-size:24px;font-weight:700;color:#06b6d4;">${stats.orders.toLocaleString()}</p>
+                      <p style="margin:4px 0 0;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Orders</p>
+                    </td>
+                    <td style="padding:8px 0;width:25%;text-align:center;">
+                      <p style="margin:0;font-size:24px;font-weight:700;color:#f59e0b;">${stats.conversionRate}%</p>
+                      <p style="margin:4px 0 0;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Conv.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      ${momRows}
+      ${bestDaySection}
+      ${topProductsSection}
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/dashboard" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Full Dashboard</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `${storeName} ${month} report — ${stats.visits} visits, ${stats.orders} orders`,
+    htmlContent: html,
+    tags: ["marketing", "monthly_analytics_summary"],
+    templateSlug: "monthly-analytics-summary",
+    templateVars: {
+      greeting,
+      store_name: storeName,
+      store_slug: storeSlug,
+      month,
+      visits: String(stats.visits),
+      clicks: String(stats.clicks),
+      orders: String(stats.orders),
+      conversion_rate: stats.conversionRate,
+      best_day: stats.bestDay?.day || "",
+      platform_name: platformName,
+      app_url: APP_URL,
+    },
+  });
+}
+
+// ─── Onboarding Checklist ───────────────────────────────────────────────────
+
+export async function sendOnboardingChecklist({
+  email,
+  name,
+  storeName,
+  storeSlug,
+}: {
+  email: string;
+  name?: string;
+  storeName: string;
+  storeSlug: string;
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#127881;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Your store is live!</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">Here's your setup checklist</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting}, congratulations! <strong>${storeName}</strong> is now live on ${platformName}. Complete these steps to get your first order:</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);border-radius:12px;">
+            <tr>
+              <td style="padding:20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:8px 0;vertical-align:top;width:32px;">
+                      <div style="width:24px;height:24px;border-radius:50%;background:rgba(16,185,129,0.15);text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#10b981;">&#10003;</div>
+                    </td>
+                    <td style="padding:8px 0 8px 12px;">
+                      <p style="margin:0;font-size:14px;font-weight:600;color:#f1f5f9;">Store created</p>
+                      <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">Your store URL is live and shareable.</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0;vertical-align:top;width:32px;">
+                      <div style="width:24px;height:24px;border-radius:50%;background:rgba(168,85,247,0.15);text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#a78bfa;">1</div>
+                    </td>
+                    <td style="padding:8px 0 8px 12px;">
+                      <p style="margin:0;font-size:14px;font-weight:600;color:#f1f5f9;">Add your first product</p>
+                      <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">Upload a clear photo, set a price, and write a short description. Stores with 5+ products get 3x more orders.</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0;vertical-align:top;width:32px;">
+                      <div style="width:24px;height:24px;border-radius:50%;background:rgba(168,85,247,0.15);text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#a78bfa;">2</div>
+                    </td>
+                    <td style="padding:8px 0 8px 12px;">
+                      <p style="margin:0;font-size:14px;font-weight:600;color:#f1f5f9;">Add your logo & description</p>
+                      <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">A professional logo and bio builds trust with customers.</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0;vertical-align:top;width:32px;">
+                      <div style="width:24px;height:24px;border-radius:50%;background:rgba(168,85,247,0.15);text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#a78bfa;">3</div>
+                    </td>
+                    <td style="padding:8px 0 8px 12px;">
+                      <p style="margin:0;font-size:14px;font-weight:600;color:#f1f5f9;">Share your store link</p>
+                      <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">Put it in your WhatsApp bio, Instagram bio, and tell 5 friends today.</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0;vertical-align:top;width:32px;">
+                      <div style="width:24px;height:24px;border-radius:50%;background:rgba(168,85,247,0.15);text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#a78bfa;">4</div>
+                    </td>
+                    <td style="padding:8px 0 8px 12px;">
+                      <p style="margin:0;font-size:14px;font-weight:600;color:#f1f5f9;">Test the WhatsApp checkout</p>
+                      <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">Add a product to cart and click "Order on WhatsApp" to see how customers will order from you.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <div style="padding:16px 20px;background:rgba(6,182,212,0.06);border-left:3px solid #06b6d4;border-radius:0 8px 8px 0;">
+            <p style="margin:0;font-size:14px;color:#e0e0e0;line-height:1.5;"><strong style="color:#06b6d4;">Pro tip:</strong> Vendors who complete all 4 steps within 24 hours get 5x more orders in their first week than those who skip steps.</p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/${storeSlug}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Your Store</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `${storeName} is live! Here's your setup checklist`,
+    htmlContent: html,
+    tags: ["marketing", "onboarding_checklist"],
+    templateSlug: "onboarding-checklist",
+    templateVars: {
+      greeting,
+      store_name: storeName,
+      store_slug: storeSlug,
+      platform_name: platformName,
+      app_url: APP_URL,
+    },
+  });
+}
