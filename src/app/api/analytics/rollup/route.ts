@@ -180,6 +180,47 @@ export async function GET(request: NextRequest) {
     const thisMonthMetrics = sumMetrics(thisMonth);
     const lastMonthMetrics = sumMetrics(lastMonth);
 
+    // ── Best/worst day analysis ───────────────────────────────────────────
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dayTotals: Record<number, { visits: number; clicks: number; views: number; count: number }> = {};
+    for (const d of chartData) {
+      const dow = new Date(d.date).getDay();
+      if (!dayTotals[dow]) dayTotals[dow] = { visits: 0, clicks: 0, views: 0, count: 0 };
+      dayTotals[dow].visits += d.visits;
+      dayTotals[dow].clicks += d.clicks;
+      dayTotals[dow].views += d.views;
+      dayTotals[dow].count++;
+    }
+
+    const dayOfWeekAvg = dayNames.map((name, i) => {
+      const t = dayTotals[i];
+      if (!t || t.count === 0) return { day: name, avgVisits: 0, avgClicks: 0, totalVisits: 0 };
+      return {
+        day: name,
+        avgVisits: Math.round(t.visits / t.count),
+        avgClicks: Math.round(t.clicks / t.count),
+        totalVisits: t.visits,
+      };
+    });
+
+    // Best/worst by total visits
+    const sortedDays = [...dayOfWeekAvg].filter((d) => d.totalVisits > 0).sort((a, b) => b.totalVisits - a.totalVisits);
+    const bestDay = sortedDays[0] || null;
+    const worstDay = sortedDays.length > 1 ? sortedDays[sortedDays.length - 1] : null;
+
+    // Best/worst individual dates
+    const sortedDates = [...chartData].sort((a, b) => b.visits - a.visits);
+    const bestDate = sortedDates[0] || null;
+    const worstDate = sortedDates.length > 1 ? sortedDates[sortedDates.length - 1] : null;
+
+    // ── Conversion funnel ──────────────────────────────────────────────────
+    // Get order count for the period
+    const { count: orderCount } = await supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("store_id", storeId)
+      .gte("created_at", startDate.toISOString());
+
     return NextResponse.json({
       totalVisits,
       whatsappClicks: totalClicks,
@@ -201,6 +242,16 @@ export async function GET(request: NextRequest) {
         visits: { current: thisMonthMetrics.visits, previous: lastMonthMetrics.visits, trend: calcTrend(thisMonthMetrics.visits, lastMonthMetrics.visits) },
         clicks: { current: thisMonthMetrics.clicks, previous: lastMonthMetrics.clicks, trend: calcTrend(thisMonthMetrics.clicks, lastMonthMetrics.clicks) },
         views: { current: thisMonthMetrics.views, previous: lastMonthMetrics.views, trend: calcTrend(thisMonthMetrics.views, lastMonthMetrics.views) },
+      },
+      dayOfWeek: dayOfWeekAvg,
+      bestDay,
+      worstDay,
+      bestDate: bestDate ? { date: bestDate.date, visits: bestDate.visits } : null,
+      worstDate: worstDate ? { date: worstDate.date, visits: worstDate.visits } : null,
+      funnel: {
+        visits: totalVisits,
+        clicks: totalClicks,
+        orders: orderCount || 0,
       },
     });
   } catch (error) {

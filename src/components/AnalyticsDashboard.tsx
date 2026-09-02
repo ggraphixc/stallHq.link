@@ -19,6 +19,13 @@ interface ComparisonMetric {
   trend?: number;
 }
 
+interface DayOfWeekMetric {
+  day: string;
+  avgVisits: number;
+  avgClicks: number;
+  totalVisits: number;
+}
+
 interface AnalyticsData {
   totalVisits: number;
   whatsappClicks: number;
@@ -43,6 +50,12 @@ interface AnalyticsData {
     clicks: ComparisonMetric;
     views: ComparisonMetric;
   };
+  dayOfWeek?: DayOfWeekMetric[];
+  bestDay?: DayOfWeekMetric | null;
+  worstDay?: DayOfWeekMetric | null;
+  bestDate?: { date: string; visits: number } | null;
+  worstDate?: { date: string; visits: number } | null;
+  funnel?: { visits: number; clicks: number; orders: number };
 }
 
 export function AnalyticsDashboard({ store }: AnalyticsDashboardProps) {
@@ -188,7 +201,7 @@ export function AnalyticsDashboard({ store }: AnalyticsDashboardProps) {
               ))}
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem" }}>
               {/* Week over Week */}
               <ComparisonCard
                 title="This Week vs Last Week"
@@ -202,6 +215,49 @@ export function AnalyticsDashboard({ store }: AnalyticsDashboardProps) {
                 icon={<BarChart3 size={14} style={{ color: "var(--glow-cyan)" }} />}
                 metrics={data?.monthOverMonth}
                 labels={{ visits: "Visits", clicks: "Clicks", views: "Views" }}
+              />
+              {/* Conversion Funnel */}
+              <FunnelCard funnel={data?.funnel} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Day Analysis */}
+      {(data?.bestDay || data?.dayOfWeek) && (
+        <div style={{
+          background: "var(--bg-card)", border: "1px solid var(--border-subtle)",
+          borderRadius: "0.875rem", padding: "1.25rem", position: "relative", overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", top: 0, left: 0, right: 0, height: "2px",
+            background: "linear-gradient(90deg, var(--glow-amber), var(--glow-purple))",
+          }} />
+          <h4 style={{
+            fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-primary)",
+            marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem",
+          }}>
+            <Calendar size={14} style={{ color: "var(--glow-amber)" }} />
+            Best & Worst Days
+          </h4>
+          {loading ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              {[...Array(2)].map((_, i) => (
+                <div key={i} style={{ height: "5rem", borderRadius: "0.5rem", background: "var(--bg-secondary)", animation: "pulse 2s infinite" }} />
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              {/* Best/Worst day of week */}
+              <DayOfWeekCard
+                bestDay={data?.bestDay}
+                worstDay={data?.worstDay}
+                dayOfWeek={data?.dayOfWeek}
+              />
+              {/* Best/Worst individual dates */}
+              <DateExtremesCard
+                bestDate={data?.bestDate}
+                worstDate={data?.worstDate}
               />
             </div>
           )}
@@ -643,6 +699,166 @@ function ComparisonCard({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function FunnelCard({ funnel }: { funnel?: { visits: number; clicks: number; orders: number } }) {
+  if (!funnel) return null;
+
+  const clickRate = funnel.visits > 0 ? ((funnel.clicks / funnel.visits) * 100).toFixed(1) : "0";
+  const orderRate = funnel.clicks > 0 ? ((funnel.orders / funnel.clicks) * 100).toFixed(1) : "0";
+
+  const steps = [
+    { label: "Visits", value: funnel.visits, color: "var(--glow-purple)", width: "100%" },
+    { label: "Channel Clicks", value: funnel.clicks, color: "var(--glow-green)", width: funnel.visits > 0 ? `${Math.max(10, (funnel.clicks / funnel.visits) * 100)}%` : "10%" },
+    { label: "Orders", value: funnel.orders, color: "var(--glow-cyan)", width: funnel.clicks > 0 ? `${Math.max(10, (funnel.orders / funnel.clicks) * 100)}%` : "10%" },
+  ];
+
+  return (
+    <div style={{
+      background: "var(--bg-secondary)", borderRadius: "0.625rem",
+      padding: "0.875rem", display: "flex", flexDirection: "column", gap: "0.625rem",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <TrendingUp size={14} style={{ color: "var(--glow-cyan)" }} />
+        <span style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+          Conversion Funnel
+        </span>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        {steps.map((step, i) => (
+          <div key={step.label} style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
+                <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>{step.label}</span>
+                <span style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-primary)" }}>{step.value.toLocaleString()}</span>
+              </div>
+              <div style={{ height: "0.375rem", borderRadius: "0.1875rem", background: "var(--bg-card)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: step.width, borderRadius: "0.1875rem", background: step.color, transition: "width 0.5s ease" }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: "1rem", marginTop: "0.25rem" }}>
+        <span style={{ fontSize: "0.625rem", color: "var(--text-muted)" }}>
+          Click rate: <strong style={{ color: "var(--glow-green)" }}>{clickRate}%</strong>
+        </span>
+        <span style={{ fontSize: "0.625rem", color: "var(--text-muted)" }}>
+          Order rate: <strong style={{ color: "var(--glow-cyan)" }}>{orderRate}%</strong>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function DayOfWeekCard({
+  bestDay,
+  worstDay,
+  dayOfWeek,
+}: {
+  bestDay?: DayOfWeekMetric | null;
+  worstDay?: DayOfWeekMetric | null;
+  dayOfWeek?: DayOfWeekMetric[];
+}) {
+  const maxVisits = dayOfWeek ? Math.max(...dayOfWeek.map((d) => d.avgVisits), 1) : 1;
+
+  return (
+    <div style={{
+      background: "var(--bg-secondary)", borderRadius: "0.625rem",
+      padding: "0.875rem", display: "flex", flexDirection: "column", gap: "0.625rem",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <Calendar size={14} style={{ color: "var(--glow-amber)" }} />
+        <span style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+          Day of Week
+        </span>
+      </div>
+      {dayOfWeek && dayOfWeek.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+          {dayOfWeek.map((d) => (
+            <div key={d.day} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span style={{
+                fontSize: "0.625rem", fontWeight: 600, width: "1.75rem",
+                color: bestDay?.day === d.day ? "var(--glow-green)" : worstDay?.day === d.day ? "var(--glow-red)" : "var(--text-muted)",
+              }}>
+                {d.day}
+              </span>
+              <div style={{ flex: 1, height: "0.375rem", borderRadius: "0.1875rem", background: "var(--bg-card)", overflow: "hidden" }}>
+                <div style={{
+                  height: "100%",
+                  width: `${Math.max(5, (d.avgVisits / maxVisits) * 100)}%`,
+                  borderRadius: "0.1875rem",
+                  background: bestDay?.day === d.day ? "var(--glow-green)" : worstDay?.day === d.day ? "var(--glow-red)" : "var(--glow-purple)",
+                  opacity: bestDay?.day === d.day || worstDay?.day === d.day ? 1 : 0.5,
+                  transition: "width 0.5s ease",
+                }} />
+              </div>
+              <span style={{ fontSize: "0.625rem", fontWeight: 600, color: "var(--text-muted)", width: "1.5rem", textAlign: "right" }}>
+                {d.avgVisits}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", textAlign: "center", padding: "0.5rem" }}>No data</p>
+      )}
+    </div>
+  );
+}
+
+function DateExtremesCard({
+  bestDate,
+  worstDate,
+}: {
+  bestDate?: { date: string; visits: number } | null;
+  worstDate?: { date: string; visits: number } | null;
+}) {
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en", { month: "short", day: "numeric" });
+  };
+
+  return (
+    <div style={{
+      background: "var(--bg-secondary)", borderRadius: "0.625rem",
+      padding: "0.875rem", display: "flex", flexDirection: "column", gap: "0.75rem",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <Zap size={14} style={{ color: "var(--glow-green)" }} />
+        <span style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+          Peak & Low
+        </span>
+      </div>
+      {bestDate ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div style={{
+            padding: "0.625rem", borderRadius: "0.5rem",
+            background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.12)",
+          }}>
+            <p style={{ margin: 0, fontSize: "0.625rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Best day</p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: "0.25rem" }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--glow-green)" }}>{formatDate(bestDate.date)}</span>
+              <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)" }}>{bestDate.visits.toLocaleString()} visits</span>
+            </div>
+          </div>
+          {worstDate && (
+            <div style={{
+              padding: "0.625rem", borderRadius: "0.5rem",
+              background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)",
+            }}>
+              <p style={{ margin: 0, fontSize: "0.625rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Lowest day</p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: "0.25rem" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--glow-red)" }}>{formatDate(worstDate.date)}</span>
+                <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)" }}>{worstDate.visits.toLocaleString()} visits</span>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", textAlign: "center", padding: "0.5rem" }}>No data yet</p>
+      )}
     </div>
   );
 }

@@ -229,15 +229,24 @@ export async function GET(request: NextRequest) {
         if (!userInfo?.email) continue;
 
         try {
-          // Get analytics for last 7 days
-          const { data: analyticsData } = await supabase
-            .from("analytics")
-            .select("event_type, product_id")
-            .eq("store_id", store.id)
-            .gte("created_at", sevenDaysAgoISO);
+          // Use aggregated data instead of raw analytics (much faster)
+          const sevenDaysAgoDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+            .toISOString().split("T")[0];
 
-          const visits = analyticsData?.filter((e) => e.event_type === "visit").length || 0;
-          const whatsappClicks = analyticsData?.filter((e) => e.event_type === "whatsapp_click").length || 0;
+          const { data: aggData } = await supabase
+            .from("analytics_aggregates")
+            .select("visits, whatsapp_clicks, product_views")
+            .eq("store_id", store.id)
+            .gte("date", sevenDaysAgoDate);
+
+          let visits = 0;
+          let whatsappClicks = 0;
+          if (aggData) {
+            for (const row of aggData) {
+              visits += row.visits || 0;
+              whatsappClicks += row.whatsapp_clicks || 0;
+            }
+          }
 
           // Get orders for last 7 days
           const { count: orderCount } = await supabase
@@ -246,14 +255,22 @@ export async function GET(request: NextRequest) {
             .eq("store_id", store.id)
             .gte("created_at", sevenDaysAgoISO);
 
-          // Get top product
-          const productViews = analyticsData?.filter((e) => e.event_type === "product_view" && e.product_id) || [];
-          const viewCounts = new Map<string, number>();
-          for (const pv of productViews) {
-            viewCounts.set(pv.product_id!, (viewCounts.get(pv.product_id!) || 0) + 1);
-          }
+          // Get top product from raw analytics (still needed for product-level detail)
+          const { data: topProductData } = await supabase
+            .from("analytics")
+            .select("product_id")
+            .eq("store_id", store.id)
+            .eq("event_type", "product_view")
+            .gte("created_at", sevenDaysAgoISO)
+            .not("product_id", "is", null)
+            .limit(100);
+
           let topProduct: string | undefined;
-          if (viewCounts.size > 0) {
+          if (topProductData && topProductData.length > 0) {
+            const viewCounts = new Map<string, number>();
+            for (const pv of topProductData) {
+              viewCounts.set(pv.product_id, (viewCounts.get(pv.product_id) || 0) + 1);
+            }
             const topId = [...viewCounts.entries()].sort((a, b) => b[1] - a[1])[0][0];
             const { data: product } = await supabase
               .from("products")
