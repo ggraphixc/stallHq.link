@@ -1,13 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAlert } from "@/contexts/AlertContext";
 import Link from "next/link";
 import {
   Store, Users, ShoppingCart, TrendingUp, Star, Activity,
   AlertTriangle, CheckCircle2, XCircle, Clock, Package,
   ArrowUpRight, RefreshCw, LayoutDashboard, Settings, Eye, CreditCard,
+  Zap, MessageSquare, ShoppingBag,
 } from "lucide-react";
+
+interface ActivityItem {
+  id: string;
+  type: "order" | "store" | "review";
+  created_at: string;
+  data: any;
+}
 
 interface SystemData {
   overview: {
@@ -47,11 +55,26 @@ interface SystemData {
   environment: Record<string, string | boolean | undefined>;
 }
 
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
 export function AdminOverview() {
   const { error: showError } = useAlert();
   const [data, setData] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<"today" | "week" | "month">("week");
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const lastActivityRef = useRef<string | null>(null);
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -67,7 +90,36 @@ export function AdminOverview() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  const fetchActivities = async (isPoll = false) => {
+    try {
+      const sinceParam = isPoll && lastActivityRef.current ? `&since=${lastActivityRef.current}` : "";
+      const res = await fetch(`/api/admin/activity?limit=20${sinceParam}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (isPoll && json.activities?.length > 0) {
+        setActivities(prev => {
+          const existingIds = new Set(prev.map(a => a.id));
+          const newItems = json.activities.filter((a: ActivityItem) => !existingIds.has(a.id));
+          return newItems.length > 0 ? [...newItems, ...prev].slice(0, 30) : prev;
+        });
+        lastActivityRef.current = json.activities[0]?.created_at || lastActivityRef.current;
+      } else if (!isPoll) {
+        setActivities(json.activities || []);
+        if (json.activities?.length > 0) {
+          lastActivityRef.current = json.activities[0].created_at;
+        }
+      }
+    } catch { /* ignore poll errors */ }
+    if (!isPoll) setActivityLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+    fetchActivities(false);
+    // Poll every 30s for new activity
+    pollRef.current = setInterval(() => fetchActivities(true), 30000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
 
   if (loading) {
     return (
@@ -293,8 +345,126 @@ export function AdminOverview() {
         </div>
       </div>
 
+      {/* Activity Feed */}
+      <div style={{
+        background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-subtle)",
+        borderRadius: "0.75rem", padding: "1.25rem", marginTop: "1.5rem",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+          <h3 style={{ fontSize: "0.8125rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Zap size={14} style={{ color: "var(--glow-amber)" }} /> Live Activity
+            <span style={{ fontSize: "0.5625rem", fontWeight: 400, color: "var(--glow-green)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--glow-green)", display: "inline-block", animation: "pulse 2s infinite" }} />
+              auto-refresh
+            </span>
+          </h3>
+          <button onClick={() => fetchActivities(false)} style={{
+            padding: "0.25rem 0.5rem", fontSize: "0.625rem", background: "transparent",
+            border: "1px solid var(--border-subtle)", borderRadius: "0.375rem",
+            color: "var(--text-muted)", cursor: "pointer",
+          }}>
+            <RefreshCw size={12} />
+          </button>
+        </div>
+
+        {activityLoading ? (
+          <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)", fontSize: "0.75rem" }}>
+            Loading activity...
+          </div>
+        ) : activities.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)", fontSize: "0.75rem" }}>
+            No activity in the last 24 hours
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {activities.map((activity, i) => (
+              <div key={activity.id} style={{
+                display: "flex", alignItems: "flex-start", gap: "0.75rem",
+                padding: "0.75rem 0",
+                borderBottom: i < activities.length - 1 ? "1px solid var(--border-subtle)" : "none",
+                animation: i === 0 && lastActivityRef.current ? "fadeIn 0.3s ease" : undefined,
+              }}>
+                {/* Icon */}
+                <div style={{
+                  width: "2rem", height: "2rem", borderRadius: "0.5rem",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                  background: activity.type === "order" ? "rgba(16,185,129,0.1)"
+                    : activity.type === "store" ? "rgba(168,133,247,0.1)"
+                    : "rgba(245,158,11,0.1)",
+                  color: activity.type === "order" ? "var(--glow-green)"
+                    : activity.type === "store" ? "var(--glow-purple)"
+                    : "var(--glow-amber)",
+                }}>
+                  {activity.type === "order" ? <ShoppingBag size={14} />
+                    : activity.type === "store" ? <Store size={14} />
+                    : <Star size={14} />}
+                </div>
+
+                {/* Content */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {activity.type === "order" && (
+                    <p style={{ fontSize: "0.75rem", color: "var(--text-primary)" }}>
+                      <span style={{ fontWeight: 600 }}>{activity.data.customer_name || "Customer"}</span>
+                      {" placed an order at "}
+                      <span style={{ fontWeight: 600 }}>{activity.data.store_name}</span>
+                      {" — "}
+                      <span style={{ color: "var(--glow-green)", fontWeight: 600 }}>₦{activity.data.total.toLocaleString()}</span>
+                    </p>
+                  )}
+                  {activity.type === "store" && (
+                    <p style={{ fontSize: "0.75rem", color: "var(--text-primary)" }}>
+                      <span style={{ fontWeight: 600 }}>{activity.data.name}</span>
+                      {" joined on "}
+                      <span style={{ textTransform: "capitalize" }}>{activity.data.plan}</span>
+                      {" plan ("}
+                      <span style={{ textTransform: "capitalize" }}>{activity.data.channel}</span>
+                      {")"}
+                    </p>
+                  )}
+                  {activity.type === "review" && (
+                    <p style={{ fontSize: "0.75rem", color: "var(--text-primary)" }}>
+                      <span style={{ fontWeight: 600 }}>{activity.data.reviewer_name}</span>
+                      {" left a "}
+                      <span style={{ color: "var(--glow-amber)" }}>{"★".repeat(activity.data.rating)}</span>
+                      {" review on "}
+                      <span style={{ fontWeight: 600 }}>{activity.data.store_name}</span>
+                      {activity.data.comment ? ": \"" + activity.data.comment.slice(0, 80) + (activity.data.comment.length > 80 ? "..." : "") + "\"" : ""}
+                    </p>
+                  )}
+                  <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", marginTop: "0.125rem" }}>
+                    {timeAgo(activity.created_at)}
+                  </p>
+                </div>
+
+                {/* Status badge for orders */}
+                {activity.type === "order" && (
+                  <span style={{
+                    fontSize: "0.5625rem", fontWeight: 600, textTransform: "capitalize",
+                    padding: "0.125rem 0.5rem", borderRadius: "0.25rem",
+                    background: activity.data.status === "pending" ? "rgba(234,179,8,0.1)"
+                      : activity.data.status === "delivered" ? "rgba(16,185,129,0.1)"
+                      : activity.data.status === "cancelled" ? "rgba(239,68,68,0.1)"
+                      : "rgba(59,130,246,0.1)",
+                    color: activity.data.status === "pending" ? "#eab308"
+                      : activity.data.status === "delivered" ? "var(--glow-green)"
+                      : activity.data.status === "cancelled" ? "var(--glow-red)"
+                      : "#3b82f6",
+                    flexShrink: 0,
+                  }}>
+                    {activity.data.status}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Responsive overrides */}
       <style>{`
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 768px) {
           div[style*="grid-template-columns: repeat(4"] {
             grid-template-columns: repeat(2, 1fr) !important;
