@@ -311,7 +311,7 @@ function TemplateRow({ template, expanded, onToggle, onEdit, onToggleActive, onD
   onDelete: () => void;
   isMobile: boolean;
 }) {
-  const hasContent = template.html_body && template.html_body.trim() && !template.html_body.trim().startsWith("<!--");
+  const hasContent = !!(template.html_body && template.html_body.trim());
   const previewRef = useRef<HTMLIFrameElement>(null);
 
   // Auto-resize iframe to content height
