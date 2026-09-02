@@ -117,7 +117,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
-        <link rel="icon" href="/icons/icon-192.svg" />
+        <link rel="icon" href="/icons/icon-192.svg" id="static-favicon" />
 
         {/* Structured Data: Organization */}
         <script

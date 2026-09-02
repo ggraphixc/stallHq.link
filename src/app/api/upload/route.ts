@@ -22,10 +22,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/x-icon", "image/vnd.microsoft.icon"];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: "Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed" },
+        { error: "Invalid file type. Only JPEG, PNG, WebP, GIF, and ICO are allowed" },
         { status: 400 }
       );
     }

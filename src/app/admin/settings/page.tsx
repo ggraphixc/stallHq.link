@@ -50,6 +50,12 @@ export default function AdminSettings() {
         body: JSON.stringify({ settings }),
       });
       if (!res.ok) throw new Error("Failed to save");
+      // Invalidate branding cache so all users see changes immediately
+      if (settings.logo_url !== undefined || settings.favicon_url !== undefined || settings.platform_name !== undefined) {
+        try {
+          localStorage.removeItem("stallhq_branding");
+        } catch {}
+      }
       showSuccess("Settings saved");
     } catch { showError("Failed to save settings"); }
     setSaving(false);
