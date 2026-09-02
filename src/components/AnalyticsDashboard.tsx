@@ -19,13 +19,14 @@ interface AnalyticsData {
   productViews: number;
   conversionRate: string;
   topProducts: Array<{ id: string; name: string; count: number }>;
-  chartData: Array<{ date: string; visits: number }>;
+  chartData: Array<{ date: string; visits: number; clicks?: number; views?: number }>;
   viewsTrend?: number;
   visitsTrend?: number;
   ordersToday?: number;
   ordersTrend?: number;
   favoritesCount?: number;
   recentActivity?: Array<{ type: string; detail: string; time: string }>;
+  uniqueVisitors?: number;
 }
 
 export function AnalyticsDashboard({ store }: AnalyticsDashboardProps) {
@@ -38,7 +39,7 @@ export function AnalyticsDashboard({ store }: AnalyticsDashboardProps) {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/analytics?store_id=${store.id}&period=${period}`);
+      const res = await fetch(`/api/analytics/rollup?store_id=${store.id}&period=${period}`);
       if (res.ok) setData(await res.json());
     } catch (error) {
       console.error("Error fetching analytics:", error);
