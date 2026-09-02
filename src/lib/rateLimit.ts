@@ -50,7 +50,16 @@ export async function checkRateLimit(
     return { success: true };
   }
 
-  const { success, limit, remaining, reset } = await limiter.limit(key);
+  let result;
+  try {
+    result = await limiter.limit(key);
+  } catch (e) {
+    // Upstash unreachable — fail open so the request still works
+    console.warn("[RateLimit] Redis unavailable, allowing request:", e);
+    return { success: true };
+  }
+
+  const { success, limit, remaining, reset } = result;
 
   const headers: Record<string, string> = {
     "X-RateLimit-Limit": limit.toString(),
