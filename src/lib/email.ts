@@ -1425,3 +1425,257 @@ export async function sendWeeklyDigest({
     templateVars: { greeting, store_name: storeName, store_slug: storeSlug, visits: String(stats.visits), orders: String(stats.orders), whatsapp_clicks: String(stats.whatsappClicks), top_product: stats.topProduct || "", platform_name: platformName, app_url: APP_URL },
   });
 }
+
+export async function sendWeeklyAnalyticsSummary({
+  email,
+  name,
+  storeName,
+  storeSlug,
+  stats,
+}: {
+  email: string;
+  name?: string;
+  storeName: string;
+  storeSlug: string;
+  stats: {
+    visits: number;
+    clicks: number;
+    orders: number;
+    conversionRate: string;
+    weekOverWeek?: {
+      visits: { current: number; previous: number; trend?: number };
+      clicks: { current: number; previous: number; trend?: number };
+    };
+    bestDay?: { day: string; avgVisits: number } | null;
+    worstDay?: { day: string; avgVisits: number } | null;
+    topProducts?: Array<{ name: string; count: number }>;
+  };
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
+
+  // Build trend badges
+  const trendBadge = (trend?: number) => {
+    if (trend === undefined || trend === null) return "";
+    const color = trend >= 0 ? "#10b981" : "#ef4444";
+    const arrow = trend >= 0 ? "&#8593;" : "&#8595;";
+    return `<span style="color:${color};font-size:12px;font-weight:600;">${arrow} ${Math.abs(trend)}%</span>`;
+  };
+
+  // Build WoW comparison rows
+  const wowRows = stats.weekOverWeek
+    ? `
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0 0 8px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Week vs Last Week</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.12);border-radius:12px;overflow:hidden;">
+            <tr>
+              <td style="padding:12px 16px;font-size:13px;color:#94a3b8;">Visits</td>
+              <td style="padding:12px 16px;text-align:right;font-size:14px;font-weight:600;color:#f1f5f9;">${stats.weekOverWeek.visits.current.toLocaleString()}</td>
+              <td style="padding:12px 16px;text-align:right;">${trendBadge(stats.weekOverWeek.visits.trend)}</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 16px;font-size:13px;color:#94a3b8;border-top:1px solid rgba(255,255,255,0.06);">Channel Clicks</td>
+              <td style="padding:12px 16px;text-align:right;font-size:14px;font-weight:600;color:#f1f5f9;border-top:1px solid rgba(255,255,255,0.06);">${stats.weekOverWeek.clicks.current.toLocaleString()}</td>
+              <td style="padding:12px 16px;text-align:right;border-top:1px solid rgba(255,255,255,0.06);">${trendBadge(stats.weekOverWeek.clicks.trend)}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `
+    : "";
+
+  // Build best/worst day section
+  const daySection = stats.bestDay
+    ? `
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              ${
+                stats.bestDay
+                  ? `<td style="padding:0 8px 0 0;width:50%;">
+                <div style="padding:14px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.12);border-radius:10px;text-align:center;">
+                  <p style="margin:0;font-size:11px;color:#94a3b8;text-transform:uppercase;">Best Day</p>
+                  <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:#10b981;">${stats.bestDay.day}</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#94a3b8;">avg ${stats.bestDay.avgVisits} visits</p>
+                </div>
+              </td>`
+                  : ""
+              }
+              ${
+                stats.worstDay
+                  ? `<td style="padding:0 0 0 8px;width:50%;">
+                <div style="padding:14px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12);border-radius:10px;text-align:center;">
+                  <p style="margin:0;font-size:11px;color:#94a3b8;text-transform:uppercase;">Slowest Day</p>
+                  <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:#ef4444;">${stats.worstDay.day}</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#94a3b8;">avg ${stats.worstDay.avgVisits} visits</p>
+                </div>
+              </td>`
+                  : ""
+              }
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `
+    : "";
+
+  // Build funnel section
+  const funnelSection = `
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0 0 8px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Conversion Funnel</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);border-radius:12px;overflow:hidden;">
+            <tr>
+              <td style="padding:14px 16px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:6px 0;">
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;">
+                          <div style="height:100%;width:100%;background:#a855f7;border-radius:3px;"></div>
+                        </div>
+                        <span style="font-size:12px;color:#94a3b8;min-width:50px;">Visits</span>
+                        <span style="font-size:13px;font-weight:600;color:#f1f5f9;min-width:40px;text-align:right;">${stats.visits.toLocaleString()}</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;">
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;">
+                          <div style="height:100%;width:${stats.visits > 0 ? Math.max(5, (stats.clicks / stats.visits) * 100) : 0}%;background:#10b981;border-radius:3px;"></div>
+                        </div>
+                        <span style="font-size:12px;color:#94a3b8;min-width:50px;">Clicks</span>
+                        <span style="font-size:13px;font-weight:600;color:#f1f5f9;min-width:40px;text-align:right;">${stats.clicks.toLocaleString()}</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;">
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;">
+                          <div style="height:100%;width:${stats.clicks > 0 ? Math.max(5, (stats.orders / stats.clicks) * 100) : 0}%;background:#06b6d4;border-radius:3px;"></div>
+                        </div>
+                        <span style="font-size:12px;color:#94a3b8;min-width:50px;">Orders</span>
+                        <span style="font-size:13px;font-weight:600;color:#f1f5f9;min-width:40px;text-align:right;">${stats.orders.toLocaleString()}</span>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:8px 0 0;font-size:11px;color:#94a3b8;">Click rate: <strong style="color:#10b981;">${stats.conversionRate}%</strong></p>
+        </td>
+      </tr>
+    `;
+
+  // Build top products section
+  const topProductsSection =
+    stats.topProducts && stats.topProducts.length > 0
+      ? `
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0 0 8px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Top Products</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;overflow:hidden;">
+            ${stats.topProducts
+              .slice(0, 5)
+              .map(
+                (p, i) => `
+              <tr>
+                <td style="padding:10px 16px;border-bottom:${i < stats.topProducts!.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none"};">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="width:20px;height:20px;border-radius:4px;background:${i === 0 ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.04)"};text-align:center;line-height:20px;font-size:10px;font-weight:700;color:${i === 0 ? "#a78bfa" : "#94a3b8"};">${i + 1}</span>
+                    <span style="flex:1;font-size:13px;color:#e0e0e0;">${p.name}</span>
+                    <span style="font-size:12px;color:#94a3b8;">${p.count} views</span>
+                  </div>
+                </td>
+              </tr>
+            `
+              )
+              .join("")}
+          </table>
+        </td>
+      </tr>
+    `
+      : "";
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#128200;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Your Weekly Analytics</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting}, here's what happened with your store this week.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.12);border-radius:12px;">
+            <tr>
+              <td style="padding:20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:8px 0;width:25%;text-align:center;">
+                      <p style="margin:0;font-size:24px;font-weight:700;color:#a78bfa;">${stats.visits.toLocaleString()}</p>
+                      <p style="margin:4px 0 0;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Visits</p>
+                    </td>
+                    <td style="padding:8px 0;width:25%;text-align:center;">
+                      <p style="margin:0;font-size:24px;font-weight:700;color:#10b981;">${stats.clicks.toLocaleString()}</p>
+                      <p style="margin:4px 0 0;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Clicks</p>
+                    </td>
+                    <td style="padding:8px 0;width:25%;text-align:center;">
+                      <p style="margin:0;font-size:24px;font-weight:700;color:#06b6d4;">${stats.orders.toLocaleString()}</p>
+                      <p style="margin:4px 0 0;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Orders</p>
+                    </td>
+                    <td style="padding:8px 0;width:25%;text-align:center;">
+                      <p style="margin:0;font-size:24px;font-weight:700;color:#f59e0b;">${stats.conversionRate}%</p>
+                      <p style="margin:4px 0 0;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Conv.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      ${wowRows}
+      ${daySection}
+      ${funnelSection}
+      ${topProductsSection}
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/dashboard" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Full Dashboard</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `Your ${storeName} weekly analytics — ${stats.visits} visits, ${stats.orders} orders`,
+    htmlContent: html,
+    tags: ["marketing", "weekly_analytics_summary"],
+    templateSlug: "weekly-analytics-summary",
+    templateVars: {
+      greeting,
+      store_name: storeName,
+      store_slug: storeSlug,
+      visits: String(stats.visits),
+      clicks: String(stats.clicks),
+      orders: String(stats.orders),
+      conversion_rate: stats.conversionRate,
+      best_day: stats.bestDay?.day || "",
+      worst_day: stats.worstDay?.day || "",
+      platform_name: platformName,
+      app_url: APP_URL,
+    },
+  });
+}

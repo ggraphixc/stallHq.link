@@ -8,6 +8,7 @@ import {
   sendTrialNurtureDay10,
   sendWinBackEmail,
   sendWeeklyDigest,
+  sendWeeklyAnalyticsSummary,
 } from "@/lib/email";
 import { postPromo, buildCaption, type SocialStore, type SocialProduct } from "@/lib/social-post";
 
@@ -280,18 +281,100 @@ export async function GET(request: NextRequest) {
             topProduct = product?.name;
           }
 
+          // Calculate growth metrics from aggregated data
+          const lastWeekDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+            .toISOString().split("T")[0];
+          const thisWeekDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+            .toISOString().split("T")[0];
+
+          const { data: lastWeekAgg } = await supabase
+            .from("analytics_aggregates")
+            .select("visits, whatsapp_clicks")
+            .eq("store_id", store.id)
+            .gte("date", lastWeekDate)
+            .lt("date", thisWeekDate);
+
+          let lastWeekVisits = 0;
+          let lastWeekClicks = 0;
+          if (lastWeekAgg) {
+            for (const row of lastWeekAgg) {
+              lastWeekVisits += row.visits || 0;
+              lastWeekClicks += row.whatsapp_clicks || 0;
+            }
+          }
+
+          const calcTrend = (current: number, previous: number): number | undefined => {
+            if (previous === 0) return current > 0 ? 100 : undefined;
+            return Math.round(((current - previous) / previous) * 100);
+          };
+
+          // Calculate best/worst day of week
+          const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+          const dayTotals: Record<number, { visits: number; count: number }> = {};
+          const { data: weekDaily } = await supabase
+            .from("analytics_aggregates")
+            .select("date, visits")
+            .eq("store_id", store.id)
+            .gte("date", thisWeekDate);
+
+          if (weekDaily) {
+            for (const row of weekDaily) {
+              const dow = new Date(row.date).getDay();
+              if (!dayTotals[dow]) dayTotals[dow] = { visits: 0, count: 0 };
+              dayTotals[dow].visits += row.visits || 0;
+              dayTotals[dow].count++;
+            }
+          }
+
+          const dayOfWeekArr = dayNames.map((name, i) => {
+            const t = dayTotals[i];
+            if (!t || t.count === 0) return { day: name, avgVisits: 0 };
+            return { day: name, avgVisits: Math.round(t.visits / t.count) };
+          });
+
+          const sortedDays = [...dayOfWeekArr].filter((d) => d.avgVisits > 0).sort((a, b) => b.avgVisits - a.avgVisits);
+          const bestDay = sortedDays[0] || null;
+          const worstDay = sortedDays.length > 1 ? sortedDays[sortedDays.length - 1] : null;
+
+          // Build top products list
+          const topProductsList: Array<{ name: string; count: number }> = [];
+          if (topProductData && topProductData.length > 0) {
+            const viewCounts = new Map<string, number>();
+            for (const pv of topProductData) {
+              viewCounts.set(pv.product_id, (viewCounts.get(pv.product_id) || 0) + 1);
+            }
+            const sorted = [...viewCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+            for (const [id, count] of sorted) {
+              const { data: prod } = await supabase
+                .from("products")
+                .select("name")
+                .eq("id", id)
+                .single();
+              if (prod?.name) topProductsList.push({ name: prod.name, count });
+            }
+          }
+
+          const conversionRate = visits > 0 ? ((whatsappClicks / visits) * 100).toFixed(1) : "0";
+
           // Only send if there was any activity
           if (visits > 0 || (orderCount || 0) > 0 || whatsappClicks > 0) {
-            await sendWeeklyDigest({
+            await sendWeeklyAnalyticsSummary({
               email: userInfo.email,
               name: userInfo.name,
               storeName: store.name,
               storeSlug: store.slug,
               stats: {
                 visits,
+                clicks: whatsappClicks,
                 orders: orderCount || 0,
-                whatsappClicks,
-                topProduct,
+                conversionRate,
+                weekOverWeek: {
+                  visits: { current: visits, previous: lastWeekVisits, trend: calcTrend(visits, lastWeekVisits) },
+                  clicks: { current: whatsappClicks, previous: lastWeekClicks, trend: calcTrend(whatsappClicks, lastWeekClicks) },
+                },
+                bestDay,
+                worstDay,
+                topProducts: topProductsList.length > 0 ? topProductsList : undefined,
               },
             });
             results.weekly_digest++;
