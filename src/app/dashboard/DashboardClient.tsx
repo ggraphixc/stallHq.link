@@ -306,9 +306,9 @@ export function DashboardClient({
               <a href={`/${store.slug}`} target="_blank" rel="noopener noreferrer" style={iconBtn} className="icon-button" title="View Store">
                 <ExternalLink size={16} />
               </a>
-              <button onClick={() => setShowSettings(true)} style={iconBtn} className="icon-button" title="Settings">
+              <a href="/dashboard/settings" style={iconBtn} className="icon-button" title="Settings">
                 <Settings size={16} />
-              </button>
+              </a>
               <a href="/dashboard/support" style={iconBtn} className="icon-button" title="Support">
                 <LifeBuoy size={16} />
               </a>
@@ -390,13 +390,13 @@ export function DashboardClient({
                       <ExternalLink size={16} />
                       View Store
                     </a>
-                    <button
-                      onClick={() => { setShowSettings(true); setShowMobileMenu(false); }}
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", minHeight: "44px" }}
+                    <a
+                      href="/dashboard/settings"
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none", minHeight: "44px" }}
                     >
                       <Settings size={16} />
                       Settings
-                    </button>
+                    </a>
                     <button
                       onClick={handleLogout}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", fontSize: "0.875rem", color: "var(--glow-red)", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", minHeight: "44px" }}
