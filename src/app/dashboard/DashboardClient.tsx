@@ -37,7 +37,10 @@ import {
   Crown,
   LifeBuoy,
   Users,
+  TrendingUp,
+  MousePointerClick,
 } from "lucide-react";
+import { Sparkline } from "@/components/ui/Sparkline";
 
 interface DashboardClientProps {
   store: Store;
@@ -174,6 +177,7 @@ export function DashboardClient({
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const visitorCount = useRealtimeVisitors({ storeId: store.id });
   const [origin, setOrigin] = useState("");
+  const [trend, setTrend] = useState<{ visits: number[]; clicks: number[]; orders: number[]; revenue: number[] } | null>(null);
 
   const supabase = createClient();
 
@@ -195,6 +199,7 @@ export function DashboardClient({
 
   useEffect(() => {
     fetchProducts();
+    fetchTrend();
   }, []);
 
   const fetchProducts = async () => {
@@ -235,6 +240,16 @@ export function DashboardClient({
     } finally {
       setTogglingId(null);
     }
+  };
+
+  const fetchTrend = async () => {
+    try {
+      const res = await fetch(`/api/analytics/trend?store_id=${store.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTrend(data);
+      }
+    } catch { /* ignore */ }
   };
 
   const handleStoreUpdated = (updatedStore: Store) => {
@@ -414,46 +429,77 @@ export function DashboardClient({
 
       {/* ── Main ───────────────────────────────────── */}
       <main style={{ maxWidth: "80rem", margin: "0 auto", padding: "1.5rem 1rem", position: "relative", zIndex: 1 }}>
-        {/* Stats */}
+        {/* Stats with sparklines */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem", marginBottom: "2rem" }}>
-          {/* Product count */}
-          <div style={{ ...glassCard, padding: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <div style={{ width: "2.25rem", height: "2.25rem", borderRadius: "0.5rem", background: "linear-gradient(135deg, rgba(168,133,247,0.15), rgba(6,182,212,0.1))", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Package size={16} style={{ color: "var(--glow-purple)" }} />
+          {/* Products */}
+          <div style={{ ...glassCard, padding: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+              <div style={{ width: "1.75rem", height: "1.75rem", borderRadius: "0.375rem", background: "linear-gradient(135deg, rgba(168,133,247,0.15), rgba(6,182,212,0.1))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Package size={14} style={{ color: "var(--glow-purple)" }} />
+              </div>
+              <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", ...labelStyle, marginBottom: 0 }}>Products</span>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", ...labelStyle, marginBottom: 0 }}>Products</p>
-              <p style={{ fontSize: "1.125rem", fontWeight: 700 }}>{products.length}</p>
-            </div>
+            <p style={{ fontSize: "1.5rem", fontWeight: 700, lineHeight: 1 }}>{products.length}</p>
+            {trend && (
+              <div style={{ marginTop: "0.5rem" }}>
+                <Sparkline data={trend.visits} color="var(--glow-purple)" width={110} height={22} />
+              </div>
+            )}
           </div>
 
           {/* Store URL */}
-          <div style={{ ...glassCard, padding: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <div style={{ width: "2.25rem", height: "2.25rem", borderRadius: "0.5rem", background: "linear-gradient(135deg, rgba(6,182,212,0.15), rgba(16,185,129,0.1))", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <LinkIcon size={16} style={{ color: "var(--glow-cyan)" }} />
+          <div style={{ ...glassCard, padding: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+              <div style={{ width: "1.75rem", height: "1.75rem", borderRadius: "0.375rem", background: "linear-gradient(135deg, rgba(6,182,212,0.15), rgba(16,185,129,0.1))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <LinkIcon size={14} style={{ color: "var(--glow-cyan)" }} />
+              </div>
+              <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", ...labelStyle, marginBottom: 0 }}>Store URL</span>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", ...labelStyle, marginBottom: 0 }}>Store URL</p>
-              <a
-                href={`/${store.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--glow-cyan)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", textDecoration: "none" }}
-              >
-                stallhq.link/{store.slug}
-              </a>
-            </div>
+            <a
+              href={`/${store.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--glow-cyan)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", textDecoration: "none" }}
+            >
+              stallhq.link/{store.slug}
+            </a>
+            {trend && (
+              <div style={{ marginTop: "0.5rem" }}>
+                <Sparkline data={trend.clicks} color="var(--glow-cyan)" width={110} height={22} />
+              </div>
+            )}
           </div>
 
-          {/* Visitor count */}
+          {/* Visitors */}
           {visitorCount !== null && (
-            <div style={{ ...glassCard, padding: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              <div style={{ width: "2.25rem", height: "2.25rem", borderRadius: "0.5rem", background: "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(239,68,68,0.1))", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Users size={16} style={{ color: "#f59e0b" }} />
+            <div style={{ ...glassCard, padding: "1rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                <div style={{ width: "1.75rem", height: "1.75rem", borderRadius: "0.375rem", background: "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(239,68,68,0.1))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Users size={14} style={{ color: "#f59e0b" }} />
+                </div>
+                <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", ...labelStyle, marginBottom: 0 }}>Visitors</span>
               </div>
-              <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", ...labelStyle, marginBottom: 0 }}>Visitors</p>
-                <p style={{ fontSize: "1.125rem", fontWeight: 700 }}>{visitorCount.toLocaleString()}</p>
+              <p style={{ fontSize: "1.5rem", fontWeight: 700, lineHeight: 1 }}>{visitorCount.toLocaleString()}</p>
+              {trend && (
+                <div style={{ marginTop: "0.5rem" }}>
+                  <Sparkline data={trend.visits} color="#f59e0b" width={110} height={22} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Orders trend */}
+          {trend && trend.orders.some(v => v > 0) && (
+            <div style={{ ...glassCard, padding: "1rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                <div style={{ width: "1.75rem", height: "1.75rem", borderRadius: "0.375rem", background: "linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.1))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <TrendingUp size={14} style={{ color: "var(--glow-green)" }} />
+                </div>
+                <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", ...labelStyle, marginBottom: 0 }}>Orders (7d)</span>
+              </div>
+              <p style={{ fontSize: "1.5rem", fontWeight: 700, lineHeight: 1 }}>{trend.orders.reduce((a, b) => a + b, 0)}</p>
+              <div style={{ marginTop: "0.5rem" }}>
+                <Sparkline data={trend.orders} color="var(--glow-green)" width={110} height={22} />
               </div>
             </div>
           )}

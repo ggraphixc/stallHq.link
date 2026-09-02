@@ -196,9 +196,14 @@ export function AdminOverview() {
                 <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", marginTop: "0.375rem" }}>{stat.sub}</p>
               </div>
               {stat.trend && (
-                <div style={{ marginTop: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Sparkline data={stat.trend} color={stat.color} width={72} height={24} />
-                  <span style={{ fontSize: "0.5625rem", color: "var(--text-muted)", flexShrink: 0 }}>7d</span>
+                <div style={{ marginTop: "0.75rem" }}>
+                  <Sparkline
+                    data={stat.trend}
+                    color={stat.color}
+                    width={90}
+                    height={26}
+                    valuePrefix={stat.label === "Revenue" ? "₦" : ""}
+                  />
                 </div>
               )}
             </div>
