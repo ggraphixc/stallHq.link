@@ -71,7 +71,7 @@ export default function TermsPage() {
         <div style={sectionStyle}>
           <h2 style={h2Style}>6. Subscriptions and Payments</h2>
           <ul style={ulStyle}>
-            <li>Free trial: 5 days, up to 10 products. No credit card required.</li>
+            <li>Free trial: 14 days, up to 10 products. No credit card required.</li>
             <li>Paid plans are billed via Paystack. By subscribing, you authorize Paystack to charge your payment method.</li>
             <li>Subscriptions auto-renew unless cancelled before the renewal date.</li>
             <li>Refund policy: subscriptions are non-refundable except where required by law.</li>

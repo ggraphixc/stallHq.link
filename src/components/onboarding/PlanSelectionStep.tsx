@@ -129,7 +129,7 @@ export function PlanSelectionStep({ store, onPlanSelected, onSkip }: PlanSelecti
                   )}
                   {isTrial && (
                     <span style={{ display: "block", fontSize: "0.5625rem", color: "var(--text-muted)" }}>
-                      5 days
+                      14 days
                     </span>
                   )}
                 </div>

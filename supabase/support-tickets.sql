@@ -59,7 +59,7 @@ insert into platform_settings (key, value) values
   ('maintenance_mode', 'false'),
   ('allow_signup', 'true'),
   ('max_free_products', '10'),
-  ('trial_days', '5'),
+  ('trial_days', '14'),
   ('support_email', '"support@stallhq.link"')
 on conflict (key) do nothing;
 

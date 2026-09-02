@@ -327,7 +327,7 @@ export default function Home() {
           <p style={labelStyle}>Frequently Asked Questions</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxWidth: 600, margin: "0 auto" }}>
             {[
-              { q: "Is StallHq really free to start?", a: "Yes. You get a 7-day free trial with full access. After that, plans start at just \u20a63,500/month. No hidden fees, no platform commission on your sales." },
+              { q: "Is StallHq really free to start?", a: "Yes. You get a 14-day free trial with full access. After that, plans start at just \u20a63,500/month. No hidden fees, no platform commission on your sales." },
               { q: "Do I need a website or hosting?", a: "No. StallHq gives you a ready-made store at stallhq.link/yourstore. No coding, no hosting, no domain registration needed." },
               { q: "How do customers place orders?", a: "Customers browse your catalog, select products, and click the order button. The order is sent to your WhatsApp or Instagram DM with all the details." },
               { q: "Can I use it for Instagram too?", a: "Yes. You can connect both WhatsApp and Instagram. Customers can choose which channel to order through." },

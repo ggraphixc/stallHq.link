@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         email: body.email,
         setup_complete: body.setup_complete ?? false,
         plan: "trial",
-        trial_ends_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
       })
       .select()
       .single();

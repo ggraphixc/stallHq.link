@@ -28,7 +28,7 @@ const ABOUT_FAQS = [
   {
     question: "Is stallHq free?",
     answer:
-      "Yes, stallHq offers a free 5-day trial with up to 10 products. After the trial, paid plans start at ₦3,500/month (Monthly), ₦7,500/quarter (Quarterly), or ₦12,000 for 6 months (Best Value). There are no transaction fees — payments happen directly between vendor and customer.",
+      "Yes, stallHq offers a free 14-day trial with up to 10 products. After the trial, paid plans start at ₦3,500/month (Monthly), ₦7,500/quarter (Quarterly), or ₦12,000 for 6 months (Best Value). There are no transaction fees — payments happen directly between vendor and customer.",
   },
   {
     question: "What countries does stallHq support?",
@@ -124,7 +124,7 @@ export default function AboutPage() {
             Pricing
           </h2>
           <ul style={{ color: "var(--text-secondary)", lineHeight: 1.8, paddingLeft: "1.25rem" }}>
-            <li><strong>Free Trial</strong> — 5 days, 10 products, all core features.</li>
+            <li><strong>Free Trial</strong> — 14 days, 10 products, all core features.</li>
             <li><strong>Monthly</strong> — ₦3,500/month, up to 20 products.</li>
             <li><strong>Quarterly</strong> — ₦7,500/quarter (₦2,500/month), up to 50 products.</li>
             <li><strong>6-Month</strong> — ₦12,000 (₦2,000/month), unlimited products.</li>

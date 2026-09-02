@@ -17,7 +17,7 @@ const HOME_FAQS = [
   {
     question: "How much does stallHq cost?",
     answer:
-      "stallHq is free to start with a 5-day trial. After that, plans start from ₦3,500/month. There are no transaction fees — all payments happen directly between you and your customer via WhatsApp or Instagram.",
+      "stallHq is free to start with a 14-day trial. After that, plans start from ₦3,500/month. There are no transaction fees — all payments happen directly between you and your customer via WhatsApp or Instagram.",
   },
   {
     question: "Do I need coding skills to create a store?",

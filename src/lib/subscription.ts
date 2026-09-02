@@ -21,7 +21,7 @@ export const PLANS: Record<SubscriptionPlan, PlanInfo> = {
     name: "Free Trial",
     tagline: "Test the waters — no card needed",
     price: 0,
-    billingLabel: "5-day free trial",
+    billingLabel: "14-day free trial",
     monthlyBreakdown: 0,
     productLimit: 10,
     color: "var(--text-muted)",

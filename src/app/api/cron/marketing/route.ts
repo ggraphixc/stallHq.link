@@ -4,6 +4,8 @@ import {
   sendTrialNurtureDay1,
   sendTrialNurtureDay3,
   sendTrialNurtureDay5,
+  sendTrialNurtureDay7,
+  sendTrialNurtureDay10,
   sendWinBackEmail,
   sendWeeklyDigest,
 } from "@/lib/email";
@@ -101,8 +103,25 @@ export async function GET(request: NextRequest) {
           results.trial_nurture++;
         }
 
-        if (daysSinceSignup === 5) {
-          const daysLeft = 7 - daysSinceSignup;
+        if (daysSinceSignup === 7) {
+          await sendTrialNurtureDay7(baseArgs);
+          results.trial_nurture++;
+        }
+
+        if (daysSinceSignup === 10) {
+          const daysLeft = 14 - daysSinceSignup;
+          await sendTrialNurtureDay10({ ...baseArgs, storeSlug: store.slug, daysLeft });
+          results.trial_nurture++;
+        }
+
+        if (daysSinceSignup === 12) {
+          const daysLeft = 14 - daysSinceSignup;
+          await sendTrialNurtureDay5({ ...baseArgs, storeSlug: store.slug, daysLeft });
+          results.trial_nurture++;
+        }
+
+        if (daysSinceSignup === 13) {
+          const daysLeft = 14 - daysSinceSignup;
           await sendTrialNurtureDay5({ ...baseArgs, storeSlug: store.slug, daysLeft });
           results.trial_nurture++;
         }

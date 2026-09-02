@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS: Record<string, any> = {
   app_name: "StallHq", app_url: process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app",
   brevo_sender_email: process.env.BREVO_SENDER_EMAIL || "", brevo_sender_name: "StallHq",
   maintenance_mode: false, allow_signup: true,
-  max_free_products: 10, trial_days: 5, support_email: "",
+  max_free_products: 10, trial_days: 14, support_email: "",
   ai_enabled: false, ai_provider: "openrouter", ai_model: "", ai_api_key: "", ai_base_url: "",
   logo_url: "", favicon_url: "", platform_name: "",
 };
@@ -138,7 +138,7 @@ function GeneralTab({ settings, updateSetting }: { settings: Record<string, any>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "0.75rem" }}>
         <div>
           <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Trial Days</label>
-          <input className="ambient-input" type="number" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.trial_days || 5} onChange={(e) => updateSetting("trial_days", parseInt(e.target.value) || 5)} />
+          <input className="ambient-input" type="number" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.trial_days || 14} onChange={(e) => updateSetting("trial_days", parseInt(e.target.value) || 14)} />
         </div>
         <div>
           <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Max Free Products</label>
