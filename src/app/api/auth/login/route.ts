@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
           getAll() {
             return req.cookies.getAll();
           },
-          setAll(setCookies) {
+          setAll(setCookies, headers) {
             cookiesToSet = setCookies;
           },
         },
