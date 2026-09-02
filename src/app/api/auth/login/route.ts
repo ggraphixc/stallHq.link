@@ -4,6 +4,20 @@ import { authRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("[Login] Missing env vars:", {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseAnonKey,
+      });
+      return NextResponse.json(
+        { error: "Server misconfiguration" },
+        { status: 500 }
+      );
+    }
+
     const rl = await authRateLimit(req);
     if (!rl.success) return rl.response!;
 
@@ -15,20 +29,16 @@ export async function POST(req: NextRequest) {
 
     let cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[] = [];
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return req.cookies.getAll();
-          },
-          setAll(setCookies, headers) {
-            cookiesToSet = setCookies;
-          },
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
         },
-      }
-    );
+        setAll(setCookies, _headers) {
+          cookiesToSet = setCookies;
+        },
+      },
+    });
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -36,6 +46,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (error) {
+      console.error("[Login] signInWithPassword error:", error.message);
       if (error.message.includes("Email not confirmed")) {
         return NextResponse.json({ error: "email_not_confirmed" }, { status: 401 });
       }
@@ -43,6 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!data.session) {
+      console.error("[Login] No session returned after successful sign-in");
       return NextResponse.json({ error: "No session" }, { status: 500 });
     }
 
@@ -58,7 +70,8 @@ export async function POST(req: NextRequest) {
     }
 
     return response;
-  } catch {
+  } catch (e) {
+    console.error("[Login] Unexpected error:", e);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
