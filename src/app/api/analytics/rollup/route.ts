@@ -134,6 +134,52 @@ export async function GET(request: NextRequest) {
       return Math.round(((current - previous) / previous) * 100);
     };
 
+    // ── Week-over-week comparison ──────────────────────────────────────────
+    const thisWeekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const lastWeekStart = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    const { data: thisWeek } = await supabase
+      .from("analytics_aggregates")
+      .select("visits, whatsapp_clicks, product_views")
+      .eq("store_id", storeId)
+      .gte("date", thisWeekStart.toISOString().split("T")[0]);
+
+    const { data: lastWeek } = await supabase
+      .from("analytics_aggregates")
+      .select("visits, whatsapp_clicks, product_views")
+      .eq("store_id", storeId)
+      .gte("date", lastWeekStart.toISOString().split("T")[0])
+      .lt("date", thisWeekStart.toISOString().split("T")[0]);
+
+    const sumMetrics = (rows: typeof thisWeek) => {
+      let v = 0, c = 0, p = 0;
+      if (rows) for (const r of rows) { v += r.visits || 0; c += r.whatsapp_clicks || 0; p += r.product_views || 0; }
+      return { visits: v, clicks: c, views: p };
+    };
+
+    const thisWeekMetrics = sumMetrics(thisWeek);
+    const lastWeekMetrics = sumMetrics(lastWeek);
+
+    // ── Month-over-month comparison ────────────────────────────────────────
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const { data: thisMonth } = await supabase
+      .from("analytics_aggregates")
+      .select("visits, whatsapp_clicks, product_views")
+      .eq("store_id", storeId)
+      .gte("date", thisMonthStart.toISOString().split("T")[0]);
+
+    const { data: lastMonth } = await supabase
+      .from("analytics_aggregates")
+      .select("visits, whatsapp_clicks, product_views")
+      .eq("store_id", storeId)
+      .gte("date", lastMonthStart.toISOString().split("T")[0])
+      .lt("date", thisMonthStart.toISOString().split("T")[0]);
+
+    const thisMonthMetrics = sumMetrics(thisMonth);
+    const lastMonthMetrics = sumMetrics(lastMonth);
+
     return NextResponse.json({
       totalVisits,
       whatsappClicks: totalClicks,
@@ -146,6 +192,16 @@ export async function GET(request: NextRequest) {
       chartData,
       visitsTrend: calcTrend(totalVisits, prevVisits),
       viewsTrend: calcTrend(totalViews, prevViews),
+      weekOverWeek: {
+        visits: { current: thisWeekMetrics.visits, previous: lastWeekMetrics.visits, trend: calcTrend(thisWeekMetrics.visits, lastWeekMetrics.visits) },
+        clicks: { current: thisWeekMetrics.clicks, previous: lastWeekMetrics.clicks, trend: calcTrend(thisWeekMetrics.clicks, lastWeekMetrics.clicks) },
+        views: { current: thisWeekMetrics.views, previous: lastWeekMetrics.views, trend: calcTrend(thisWeekMetrics.views, lastWeekMetrics.views) },
+      },
+      monthOverMonth: {
+        visits: { current: thisMonthMetrics.visits, previous: lastMonthMetrics.visits, trend: calcTrend(thisMonthMetrics.visits, lastMonthMetrics.visits) },
+        clicks: { current: thisMonthMetrics.clicks, previous: lastMonthMetrics.clicks, trend: calcTrend(thisMonthMetrics.clicks, lastMonthMetrics.clicks) },
+        views: { current: thisMonthMetrics.views, previous: lastMonthMetrics.views, trend: calcTrend(thisMonthMetrics.views, lastMonthMetrics.views) },
+      },
     });
   } catch (error) {
     console.error("[AnalyticsRollup] Error:", error);

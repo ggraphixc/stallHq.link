@@ -13,6 +13,12 @@ interface AnalyticsDashboardProps {
   store: Store;
 }
 
+interface ComparisonMetric {
+  current: number;
+  previous: number;
+  trend?: number;
+}
+
 interface AnalyticsData {
   totalVisits: number;
   whatsappClicks: number;
@@ -27,6 +33,16 @@ interface AnalyticsData {
   favoritesCount?: number;
   recentActivity?: Array<{ type: string; detail: string; time: string }>;
   uniqueVisitors?: number;
+  weekOverWeek?: {
+    visits: ComparisonMetric;
+    clicks: ComparisonMetric;
+    views: ComparisonMetric;
+  };
+  monthOverMonth?: {
+    visits: ComparisonMetric;
+    clicks: ComparisonMetric;
+    views: ComparisonMetric;
+  };
 }
 
 export function AnalyticsDashboard({ store }: AnalyticsDashboardProps) {
@@ -147,6 +163,50 @@ export function AnalyticsDashboard({ store }: AnalyticsDashboardProps) {
           <EmptyChart />
         )}
       </div>
+
+      {/* Growth Comparison */}
+      {(data?.weekOverWeek || data?.monthOverMonth) && (
+        <div style={{
+          background: "var(--bg-card)", border: "1px solid var(--border-subtle)",
+          borderRadius: "0.875rem", padding: "1.25rem", position: "relative", overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", top: 0, left: 0, right: 0, height: "2px",
+            background: "linear-gradient(90deg, var(--glow-green), var(--glow-amber))",
+          }} />
+          <h4 style={{
+            fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-primary)",
+            marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem",
+          }}>
+            <TrendingUp size={14} style={{ color: "var(--glow-green)" }} />
+            Growth Comparison
+          </h4>
+          {loading ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              {[...Array(2)].map((_, i) => (
+                <div key={i} style={{ height: "5rem", borderRadius: "0.5rem", background: "var(--bg-secondary)", animation: "pulse 2s infinite" }} />
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              {/* Week over Week */}
+              <ComparisonCard
+                title="This Week vs Last Week"
+                icon={<Calendar size={14} style={{ color: "var(--glow-purple)" }} />}
+                metrics={data?.weekOverWeek}
+                labels={{ visits: "Visits", clicks: "Clicks", views: "Views" }}
+              />
+              {/* Month over Month */}
+              <ComparisonCard
+                title="This Month vs Last Month"
+                icon={<BarChart3 size={14} style={{ color: "var(--glow-cyan)" }} />}
+                metrics={data?.monthOverMonth}
+                labels={{ visits: "Visits", clicks: "Clicks", views: "Views" }}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Bottom Row */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
@@ -519,6 +579,70 @@ function EmptyState({ text }: { text: string }) {
     }}>
       <Eye size={20} style={{ color: "var(--text-muted)", opacity: 0.4 }} />
       <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{text}</p>
+    </div>
+  );
+}
+
+function ComparisonCard({
+  title,
+  icon,
+  metrics,
+  labels,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  metrics?: {
+    visits: ComparisonMetric;
+    clicks: ComparisonMetric;
+    views: ComparisonMetric;
+  };
+  labels: { visits: string; clicks: string; views: string };
+}) {
+  if (!metrics) return null;
+
+  const rows: Array<{ key: keyof typeof labels; label: string; metric: ComparisonMetric }> = [
+    { key: "visits", label: labels.visits, metric: metrics.visits },
+    { key: "clicks", label: labels.clicks, metric: metrics.clicks },
+    { key: "views", label: labels.views, metric: metrics.views },
+  ];
+
+  return (
+    <div style={{
+      background: "var(--bg-secondary)", borderRadius: "0.625rem",
+      padding: "0.875rem", display: "flex", flexDirection: "column", gap: "0.625rem",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        {icon}
+        <span style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+          {title}
+        </span>
+      </div>
+      {rows.map((row) => (
+        <div key={row.key} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+            {row.label}
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-primary)" }}>
+              {row.metric.current.toLocaleString()}
+            </span>
+            {row.metric.trend !== undefined && row.metric.trend !== null && (
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: "0.125rem",
+                fontSize: "0.625rem", fontWeight: 600,
+                padding: "0.125rem 0.375rem", borderRadius: "0.25rem",
+                background: row.metric.trend >= 0 ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+                color: row.metric.trend >= 0 ? "#10b981" : "#ef4444",
+              }}>
+                {row.metric.trend >= 0 ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                {Math.abs(row.metric.trend)}%
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
