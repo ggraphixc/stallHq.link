@@ -9,6 +9,7 @@ import {
   ArrowUpRight, RefreshCw, LayoutDashboard, Settings, Eye, CreditCard,
   Zap, MessageSquare, ShoppingBag,
 } from "lucide-react";
+import { Sparkline, get7DayData } from "@/components/ui/Sparkline";
 
 interface ActivityItem {
   id: string;
@@ -18,6 +19,12 @@ interface ActivityItem {
 }
 
 interface SystemData {
+  charts: {
+    ordersByDay: Record<string, number>;
+    revenueByDay: Record<string, number>;
+    storesByDay: Record<string, number>;
+    productsByDay: Record<string, number>;
+  };
   overview: {
     totalStores: number;
     trialStores: number;
@@ -160,26 +167,43 @@ export function AdminOverview() {
         </button>
       </div>
 
-      {/* Hero Stats — 4 big numbers */}
+      {/* Hero Stats — 4 big numbers with sparklines */}
       <div style={{
         display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
         gap: "0.75rem", marginBottom: "1.5rem",
       }}>
-        {[
-          { label: "Stores", value: o.totalStores, color: "var(--glow-purple)", sub: `${o.paidStores} paid · ${o.trialStores} trial` },
-          { label: "Products", value: o.totalProducts, color: "var(--glow-cyan)", sub: `${o.activeProducts} in stock` },
-          { label: "Orders", value: o.totalOrders, color: "var(--glow-green)", sub: `${o.pendingOrders} pending` },
-          { label: "Revenue", value: `₦${o.totalRevenue.toLocaleString()}`, color: "var(--glow-green)", sub: `₦${o.revenueLast7d.toLocaleString()} this week` },
-        ].map((stat) => (
-          <div key={stat.label} style={{
-            background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-subtle)",
-            borderRadius: "0.75rem", padding: "1rem 1.25rem",
-          }}>
-            <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>{stat.label}</p>
-            <p style={{ fontSize: "clamp(1.5rem,3vw,2rem)", fontWeight: 700, color: stat.color, lineHeight: 1 }}>{stat.value}</p>
-            <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", marginTop: "0.375rem" }}>{stat.sub}</p>
-          </div>
-        ))}
+        {(() => {
+          const sparkData = {
+            stores: get7DayData(data.charts?.storesByDay || {}),
+            products: get7DayData(data.charts?.productsByDay || {}),
+            orders: get7DayData(data.charts?.ordersByDay || {}),
+            revenue: get7DayData(data.charts?.revenueByDay || {}),
+          };
+          return [
+            { label: "Stores", value: o.totalStores, color: "var(--glow-purple)", sub: `${o.paidStores} paid · ${o.trialStores} trial`, trend: sparkData.stores },
+            { label: "Products", value: o.totalProducts, color: "var(--glow-cyan)", sub: `${o.activeProducts} in stock`, trend: sparkData.products },
+            { label: "Orders", value: o.totalOrders, color: "var(--glow-green)", sub: `${o.pendingOrders} pending`, trend: sparkData.orders },
+            { label: "Revenue", value: `₦${o.totalRevenue.toLocaleString()}`, color: "var(--glow-green)", sub: `₦${o.revenueLast7d.toLocaleString()} this week`, trend: sparkData.revenue },
+          ].map((stat) => (
+            <div key={stat.label} style={{
+              background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-subtle)",
+              borderRadius: "0.75rem", padding: "1rem 1.25rem",
+              display: "flex", flexDirection: "column", justifyContent: "space-between",
+            }}>
+              <div>
+                <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>{stat.label}</p>
+                <p style={{ fontSize: "clamp(1.5rem,3vw,2rem)", fontWeight: 700, color: stat.color, lineHeight: 1 }}>{stat.value}</p>
+                <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", marginTop: "0.375rem" }}>{stat.sub}</p>
+              </div>
+              {stat.trend && (
+                <div style={{ marginTop: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Sparkline data={stat.trend} color={stat.color} width={72} height={24} />
+                  <span style={{ fontSize: "0.5625rem", color: "var(--text-muted)", flexShrink: 0 }}>7d</span>
+                </div>
+              )}
+            </div>
+          ));
+        })()}
       </div>
 
       {/* Two-column layout: Period Reports + Quick Grid */}

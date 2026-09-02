@@ -139,6 +139,20 @@ export async function GET() {
     revenueByDay[day] = (revenueByDay[day] || 0) + (o.total || 0);
   });
 
+  // Stores by day (last 30 days)
+  const storesByDay: Record<string, number> = {};
+  stores.forEach(s => {
+    const day = s.created_at.split("T")[0];
+    storesByDay[day] = (storesByDay[day] || 0) + 1;
+  });
+
+  // Products by day (last 30 days)
+  const productsByDay: Record<string, number> = {};
+  products.forEach(p => {
+    const day = p.created_at.split("T")[0];
+    productsByDay[day] = (productsByDay[day] || 0) + 1;
+  });
+
   return NextResponse.json({
     overview: {
       totalStores,
@@ -177,6 +191,8 @@ export async function GET() {
     charts: {
       ordersByDay,
       revenueByDay,
+      storesByDay,
+      productsByDay,
     },
     environment: {
       nodeEnv: process.env.NODE_ENV || "development",
