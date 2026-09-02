@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAlert } from "@/contexts/AlertContext";
 import {
   Mail, Pencil, Trash2, RefreshCw, Search, Plus, Eye, EyeOff,
@@ -311,6 +311,23 @@ function TemplateRow({ template, expanded, onToggle, onEdit, onToggleActive, onD
   onDelete: () => void;
   isMobile: boolean;
 }) {
+  const hasContent = template.html_body && template.html_body.trim() && !template.html_body.trim().startsWith("<!--");
+  const previewRef = useRef<HTMLIFrameElement>(null);
+
+  // Auto-resize iframe to content height
+  useEffect(() => {
+    if (!expanded || !previewRef.current) return;
+    const iframe = previewRef.current;
+    const timer = setTimeout(() => {
+      try {
+        if (iframe.contentDocument?.body) {
+          iframe.style.height = iframe.contentDocument.body.scrollHeight + 20 + "px";
+        }
+      } catch {}
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [expanded, template.html_body]);
+
   return (
     <div style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.5rem", overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 0.75rem", cursor: "pointer" }} onClick={onToggle}>
@@ -344,7 +361,7 @@ function TemplateRow({ template, expanded, onToggle, onEdit, onToggleActive, onD
           )}
           <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
             <button onClick={onEdit} style={{ display: "flex", alignItems: "center", gap: "0.25rem", padding: "0.375rem 0.75rem", fontSize: "0.6875rem", borderRadius: "0.375rem", border: "1px solid var(--border-subtle)", background: "var(--bg-primary)", color: "var(--text-primary)", cursor: "pointer" }}>
-              <Pencil size={10} /> Edit HTML
+              <Pencil size={10} /> {hasContent ? "Edit HTML" : "Create Content"}
             </button>
             <button onClick={onToggleActive} style={{ display: "flex", alignItems: "center", gap: "0.25rem", padding: "0.375rem 0.75rem", fontSize: "0.6875rem", borderRadius: "0.375rem", border: "1px solid var(--border-subtle)", background: "var(--bg-primary)", color: template.is_active ? "var(--glow-red)" : "var(--glow-green)", cursor: "pointer" }}>
               {template.is_active ? <><EyeOff size={10} /> Disable</> : <><Eye size={10} /> Enable</>}
@@ -365,6 +382,29 @@ function TemplateRow({ template, expanded, onToggle, onEdit, onToggleActive, onD
               </div>
             </div>
           )}
+          {/* Email Preview */}
+          <div style={{ marginTop: "0.75rem" }}>
+            <div style={{ fontSize: "0.625rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.375rem" }}>Preview</div>
+            {hasContent ? (
+              <div style={{ borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", overflow: "hidden", background: "var(--bg-primary)" }}>
+                <iframe
+                  ref={previewRef}
+                  srcDoc={template.html_body}
+                  title="Email Preview"
+                  style={{ width: "100%", height: "400px", border: "none", display: "block" }}
+                  sandbox="allow-same-origin"
+                />
+              </div>
+            ) : (
+              <div style={{ padding: "2rem", textAlign: "center", borderRadius: "0.5rem", border: "1px dashed var(--border-subtle)", background: "var(--bg-primary)" }}>
+                <Mail size={20} style={{ color: "var(--text-muted)", margin: "0 auto 0.5rem" }} />
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>No content yet. Click "Create Content" to design this email.</p>
+                <button onClick={onEdit} style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.5rem 1rem", fontSize: "0.75rem", borderRadius: "0.375rem", border: "1px solid rgba(168,133,247,0.3)", background: "rgba(168,133,247,0.1)", color: "var(--glow-purple)", cursor: "pointer" }}>
+                  <Pencil size={12} /> Create Content
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
