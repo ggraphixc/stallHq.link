@@ -6,8 +6,9 @@ import { Store, SubscriptionPlan } from "@/types";
 import { PLANS, getPlanName, getDaysRemaining, isSubscriptionActive } from "@/lib/subscription";
 import {
   Store as StoreIcon, Search, RefreshCw, ExternalLink, ShieldCheck,
-  ShieldOff, Clock, Crown, Loader2, ChevronDown, Eye, Trash2
+  ShieldOff, Clock, Crown, Loader2, ChevronDown, Eye, Trash2, Mail
 } from "lucide-react";
+import { SendStoreEmail } from "@/components/admin/SendStoreEmail";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
@@ -26,6 +27,7 @@ export function AdminStores() {
   const [total, setTotal] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [emailStoreId, setEmailStoreId] = useState<string | null>(null);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isSmall = useMediaQuery("(max-width: 480px)");
 
@@ -236,6 +238,14 @@ export function AdminStores() {
                       }}>
                         <ExternalLink size={12} /> View Store
                       </a>
+                      <button onClick={(e) => { e.stopPropagation(); setEmailStoreId(store.id); }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 0.75rem",
+                          fontSize: "0.75rem", background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.2)",
+                          borderRadius: "0.375rem", color: "var(--glow-cyan)", cursor: "pointer", minHeight: "44px",
+                        }}>
+                        <Mail size={12} /> Send Email
+                      </button>
                       <button onClick={(e) => { e.stopPropagation(); handleUpdateStore(store.id, { verified: !store.verified }); }}
                         disabled={updatingId === store.id} style={{
                           display: "flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 0.75rem",
@@ -255,6 +265,20 @@ export function AdminStores() {
           })}
         </div>
       )}
+
+      {/* Email Modal */}
+      {emailStoreId && (() => {
+        const s = stores.find(st => st.id === emailStoreId);
+        if (!s) return null;
+        return (
+          <SendStoreEmail
+            storeId={s.id}
+            storeName={s.name || "Unnamed"}
+            storeEmail={s.email || null}
+            onClose={() => setEmailStoreId(null)}
+          />
+        );
+      })()}
 
       {/* Pagination */}
       {total > 50 && (
