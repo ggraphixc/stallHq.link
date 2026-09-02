@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAlert } from "@/contexts/AlertContext";
 import { Store, StoreHours } from "@/types";
 import { normalizeWhatsAppNumber } from "@/lib/channel";
-import { X, Loader2, Camera, Instagram, Trash2, MessageCircle } from "lucide-react";
+import { X, Loader2, Camera, Instagram, Trash2, MessageCircle, Lock, Eye, EyeOff } from "lucide-react";
 import { StoreHoursManager } from "./StoreHoursManager";
 
 interface StoreSettingsProps {
@@ -85,6 +85,45 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
   const [lowStockThreshold, setLowStockThreshold] = useState(store.low_stock_threshold ?? 5);
   const [stockAlertsEnabled, setStockAlertsEnabled] = useState(store.stock_alerts_enabled ?? true);
   const [deletingStore, setDeletingStore] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      showError("New passwords do not match");
+      return;
+    }
+    if (newPassword.length < 6) {
+      showError("New password must be at least 6 characters");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showError(data.error || "Failed to change password");
+        return;
+      }
+      showSuccess("Password changed successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch {
+      showError("Network error. Please try again.");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const handleImageUpload = async (file: File, type: "logo" | "banner") => {
     const setUpload = type === "logo" ? setUploadingLogo : setUploadingBanner;
@@ -326,6 +365,150 @@ export function StoreSettings({ store, onClose, onSaved }: StoreSettingsProps) {
             ) : "Save Changes"}
           </button>
         </form>
+
+        {/* Store Preview */}
+        <div style={{ borderTop: "1px solid var(--border-subtle)", padding: "1.25rem" }}>
+          <label style={{ ...labelStyle, marginBottom: "0.75rem" }}>Store Preview</label>
+          <div style={{
+            background: "var(--bg-primary)", border: "1px solid var(--border-subtle)",
+            borderRadius: "0.75rem", overflow: "hidden",
+          }}>
+            {/* Banner preview */}
+            {bannerUrl && (
+              <div style={{ height: "5rem", overflow: "hidden" }}>
+                <img src={bannerUrl} alt="Banner" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            )}
+            <div style={{ padding: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              {/* Logo preview */}
+              <div style={{
+                width: "3rem", height: "3rem", borderRadius: "0.5rem",
+                background: logoUrl ? "none" : "linear-gradient(135deg, var(--glow-purple), var(--glow-cyan))",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                overflow: "hidden", flexShrink: 0,
+              }}>
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "white" }}>
+                    {name ? name.charAt(0).toUpperCase() : "S"}
+                  </span>
+                )}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <p style={{ fontSize: "0.875rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {name || "Store Name"}
+                </p>
+                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  stallhq.link/{slug || "your-store"}
+                </p>
+              </div>
+            </div>
+            {description && (
+              <div style={{ padding: "0 1rem 1rem" }}>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                  {description}
+                </p>
+              </div>
+            )}
+          </div>
+          <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.5rem" }}>
+            This is how your store appears to customers.
+          </p>
+        </div>
+
+        {/* Change Password */}
+        <div style={{ borderTop: "1px solid var(--border-subtle)", padding: "1.25rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+            <Lock size={14} style={{ color: "var(--glow-amber)" }} />
+            <label style={{ ...labelStyle, marginBottom: 0 }}>Change Password</label>
+          </div>
+          <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div>
+              <label style={labelStyle}>Current Password</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showCurrentPassword ? "text" : "password"}
+                  className="ambient-input"
+                  style={inputStyle}
+                  placeholder="Enter current password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "0.25rem" }}
+                >
+                  {showCurrentPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>New Password</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  className="ambient-input"
+                  style={inputStyle}
+                  placeholder="Enter new password (min 6 characters)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "0.25rem" }}
+                >
+                  {showNewPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Confirm New Password</label>
+              <input
+                type="password"
+                className="ambient-input"
+                style={inputStyle}
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
+              style={{
+                padding: "0.625rem 1rem",
+                borderRadius: "0.5rem",
+                border: "1px solid rgba(245,158,11,0.3)",
+                background: changingPassword ? "rgba(245,158,11,0.03)" : "rgba(245,158,11,0.08)",
+                color: "var(--glow-amber)",
+                fontSize: "0.8125rem",
+                fontWeight: 600,
+                cursor: changingPassword ? "not-allowed" : "pointer",
+                opacity: (!currentPassword || !newPassword || !confirmPassword) ? 0.5 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                minHeight: "44px",
+              }}
+            >
+              {changingPassword ? (
+                <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+              ) : (
+                <Lock size={14} />
+              )}
+              {changingPassword ? "Changing..." : "Update Password"}
+            </button>
+          </form>
+        </div>
 
         {/* Delete Store */}
         <div style={{ borderTop: "1px solid var(--border-subtle)", marginTop: "1rem", paddingTop: "1rem" }}>
