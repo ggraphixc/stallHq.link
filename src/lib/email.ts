@@ -7,6 +7,20 @@ const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || "ggraphixc@gmail.co
 const DEFAULT_PLATFORM_NAME = "stallHq";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
 
+// ─── A/B Subject Line Helper ─────────────────────────────────────────────────
+// Picks a random subject line from an array. Pass the variant as a tag for tracking.
+function pickSubject(variants: string[]): { subject: string; variant: string } {
+  const index = Math.floor(Math.random() * variants.length);
+  return { subject: variants[index], variant: `v${index + 1}` };
+}
+
+// ─── UTM Tracking Helper ─────────────────────────────────────────────────────
+// Appends UTM parameters to a URL for email click tracking.
+function trackUrl(url: string, campaign: string, medium = "email", source = "brevo"): string {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}utm_source=${source}&utm_medium=${medium}&utm_campaign=${campaign}`;
+}
+
 // Cache platform name in memory (fetched once per serverless instance)
 let cachedPlatformName: string | null = null;
 
@@ -143,9 +157,18 @@ function emailWrapper(content: string, platformName?: string): string {
             </table>
             <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
               <tr>
-                <td style="padding:24px 0;text-align:center;">
+                <td style="padding:24px 0 8px;text-align:center;">
                   <p style="margin:0;font-size:12px;color:#4b5563;">
                     Built by <a href="${APP_URL}" style="color:#a855f7;text-decoration:none;">${name}</a> &mdash; Free digital storefronts for WhatsApp vendors
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0 0 24px;text-align:center;">
+                  <p style="margin:0;font-size:11px;color:#4b5563;">
+                    <a href="${APP_URL}/email-preferences" style="color:#6b7280;text-decoration:underline;">Email Preferences</a>
+                    &nbsp;&middot;&nbsp;
+                    <a href="${APP_URL}/unsubscribe" style="color:#6b7280;text-decoration:underline;">Unsubscribe</a>
                   </p>
                 </td>
               </tr>
@@ -1653,16 +1676,22 @@ export async function sendWeeklyAnalyticsSummary({
       ${topProductsSection}
       <tr>
         <td style="padding:8px 32px 32px;text-align:center;">
-          <a href="${APP_URL}/dashboard" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Full Dashboard</a>
+          <a href="${APP_URL}/dashboard?utm_source=brevo&utm_medium=email&utm_campaign=weekly-analytics" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Full Dashboard</a>
         </td>
       </tr>
   `);
 
+  const { subject, variant } = pickSubject([
+    `Your ${storeName} weekly analytics — ${stats.visits} visits, ${stats.orders} orders`,
+    `${storeName}'s week in review: ${stats.visits} visitors, ${stats.orders} orders`,
+    `Weekly report: ${storeName} had ${stats.visits} visits this week`,
+  ]);
+
   return sendBrevoEmail({
     to: [{ email }],
-    subject: `Your ${storeName} weekly analytics — ${stats.visits} visits, ${stats.orders} orders`,
+    subject,
     htmlContent: html,
-    tags: ["marketing", "weekly_analytics_summary"],
+    tags: ["marketing", "weekly_analytics_summary", variant],
     templateSlug: "weekly-analytics-summary",
     templateVars: {
       greeting,
@@ -1840,16 +1869,22 @@ export async function sendMonthlyAnalyticsSummary({
       ${topProductsSection}
       <tr>
         <td style="padding:8px 32px 32px;text-align:center;">
-          <a href="${APP_URL}/dashboard" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Full Dashboard</a>
+          <a href="${APP_URL}/dashboard?utm_source=brevo&utm_medium=email&utm_campaign=monthly-analytics" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Full Dashboard</a>
         </td>
       </tr>
   `);
 
+  const { subject, variant } = pickSubject([
+    `${storeName} ${month} report — ${stats.visits} visits, ${stats.orders} orders`,
+    `Your ${month} recap: ${storeName} grew with ${stats.visits} visits`,
+    `${storeName}'s ${month} performance: ${stats.visits} visitors, ${stats.orders} orders`,
+  ]);
+
   return sendBrevoEmail({
     to: [{ email }],
-    subject: `${storeName} ${month} report — ${stats.visits} visits, ${stats.orders} orders`,
+    subject,
     htmlContent: html,
-    tags: ["marketing", "monthly_analytics_summary"],
+    tags: ["marketing", "monthly_analytics_summary", variant],
     templateSlug: "monthly-analytics-summary",
     templateVars: {
       greeting,
@@ -1964,16 +1999,22 @@ export async function sendOnboardingChecklist({
       </tr>
       <tr>
         <td style="padding:8px 32px 32px;text-align:center;">
-          <a href="${APP_URL}/${storeSlug}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Your Store</a>
+          <a href="${APP_URL}/${storeSlug}?utm_source=brevo&utm_medium=email&utm_campaign=onboarding-checklist" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Your Store</a>
         </td>
       </tr>
   `);
 
+  const { subject, variant } = pickSubject([
+    `${storeName} is live! Here's your setup checklist`,
+    `Congrats! ${storeName} is now live on ${platformName}`,
+    `Your store is ready — 4 steps to get your first order`,
+  ]);
+
   return sendBrevoEmail({
     to: [{ email }],
-    subject: `${storeName} is live! Here's your setup checklist`,
+    subject,
     htmlContent: html,
-    tags: ["marketing", "onboarding_checklist"],
+    tags: ["marketing", "onboarding_checklist", variant],
     templateSlug: "onboarding-checklist",
     templateVars: {
       greeting,

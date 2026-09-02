@@ -18,6 +18,25 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Check if a user has opted into a specific email type
+async function canSendEmail(userId: string, preferenceKey: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from("email_preferences")
+      .select(preferenceKey)
+      .eq("user_id", userId)
+      .single();
+
+    // If no preferences exist or error, default to sending (opt-out model)
+    if (error || !data) return true;
+    const prefs = data as unknown as Record<string, boolean>;
+    return prefs[preferenceKey] !== false;
+  } catch {
+    // If table doesn't exist or error, default to sending
+    return true;
+  }
+}
+
 export async function GET(request: NextRequest) {
   // Verify cron secret — accept Bearer token OR Vercel's x-vercel-cron header
   const authHeader = request.headers.get("authorization");
@@ -93,6 +112,10 @@ export async function GET(request: NextRequest) {
       };
 
       const productCount = productCountMap.get(store.id) || 0;
+
+      // Check email preferences
+      const canSendTrial = await canSendEmail(store.user_id, "trial_nurture");
+      if (!canSendTrial) continue;
 
       try {
         if (daysSinceSignup === 1) {
@@ -229,6 +252,10 @@ export async function GET(request: NextRequest) {
         if (!store.user_id) continue;
         const userInfo = activeUserMap.get(store.user_id);
         if (!userInfo?.email) continue;
+
+        // Check email preferences
+        const canSendWeekly = await canSendEmail(store.user_id, "weekly_analytics");
+        if (!canSendWeekly) continue;
 
         try {
           // Use aggregated data instead of raw analytics (much faster)
@@ -434,6 +461,10 @@ export async function GET(request: NextRequest) {
         if (!store.user_id) continue;
         const userInfo = monthlyUserMap.get(store.user_id);
         if (!userInfo?.email) continue;
+
+        // Check email preferences
+        const canSendMonthly = await canSendEmail(store.user_id, "monthly_analytics");
+        if (!canSendMonthly) continue;
 
         try {
           // Get aggregated data for last month
