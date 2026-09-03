@@ -6,6 +6,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, Product } from "../../../lib/supabase";
+import { BrandLoader } from "../../../components/BrandLoader";
 import { Colors, FontSize, Spacing, BorderRadius, ambientInput, labelStyle } from "../../../lib/theme";
 import { ArrowLeft, Save, Trash2, Package, Eye } from "lucide-react-native";
 
@@ -83,7 +84,7 @@ export default function ProductDetailScreen() {
   };
 
   if (loading || !product) {
-    return <SafeAreaView style={styles.container}><View style={styles.centered}><Text style={{ color: Colors.textSecondary }}>Loading...</Text></View></SafeAreaView>;
+    return <BrandLoader label="Loading product" />;
   }
 
   return (

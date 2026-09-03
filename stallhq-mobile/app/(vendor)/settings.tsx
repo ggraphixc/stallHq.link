@@ -7,6 +7,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
+import { BrandLoader } from "../../components/BrandLoader";
 import { Colors, FontSize, Spacing, BorderRadius, ambientInput, labelStyle } from "../../lib/theme";
 import { ArrowLeft, Save, Lock, Trash2, Eye, EyeOff, Store as StoreIcon } from "lucide-react-native";
 
@@ -107,7 +108,7 @@ export default function SettingsScreen() {
   };
 
   if (!store) {
-    return <SafeAreaView style={styles.container}><View style={styles.centered}><Text style={{ color: Colors.textSecondary }}>Loading...</Text></View></SafeAreaView>;
+    return <BrandLoader label="Loading settings" />;
   }
 
   return (

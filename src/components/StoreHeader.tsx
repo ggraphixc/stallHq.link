@@ -5,6 +5,7 @@ import { CartDrawer } from "./CartDrawer";
 import { StoreAvatar } from "./ui/StoreAvatar";
 import { MessageCircle, Instagram, ShieldCheck } from "lucide-react";
 import { hasWhatsApp, hasInstagram, generateInstagramUrl } from "@/lib/channel";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 interface StoreHeaderProps {
   store: Store;
@@ -25,6 +26,7 @@ const iconBtn: React.CSSProperties = {
 };
 
 export function StoreHeader({ store }: StoreHeaderProps) {
+  const { trackWhatsAppClick, trackEvent } = useAnalytics();
   return (
     <header style={{
       position: "sticky",
@@ -73,6 +75,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
               rel="noopener noreferrer"
               style={{ ...iconBtn, background: "linear-gradient(135deg, #25d366, #128c7e)" }}
               title="Chat on WhatsApp"
+              onClick={() => trackWhatsAppClick(store.id)}
             >
               <MessageCircle size={18} />
             </a>
@@ -86,6 +89,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
               rel="noopener noreferrer"
               style={{ ...iconBtn, background: "linear-gradient(135deg, #E1306C, #833AB4)" }}
               title="Open Instagram"
+              onClick={() => trackEvent({ storeId: store.id, eventType: "whatsapp_click", metadata: { channel: "instagram" } })}
             >
               <Instagram size={18} />
             </a>

@@ -17,7 +17,12 @@
         "backgroundColor": "#0a0a0f",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
-      "package": "com.stallhq.app"
+      "package": "com.stallhq.app",
+      "versionCode": 1,
+      "extraMavenRepos": [
+        "https://maven-central.storage-download.googleapis.com/maven2",
+        "https://maven.aliyun.com/repository/central"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -26,6 +31,13 @@
     "plugins": [
       "expo-router",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "24fe937f-a9eb-44a5-8b8d-2a3484c293f0"
+      }
+    },
+    "owner": "zerupthcodes"
   }
 }

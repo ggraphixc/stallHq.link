@@ -128,7 +128,7 @@ const sectionLabel: React.CSSProperties = {
 /* ── Main Component ─────────────────────────────── */
 
 export function StorePage({ store, products, aiAssistantEnabled }: StorePageProps) {
-  const { trackVisit } = useAnalytics();
+  const { trackVisit, trackWhatsAppClick, trackEvent } = useAnalytics();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { error: showError, success: showSuccess } = useAlert();
   const supabase = createClient();
@@ -137,20 +137,20 @@ export function StorePage({ store, products, aiAssistantEnabled }: StorePageProp
   const [activeTab, setActiveTab] = useState<"products" | "about">("products");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
 
+  // Count the visit once, unless the viewer is the store owner (their own preview)
   useEffect(() => {
-    trackVisit(store.id);
-  }, [store.id, trackVisit]);
-
-  // Check if current user is the store owner
-  useEffect(() => {
-    const checkOwner = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+    const init = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user && user.id === store.user_id) {
         setIsOwner(true);
+      } else {
+        trackVisit(store.id);
       }
     };
-    checkOwner();
-  }, [store.user_id, supabase]);
+    init();
+  }, [store.user_id, store.id, supabase, trackVisit]);
 
   // Categories
   const categories = useMemo(
@@ -300,6 +300,7 @@ export function StorePage({ store, products, aiAssistantEnabled }: StorePageProp
                   target="_blank"
                   rel="noopener noreferrer"
                   className="glow-button whatsapp-button"
+                  onClick={() => trackWhatsAppClick(store.id)}
                   style={{
                     flex: 1,
                     padding: "0.625rem 1rem",
@@ -321,6 +322,7 @@ export function StorePage({ store, products, aiAssistantEnabled }: StorePageProp
                   target="_blank"
                   rel="noopener noreferrer"
                   className="glow-button"
+                  onClick={() => trackEvent({ storeId: store.id, eventType: "whatsapp_click", metadata: { channel: "instagram" } })}
                   style={{
                     flex: 1,
                     padding: "0.625rem 1rem",
@@ -539,6 +541,7 @@ export function StorePage({ store, products, aiAssistantEnabled }: StorePageProp
                     href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackWhatsAppClick(store.id)}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -566,6 +569,7 @@ export function StorePage({ store, products, aiAssistantEnabled }: StorePageProp
                     href={generateInstagramUrl(store.instagram_handle!)}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackEvent({ storeId: store.id, eventType: "whatsapp_click", metadata: { channel: "instagram" } })}
                     style={{
                       display: "flex",
                       alignItems: "center",

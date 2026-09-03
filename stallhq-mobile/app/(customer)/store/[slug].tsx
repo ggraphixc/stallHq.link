@@ -6,6 +6,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase, Store, Product } from "../../../lib/supabase";
+import { trackStoreVisit, trackStoreClick } from "../../../lib/track";
+import { BrandLoader } from "../../../components/BrandLoader";
 import { Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
 import { ArrowLeft, Store as StoreIcon, MessageCircle, Camera, Minus, Plus, Package, Bot } from "lucide-react-native";
 import { AssistantChat } from "../../../components/AssistantChat";
@@ -29,6 +31,13 @@ export default function StoreDetailScreen() {
         setStore(s);
         const { data: p } = await supabase.from("products").select("*").eq("store_id", s.id).eq("in_stock", true).order("created_at", { ascending: false });
         if (!cancelled) setProducts(p ?? []);
+        // Count the visit — unless the viewer is the store owner (their own preview)
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user || user.id !== s.user_id) {
+          trackStoreVisit(s.id);
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -55,6 +64,7 @@ export default function StoreDetailScreen() {
 
   const orderWhatsApp = () => {
     if (!store?.whatsapp_number) return;
+    trackStoreClick(store.id);
     const num = store.whatsapp_number.replace(/[^0-9]/g, "");
     let msg = `Hi! I'd like to order from ${store.name}:\n\n`;
     selected.forEach((qty, id) => {
@@ -69,7 +79,7 @@ export default function StoreDetailScreen() {
   const total = Array.from(selected.entries()).reduce((s, [id, q]) => { const p = products.find((pp) => pp.id === id); return s + (p ? p.price * q : 0); }, 0);
   const totalQty = Array.from(selected.values()).reduce((s, q) => s + q, 0);
 
-  if (!store) return <SafeAreaView style={styles.container}><View style={styles.centered}><Text style={{ color: Colors.textSecondary }}>Loading...</Text></View></SafeAreaView>;
+  if (!store) return <BrandLoader label="Opening store" />;
 
   return (
     <SafeAreaView style={styles.container}>

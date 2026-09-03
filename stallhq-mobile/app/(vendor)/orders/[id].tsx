@@ -5,6 +5,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase, Order } from "../../../lib/supabase";
+import { BrandLoader } from "../../../components/BrandLoader";
 import { Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
 import { ArrowLeft, Phone, Clock, StickyNote } from "lucide-react-native";
 
@@ -43,7 +44,7 @@ export default function OrderDetailScreen() {
   };
 
   if (loading || !order) {
-    return <SafeAreaView style={styles.container}><View style={styles.centered}><Text style={{ color: Colors.textSecondary }}>Loading...</Text></View></SafeAreaView>;
+    return <BrandLoader label="Loading order" />;
   }
 
   return (
