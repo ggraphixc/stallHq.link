@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Expo / Metro
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native builds
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+ios/
+android/
+
+# Local env (contains Supabase credentials)
+.env
+.env.local
+
+# Misc
+.DS_Store
+npm-debug.log*
