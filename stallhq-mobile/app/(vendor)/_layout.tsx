@@ -30,6 +30,10 @@ export default function VendorLayout() {
         name="promo-cards"
         options={{ animation: "slide_from_right" }}
       />
+      <Stack.Screen
+        name="browse"
+        options={{ animation: "slide_from_right" }}
+      />
     </Stack>
   );
 }

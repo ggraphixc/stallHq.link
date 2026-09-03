@@ -424,6 +424,22 @@ export default function VendorDashboard() {
           </TouchableOpacity>
         </View>
 
+        {/* ── Discover other stores ── */}
+        <TouchableOpacity
+          style={styles.discoverCard}
+          onPress={() => router.push("/(vendor)/browse")}
+          activeOpacity={0.8}
+        >
+          <View style={styles.discoverIcon}>
+            <Store size={20} color={Colors.cyan} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.discoverTitle}>Browse Stores</Text>
+            <Text style={styles.discoverSub}>Discover other vendors on stallHq and shop their products</Text>
+          </View>
+          <ArrowRight size={16} color={Colors.textMuted} />
+        </TouchableOpacity>
+
         {/* ── Products Section ── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -598,6 +614,19 @@ const styles = StyleSheet.create({
     alignItems: "center", gap: 8,
   },
   actionText: { fontSize: 11, fontWeight: "600", color: Colors.textSecondary, textAlign: "center" },
+
+  // Discover stores card
+  discoverCard: {
+    flexDirection: "row", alignItems: "center", gap: Spacing.md,
+    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.xl,
+  },
+  discoverIcon: {
+    width: 40, height: 40, borderRadius: BorderRadius.md,
+    backgroundColor: Colors.cyanDim, justifyContent: "center", alignItems: "center",
+  },
+  discoverTitle: { fontSize: FontSize.md, fontWeight: "700", color: Colors.text },
+  discoverSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
 
   // Section
   section: { marginBottom: Spacing.xl },
