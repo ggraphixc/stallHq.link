@@ -14,6 +14,7 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAlert } from "@/contexts/AlertContext";
 import { ShareCard } from "@/components/ShareCard";
+import { StoreAssistant } from "@/components/StoreAssistant";
 import { createClient } from "@/lib/supabase/client";
 import { hasWhatsApp, hasInstagram, generateInstagramUrl } from "@/lib/channel";
 import {
@@ -33,6 +34,7 @@ import {
 interface StorePageProps {
   store: Store;
   products: Product[];
+  aiAssistantEnabled?: boolean;
 }
 
 /* ── Particle canvas ────────────────────────────── */
@@ -125,7 +127,7 @@ const sectionLabel: React.CSSProperties = {
 
 /* ── Main Component ─────────────────────────────── */
 
-export function StorePage({ store, products }: StorePageProps) {
+export function StorePage({ store, products, aiAssistantEnabled }: StorePageProps) {
   const { trackVisit } = useAnalytics();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { error: showError, success: showSuccess } = useAlert();
@@ -637,6 +639,9 @@ export function StorePage({ store, products }: StorePageProps) {
       </main>
 
       <StoreFooter store={store} />
+
+      {/* ── AI Store Assistant (public) ───────────── */}
+      {aiAssistantEnabled && <StoreAssistant storeSlug={store.slug} storeName={store.name} />}
 
       {/* ── Owner Dashboard Button ────────────────── */}
       {isOwner && (

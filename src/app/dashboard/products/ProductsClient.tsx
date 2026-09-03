@@ -20,8 +20,13 @@ import {
   Loader2,
   ChevronDown,
   Filter,
+  Sparkles,
+  Lock,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { hasAIAccess } from "@/lib/subscription";
 
 interface ProductsClientProps {
   store: Store;
@@ -146,9 +151,58 @@ export function ProductsClient({
   const [filterStock, setFilterStock] = useState<"all" | "in_stock" | "out_of_stock">("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [bulkAI, setBulkAI] = useState<{ running: boolean; done: number; total: number; succeeded: number; failed: number; error?: string }>({
+    running: false, done: 0, total: 0, succeeded: 0, failed: 0,
+  });
 
   const productLimit = getProductLimit(store);
   const atLimit = hasReachedProductLimit(store, products.length);
+  const canAI = hasAIAccess(store);
+  const missingDescriptionCount = products.filter((p) => !p.description || !p.description.trim()).length;
+
+  const handleBulkGenerate = async () => {
+    if (!canAI) { router.push("/upgrade"); return; }
+    const targets = products.filter((p) => !p.description || !p.description.trim());
+    if (targets.length === 0) {
+      alert("All your products already have descriptions.");
+      return;
+    }
+    if (!confirm(`Generate descriptions for ${targets.length} product${targets.length !== 1 ? "s" : ""}? This may take a minute or two.`)) return;
+
+    setBulkAI({ running: true, done: 0, total: targets.length, succeeded: 0, failed: 0 });
+    const chunk = 10;
+    let succeeded = 0;
+    let failed = 0;
+
+    try {
+      for (let i = 0; i < targets.length; i += chunk) {
+        const ids = targets.slice(i, i + chunk).map((p) => p.id);
+        const res = await fetch("/api/ai/bulk-descriptions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productIds: ids }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Bulk generation failed");
+        }
+        succeeded += data.succeeded || 0;
+        failed += data.failed || 0;
+        setBulkAI((s) => ({ ...s, done: Math.min(i + chunk, targets.length), succeeded, failed }));
+
+        // Refresh product list with the newly generated descriptions
+        const refreshed = await fetch(`/api/products?store_id=${store.id}`);
+        if (refreshed.ok) {
+          const updated = await refreshed.json();
+          setProducts(updated);
+        }
+      }
+    } catch (e: any) {
+      setBulkAI((s) => ({ ...s, error: e?.message || "Generation failed. Try again." }));
+    } finally {
+      setBulkAI((s) => ({ ...s, running: false }));
+    }
+  };
 
   const filteredProducts = products.filter((p) => {
     const matchesSearch =
@@ -255,6 +309,35 @@ export function ProductsClient({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            {missingDescriptionCount > 0 && (
+              canAI ? (
+                <button
+                  onClick={handleBulkGenerate}
+                  disabled={bulkAI.running}
+                  title={`Generate descriptions for ${missingDescriptionCount} product${missingDescriptionCount !== 1 ? "s" : ""} without one`}
+                  className="glow-button-secondary"
+                  style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "0.375rem", cursor: bulkAI.running ? "wait" : "pointer" }}
+                >
+                  {bulkAI.running ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Sparkles size={14} />}
+                  {bulkAI.running
+                    ? `Generating ${bulkAI.done}/${bulkAI.total}…`
+                    : isDesktop
+                      ? `AI Descriptions (${missingDescriptionCount})`
+                      : "AI"}
+                </button>
+              ) : (
+                <a
+                  href="/upgrade"
+                  title="Upgrade to a paid plan to use AI descriptions"
+                  className="glow-button-secondary"
+                  style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.375rem" }}
+                >
+                  <Sparkles size={14} />
+                  <Lock size={11} />
+                  {isDesktop && <span>AI Pro</span>}
+                </a>
+              )
+            )}
             {atLimit ? (
               <a
                 href="/upgrade"
@@ -321,6 +404,58 @@ export function ProductsClient({
             ))}
           </div>
         </div>
+
+        {/* Bulk AI progress */}
+        {(bulkAI.running || bulkAI.failed > 0 || bulkAI.succeeded > 0) && (
+          <div style={{ ...glassCard, padding: "0.875rem 1rem", marginBottom: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8125rem", fontWeight: 600 }}>
+                {bulkAI.running ? (
+                  <Loader2 size={14} style={{ animation: "spin 1s linear infinite", color: "var(--glow-purple)" }} />
+                ) : bulkAI.failed > 0 && bulkAI.succeeded === 0 ? (
+                  <AlertCircle size={14} style={{ color: "var(--glow-red)" }} />
+                ) : (
+                  <CheckCircle2 size={14} style={{ color: "var(--glow-green)" }} />
+                )}
+                <span>
+                  {bulkAI.running
+                    ? `Generating descriptions… ${bulkAI.done}/${bulkAI.total}`
+                    : `${bulkAI.succeeded} description${bulkAI.succeeded !== 1 ? "s" : ""} generated` + (bulkAI.failed > 0 ? `, ${bulkAI.failed} failed` : "")}
+                </span>
+              </div>
+              {bulkAI.running && (
+                <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                  {Math.round((bulkAI.done / Math.max(bulkAI.total, 1)) * 100)}%
+                </span>
+              )}
+            </div>
+            {bulkAI.running && (
+              <div style={{ height: "0.375rem", borderRadius: "9999px", background: "var(--bg-secondary)", overflow: "hidden" }}>
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${Math.round((bulkAI.done / Math.max(bulkAI.total, 1)) * 100)}%`,
+                    background: "linear-gradient(90deg, var(--glow-purple), var(--glow-cyan))",
+                    transition: "width 0.3s",
+                  }}
+                />
+              </div>
+            )}
+            {bulkAI.error && (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.75rem", color: "var(--glow-red)" }}>
+                <AlertCircle size={12} /> {bulkAI.error}
+              </div>
+            )}
+            {!bulkAI.running && (
+              <button
+                onClick={() => setBulkAI({ running: false, done: 0, total: 0, succeeded: 0, failed: 0 })}
+                style={{ alignSelf: "flex-start", fontSize: "0.6875rem", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+              >
+                Dismiss
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Product List */}
         {filteredProducts.length === 0 ? (

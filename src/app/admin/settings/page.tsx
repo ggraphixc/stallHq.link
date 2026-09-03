@@ -14,7 +14,7 @@ const DEFAULT_SETTINGS: Record<string, any> = {
   brevo_sender_email: process.env.BREVO_SENDER_EMAIL || "", brevo_sender_name: "StallHq",
   maintenance_mode: false, allow_signup: true,
   max_free_products: 10, trial_days: 14, support_email: "",
-  ai_enabled: false, ai_provider: "openrouter", ai_model: "", ai_api_key: "", ai_base_url: "",
+  ai_enabled: false, ai_provider: "openrouter", ai_model: "", ai_api_key: "", ai_base_url: "", ai_assistant_enabled: false,
   logo_url: "", favicon_url: "", platform_name: "",
 };
 
@@ -336,6 +336,13 @@ function AITab({ settings, updateSetting, showAIKey, setShowAIKey }: { settings:
       </label>
       {settings.ai_enabled && (
         <>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", cursor: "pointer" }}>
+            <input type="checkbox" checked={!!settings.ai_assistant_enabled} onChange={(e) => updateSetting("ai_assistant_enabled", e.target.checked)} style={{ width: "1rem", height: "1rem", accentColor: "var(--glow-purple)" }} />
+            <div>
+              <p style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Enable Store AI Assistant</p>
+              <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Chat widget on storefronts & mobile that answers from real inventory</p>
+            </div>
+          </label>
           <div>
             <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Provider</label>
             <select className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", background: "var(--bg-primary)", boxSizing: "border-box" }} value={settings.ai_provider || "openrouter"} onChange={(e) => updateSetting("ai_provider", e.target.value)}>

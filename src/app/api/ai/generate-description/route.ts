@@ -1,43 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createTokenClient } from "@supabase/supabase-js";
+import { createClient as createAuthClient } from "@/lib/supabase/api";
+import {
+  adminClient,
+  getAiSettings,
+  resolveProvider,
+  callAiProvider,
+  checkRateLimit,
+  getRateLimitReset,
+} from "@/lib/ai";
 
-// Provider base URLs
-const PROVIDER_URLS: Record<string, string> = {
-  openrouter: "https://openrouter.ai/api/v1/chat/completions",
-  opencodezen: "",
-  openai: "https://api.openai.com/v1/chat/completions",
-  custom: "",
-};
-
-// Simple in-memory rate limit: 10 requests per user per 5 minutes
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_MAX = 10;
-const RATE_LIMIT_WINDOW = 5 * 60 * 1000;
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT_MAX) return false;
-  entry.count++;
-  return true;
-}
-
-// Fetch with timeout
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 30000): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
+/**
+ * POST /api/ai/generate-description
+ * Single product description generation. Auth via session cookie (web) or
+ * `x-access-token` header (mobile app).
+ */
 export async function POST(req: NextRequest) {
   try {
     const { name, category, price, imageUrl } = await req.json();
@@ -46,30 +23,39 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Product name is required" }, { status: 400 });
     }
 
-    // Auth check
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll: () => req.cookies.getAll() } }
-    );
-    const { data: { user } } = await supabase.auth.getUser();
+    // ── Auth: cookie session (web) OR x-access-token (mobile) ──
+    const accessToken = req.headers.get("x-access-token");
+    let user: { id: string } | null = null;
+
+    if (accessToken) {
+      const tokenClient = createTokenClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
+      );
+      const { data } = await tokenClient.auth.getUser();
+      user = data.user;
+    } else {
+      const cookieClient = await createAuthClient();
+      const { data } = await cookieClient.auth.getUser();
+      user = data.user;
+    }
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Rate limit
+    // ── Rate limit ──
     if (!checkRateLimit(user.id)) {
+      const reset = getRateLimitReset(user.id);
       return NextResponse.json(
-        { error: "Too many requests. Please wait a few minutes before trying again." },
+        { error: `Too many requests. Try again in ~${Math.ceil((reset || 60) / 60)} min.` },
         { status: 429 }
       );
     }
 
-    // Plan check — AI is only for paid plans
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // ── Plan gate — AI only for paid plans ──
+    const adminSupabase = adminClient();
     const { data: store } = await adminSupabase
       .from("stores")
       .select("plan")
@@ -82,42 +68,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Load AI settings from platform_settings
-    const { data: settingsRows } = await adminSupabase
-      .from("platform_settings")
-      .select("key, value")
-      .in("key", ["ai_enabled", "ai_provider", "ai_model", "ai_api_key", "ai_base_url"]);
+    // ── Settings + provider ──
+    const settings = await getAiSettings();
+    const config = resolveProvider(settings); // throws descriptive errors
 
-    const settings: Record<string, any> = {};
-    settingsRows?.forEach((r) => { settings[r.key] = r.value; });
-
-    if (!settings.ai_enabled) {
-      return NextResponse.json({ error: "AI features are not enabled by the platform admin" }, { status: 400 });
-    }
-    if (!settings.ai_api_key) {
-      return NextResponse.json({ error: "AI not configured — no API key set" }, { status: 400 });
-    }
-    if (!settings.ai_model) {
-      return NextResponse.json({ error: "AI not configured — no model set" }, { status: 400 });
-    }
-
-    const provider = settings.ai_provider || "openrouter";
-    const model = settings.ai_model;
-    const apiKey = settings.ai_api_key;
-
-    // Determine base URL — append /chat/completions if not already present
-    let baseURL = settings.ai_base_url || PROVIDER_URLS[provider] || "";
-    if (!baseURL) {
-      return NextResponse.json({ error: `No base URL configured for ${provider}` }, { status: 400 });
-    }
-    if (!baseURL.endsWith("/chat/completions")) {
-      baseURL = baseURL.replace(/\/+$/, "") + "/chat/completions";
-    }
-
-    // Build prompt — rich, detailed product description
-    let promptText = `You are a professional copywriter for a Nigerian online store. Write a compelling, detailed product description (4-6 sentences) for:
-
-Product Name: ${name.trim()}`;
+    // Build prompt
+    let promptText = `You are a professional copywriter for a Nigerian online store. Write a compelling, detailed product description (4-6 sentences) for:\n\nProduct Name: ${name.trim()}`;
     if (category) promptText += `\nCategory: ${category.trim()}`;
     if (price) promptText += `\nPrice: ₦${price}`;
     promptText += `\n\nWrite a persuasive, sales-oriented description that:
@@ -132,118 +88,34 @@ Do NOT include any prefixes like "DESCRIPTION:" — just write the description d
 
     if (!category) {
       promptText += `\n\nAlso suggest ONE short category name (e.g., "Electronics", "Fashion", "Beauty", "Food").`;
-      promptText += `\nReturn your response in this exact format:
-DESCRIPTION: <the 4-6 sentence description>
-CATEGORY: <the category>`;
+      promptText += `\nReturn your response in this exact format:\nDESCRIPTION: <the 4-6 sentence description>\nCATEGORY: <the category>`;
     } else {
       promptText += `\n\nOnly return the description text, nothing else.`;
     }
 
-    // Build message content (text + optional image)
+    // Message content (text + optional image for multimodal)
     const contentParts: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
     contentParts.push({ type: "text", text: promptText });
-
-    // Send product image for multimodal AI (base64 data URL or HTTP URL)
-    // Skip if image is too large (>1MB base64 text)
     if (imageUrl && imageUrl.length < 1_500_000) {
-      contentParts.push({
-        type: "image_url",
-        image_url: { url: imageUrl },
-      });
+      contentParts.push({ type: "image_url", image_url: { url: imageUrl } });
     }
 
-    const userMessage = {
-      role: "user",
-      content: contentParts.length === 1 ? contentParts[0].text : contentParts,
-    };
+    const system =
+      "You are an expert copywriter for Nigerian online stores. You write compelling, detailed product descriptions that sell. Your descriptions are 4-6 sentences, opening with a hook, highlighting key features and benefits, and ending with a subtle call-to-action. You use warm, professional language. Never include prefixes like 'DESCRIPTION:' — just write the description.";
 
-    // Call the AI provider with timeout
-    let response: Response;
-    try {
-      response = await fetchWithTimeout(baseURL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-          ...(provider === "openrouter" ? {
-            "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app",
-            "X-Title": "stallHq",
-          } : {}),
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: "You are an expert copywriter for Nigerian online stores. You write compelling, detailed product descriptions that sell. Your descriptions are 4-6 sentences, opening with a hook, highlighting key features and benefits, and ending with a subtle call-to-action. You use warm, professional language. Never include prefixes like 'DESCRIPTION:' — just write the description." },
-            userMessage,
-          ],
-          max_tokens: 600,
-        }),
-      }, 30000);
-    } catch (fetchError: any) {
-      if (fetchError.name === "AbortError") {
-        return NextResponse.json(
-          { error: "AI request timed out. The service may be slow — try again." },
-          { status: 504 }
-        );
-      }
-      return NextResponse.json(
-        { error: "Could not connect to AI provider. Check your network." },
-        { status: 502 }
-      );
-    }
+    const content = await callAiProvider(config, [
+      { role: "system", content: system },
+      {
+        role: "user",
+        content: contentParts.length === 1 ? (contentParts[0].text as string) : contentParts,
+      },
+    ]);
 
-    // Handle provider errors
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "unknown");
-      console.error("AI provider error:", response.status, errorText.slice(0, 200));
-
-      if (response.status === 429) {
-        return NextResponse.json(
-          { error: "AI provider rate limit hit. Try again in a minute." },
-          { status: 429 }
-        );
-      }
-      if (response.status === 401 || response.status === 403) {
-        return NextResponse.json(
-          { error: "Invalid AI API key. Check your settings." },
-          { status: 401 }
-        );
-      }
-      if (response.status === 404) {
-        return NextResponse.json(
-          { error: `Model "${model}" not found. Check your model name.` },
-          { status: 404 }
-        );
-      }
-      return NextResponse.json(
-        { error: "AI provider error. Try again later." },
-        { status: 502 }
-      );
-    }
-
-    const data = await response.json();
-
-    // Debug: log raw response structure (first 500 chars)
-    console.log("AI raw response keys:", Object.keys(data).join(", "));
-    console.log("AI raw response snippet:", JSON.stringify(data).slice(0, 500));
-
-    // Try multiple response formats
-    let content = data.choices?.[0]?.message?.content?.trim();
-    if (!content) content = data.choices?.[0]?.text?.trim();
-    if (!content) content = data.output?.text?.trim();
-    if (!content) content = data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      console.error("AI empty response. Full data:", JSON.stringify(data).slice(0, 1000));
-      return NextResponse.json({ error: "AI returned empty response" }, { status: 500 });
-    }
-
-    // Parse response
+    // Parse
     let description: string;
     let suggestedCategory: string | null = null;
 
     if (!category && content.includes("DESCRIPTION:") && content.includes("CATEGORY:")) {
-      // Parse structured response: "DESCRIPTION: ...\nCATEGORY: ..."
       const descStart = content.indexOf("DESCRIPTION:") + "DESCRIPTION:".length;
       const catStart = content.indexOf("CATEGORY:");
       description = content.slice(descStart, catStart).trim();
@@ -252,21 +124,32 @@ CATEGORY: <the category>`;
       description = content;
     }
 
-    // Strip any leftover prefixes the AI might add
     description = description.replace(/^DESCRIPTION:\s*/i, "").trim();
     suggestedCategory = suggestedCategory?.replace(/^CATEGORY:\s*/i, "").trim() || null;
 
-    // Trim to reasonable length (max ~1500 chars for detailed descriptions)
     if (description.length > 1500) {
       description = description.slice(0, 1497) + "...";
     }
 
     return NextResponse.json({ description, suggestedCategory });
   } catch (error: any) {
+    if (error?.status) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    const msg = String(error?.message || "");
+    if (msg === "AI_FEATURES_DISABLED") {
+      return NextResponse.json({ error: "AI features are not enabled by the platform admin" }, { status: 400 });
+    }
+    if (msg === "AI_NOT_CONFIGURED_KEY") {
+      return NextResponse.json({ error: "AI not configured — no API key set" }, { status: 400 });
+    }
+    if (msg === "AI_NOT_CONFIGURED_MODEL") {
+      return NextResponse.json({ error: "AI not configured — no model set" }, { status: 400 });
+    }
+    if (msg === "AI_NO_BASE_URL") {
+      return NextResponse.json({ error: "No AI base URL configured. Check admin settings." }, { status: 400 });
+    }
     console.error("AI generation error:", error?.message || error);
-    return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

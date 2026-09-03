@@ -27,6 +27,16 @@ export async function getStoreByUserId(userId: string) {
   return data;
 }
 
+export async function getPlatformSetting(key: string): Promise<any | null> {
+  const { data, error } = await supabase
+    .from("platform_settings")
+    .select("value")
+    .eq("key", key)
+    .single();
+  if (error || !data) return null;
+  return data.value;
+}
+
 export async function getProductsByStoreId(storeId: string) {
   const { data, error } = await supabase
     .from("products")

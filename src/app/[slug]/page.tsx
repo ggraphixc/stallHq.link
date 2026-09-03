@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import { getStoreBySlug, getProductsByStoreId } from "@/lib/supabase";
+import { getStoreBySlug, getProductsByStoreId, getPlatformSetting } from "@/lib/supabase";
 import { StorePage } from "@/components/StorePage";
 import {
   generateStoreSchema,
@@ -110,6 +110,7 @@ export default async function StoreRoute({ params }: PageProps) {
     const store = await getStoreBySlug(slug);
     const products = await getProductsByStoreId(store.id);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app";
+    const aiAssistantEnabled = (await getPlatformSetting("ai_assistant_enabled")) === true;
 
     // Comprehensive structured data
     const storeSchema = generateStoreSchema(store);
@@ -146,7 +147,7 @@ export default async function StoreRoute({ params }: PageProps) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(aeoContent) }}
         />
-        <StorePage store={store} products={products} />
+        <StorePage store={store} products={products} aiAssistantEnabled={aiAssistantEnabled} />
       </>
     );
   } catch {

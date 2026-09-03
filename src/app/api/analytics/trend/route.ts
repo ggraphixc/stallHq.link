@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
   const [analyticsResult, ordersResult] = await Promise.all([
     supabase
       .from("analytics")
-      .select("type, created_at")
+      .select("event_type, created_at")
       .eq("store_id", storeId)
       .gte("created_at", sinceDate),
     supabase
@@ -57,8 +57,8 @@ export async function GET(request: NextRequest) {
 
   analytics.forEach(a => {
     const day = a.created_at.split("T")[0];
-    if (a.type === "visit") visitsByDay[day] = (visitsByDay[day] || 0) + 1;
-    if (a.type === "channel_click") clicksByDay[day] = (clicksByDay[day] || 0) + 1;
+    if (a.event_type === "visit") visitsByDay[day] = (visitsByDay[day] || 0) + 1;
+    if (a.event_type === "whatsapp_click") clicksByDay[day] = (clicksByDay[day] || 0) + 1;
   });
 
   orders.forEach(o => {
