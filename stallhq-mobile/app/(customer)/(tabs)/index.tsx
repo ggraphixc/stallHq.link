@@ -18,7 +18,11 @@ export default function ExploreScreen() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const { data } = await supabase.from("stores").select("*").eq("is_active", true).order("created_at", { ascending: false });
+      const { data } = await supabase
+        .from("stores")
+        .select("*")
+        .eq("setup_complete", true)
+        .order("created_at", { ascending: false });
       if (!cancelled) setStores(data ?? []);
     };
     load();
@@ -26,7 +30,11 @@ export default function ExploreScreen() {
   }, []);
   const onRefresh = async () => {
     setRefreshing(true);
-    const { data } = await supabase.from("stores").select("*").eq("is_active", true).order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("stores")
+      .select("*")
+      .eq("setup_complete", true)
+      .order("created_at", { ascending: false });
     setStores(data ?? []);
     setRefreshing(false);
   };

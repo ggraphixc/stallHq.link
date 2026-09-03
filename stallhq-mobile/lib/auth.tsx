@@ -100,7 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         trial_ends_at: new Date(
           Date.now() + 14 * 24 * 60 * 60 * 1000
         ).toISOString(),
-        is_active: true,
+        // The store is browsable once the account is created. `is_active` does
+        // not exist on stores — discoverability is driven by `setup_complete`.
+        setup_complete: true,
       });
 
       if (storeError) return { error: storeError.message };

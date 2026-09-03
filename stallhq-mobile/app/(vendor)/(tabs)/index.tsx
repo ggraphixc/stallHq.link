@@ -18,7 +18,6 @@ import {
   Link,
   Users,
   Package,
-  ExternalLink,
   LogOut,
   Plus,
   BarChart3,
@@ -31,6 +30,8 @@ import {
   AlertTriangle,
   MousePointerClick,
   TrendingUp,
+  Store,
+  Sparkles,
 } from "lucide-react-native";
 import { IconBox } from "../../../components/ui/IconBox";
 import { Sparkline } from "../../../components/ui/Sparkline";
@@ -269,9 +270,9 @@ export default function VendorDashboard() {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.iconBtn}
-            onPress={() => Linking.openURL(`https://hqlink.vercel.app/${store.slug}`)}
+            onPress={() => router.push(`/(customer)/store/${store.slug}`)}
           >
-            <ExternalLink size={16} color={Colors.textSecondary} />
+            <Store size={16} color={Colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconBtn}
@@ -390,9 +391,9 @@ export default function VendorDashboard() {
         <View style={styles.actionsRow}>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => Linking.openURL(`https://hqlink.vercel.app/${store.slug}`)}
+            onPress={() => router.push(`/(customer)/store/${store.slug}`)}
           >
-            <IconBox size="sm" accent="purple"><ExternalLink size={14} color={Colors.purple} /></IconBox>
+            <IconBox size="sm" accent="purple"><Store size={14} color={Colors.purple} /></IconBox>
             <Text style={styles.actionText}>View Store</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -409,10 +410,10 @@ export default function VendorDashboard() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => router.push("/(vendor)/products/new")}
+            onPress={() => router.push("/(vendor)/promo-cards")}
           >
-            <IconBox size="sm" accent="cyan"><Plus size={14} color={Colors.cyan} /></IconBox>
-            <Text style={styles.actionText}>Add Product</Text>
+            <IconBox size="sm" accent="cyan"><Sparkles size={14} color={Colors.cyan} /></IconBox>
+            <Text style={styles.actionText}>Promo Cards</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
@@ -585,14 +586,18 @@ const styles = StyleSheet.create({
   },
   urgentBtnText: { color: "#fff", fontSize: FontSize.xs, fontWeight: "600" },
 
-  // Quick Actions
-  actionsRow: { flexDirection: "row", gap: Spacing.sm, marginBottom: Spacing.xl },
-  actionBtn: {
-    flex: 1, backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
-    borderRadius: BorderRadius.lg, paddingVertical: Spacing.md, paddingHorizontal: 2,
-    alignItems: "center", gap: 6,
+  // Quick Actions (2x2 grid)
+  actionsRow: {
+    flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm,
+    marginBottom: Spacing.xl,
   },
-  actionText: { fontSize: 10, fontWeight: "600", color: Colors.textSecondary, textAlign: "center" },
+  actionBtn: {
+    width: "48%", flexGrow: 1,
+    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.lg, paddingVertical: Spacing.lg, paddingHorizontal: Spacing.sm,
+    alignItems: "center", gap: 8,
+  },
+  actionText: { fontSize: 11, fontWeight: "600", color: Colors.textSecondary, textAlign: "center" },
 
   // Section
   section: { marginBottom: Spacing.xl },

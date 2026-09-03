@@ -23,7 +23,11 @@ export default function FavoritesScreen() {
         if (!stored || cancelled) return;
         const slugs: string[] = JSON.parse(stored);
         if (slugs.length === 0) return;
-        const { data } = await supabase.from("stores").select("*").in("slug", slugs).eq("is_active", true);
+        const { data } = await supabase
+          .from("stores")
+          .select("*")
+          .in("slug", slugs)
+          .eq("setup_complete", true);
         if (!cancelled) setStores(data ?? []);
       } catch {}
     })();
