@@ -2164,3 +2164,94 @@ export async function sendReviewReplyNotification({
     },
   });
 }
+
+// ─── Moderation digest email ────────────────────────────────────────────────
+// Daily summary of pending moderation work for the admin team.
+
+export interface DigestItem {
+  label: string;
+  meta: string;
+  age: string;
+}
+
+export async function sendModerationDigestEmail({
+  email,
+  flagCount,
+  productReportCount,
+  reviewReportCount,
+  flags,
+  productReports,
+  reviewReports,
+}: {
+  email: string;
+  flagCount: number;
+  productReportCount: number;
+  reviewReportCount: number;
+  flags: DigestItem[];
+  productReports: DigestItem[];
+  reviewReports: DigestItem[];
+}) {
+  const platformName = await getPlatformName();
+  const total = flagCount + productReportCount + reviewReportCount;
+
+  const buildRows = (items: DigestItem[], color: string): string =>
+    items.length === 0
+      ? `<tr><td style="padding:10px 16px;color:#64748b;font-size:13px;">None pending</td></tr>`
+      : items
+          .map(
+            (it) => `<tr>
+              <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                <p style="margin:0;font-size:13px;color:#e0e0e0;font-weight:600;">${it.label}</p>
+                <p style="margin:2px 0 0;font-size:11px;color:#94a3b8;">${it.meta}</p>
+              </td>
+              <td style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:right;">
+                <span style="font-size:11px;color:${color};font-weight:700;text-transform:uppercase;">${it.age}</span>
+              </td>
+            </tr>`
+          )
+          .join("");
+
+  const section = (title: string, count: number, color: string, rows: DigestItem[]) => `
+      <tr>
+        <td style="padding:24px 32px 8px;">
+          <p style="margin:0;font-size:13px;font-weight:700;color:#f1f5f9;">
+            ${title}
+            <span style="margin-left:6px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:9999px;background:${color}22;color:${color};">${count} pending</span>
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;overflow:hidden;">
+            ${buildRows(rows, color)}
+          </table>
+        </td>
+      </tr>`;
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#ef4444);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#128276;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Daily Moderation Digest</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${total} item${total === 1 ? "" : "s"} waiting for review</p>
+        </td>
+      </tr>
+      ${section("AI product flags", flagCount, "#f59e0b", flags)}
+      ${section("User product reports", productReportCount, "#ef4444", productReports)}
+      ${section("Review reports", reviewReportCount, "#a855f7", reviewReports)}
+      <tr>
+        <td style="padding:24px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/admin/moderation?utm_source=brevo&utm_medium=email&utm_campaign=moderation_digest" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Open Moderation Queue</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `${platformName} moderation digest — ${total} item${total === 1 ? "" : "s"} pending`,
+    htmlContent: html,
+    tags: ["moderation", "digest"],
+  });
+}

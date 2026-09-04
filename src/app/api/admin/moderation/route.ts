@@ -17,15 +17,24 @@ export async function GET(req: NextRequest) {
     const admin = await verifyAdmin();
     if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const status = req.nextUrl.searchParams.get("status") || "pending";
+    const rawStatus = req.nextUrl.searchParams.get("status") || "pending";
     const supabase = adminClient();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("moderation_flags")
       .select("*, stores(name, slug, whatsapp_number)")
-      .eq("status", status)
       .order("created_at", { ascending: false })
       .limit(100);
+
+    if (rawStatus === "all") {
+      // no status filter
+    } else if (rawStatus.includes(",")) {
+      query = query.in("status", rawStatus.split(",").map((s) => s.trim()).filter(Boolean));
+    } else {
+      query = query.eq("status", rawStatus);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return NextResponse.json(data || []);
@@ -52,7 +61,7 @@ export async function PATCH(req: NextRequest) {
 
     const { error } = await supabase
       .from("moderation_flags")
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status, resolved_at: new Date().toISOString(), resolved_by: admin.id })
       .eq("id", id);
     if (error) throw error;
 

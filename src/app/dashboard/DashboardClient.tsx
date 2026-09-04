@@ -39,6 +39,7 @@ import {
   Users,
   TrendingUp,
   MousePointerClick,
+  MessageSquare,
 } from "lucide-react";
 import { Sparkline } from "@/components/ui/Sparkline";
 
@@ -304,6 +305,7 @@ export function DashboardClient({
                 { icon: ShoppingCart, label: "Orders", onClick: () => setShowOrders(true) },
                 { icon: Palette, label: "Theme", onClick: () => setShowTheme(true) },
                 { icon: Sparkles, label: "Promo Cards", href: "/dashboard/promo" },
+                { icon: MessageSquare, label: "Reviews", href: "/dashboard/reviews" },
               ].map(({ icon: Icon, label, onClick, href }) => (
                 href ? (
                   <a key={label} href={href} style={iconBtn} className="icon-button" title={label}>
@@ -371,6 +373,7 @@ export function DashboardClient({
                       { icon: Palette, label: "Theme", onClick: () => { setShowTheme(true); setShowMobileMenu(false); } },
                       { icon: Upload, label: "Batch Upload", onClick: () => { setShowBatchUpload(true); setShowMobileMenu(false); } },
                       { icon: Sparkles, label: "Promo Cards", href: "/dashboard/promo" },
+                      { icon: MessageSquare, label: "Reviews", href: "/dashboard/reviews" },
                       { icon: LifeBuoy, label: "Support", onClick: () => { window.location.href = "/dashboard/support"; } },
                     ].map(({ icon: Icon, label, onClick, href }) => (
                       href ? (

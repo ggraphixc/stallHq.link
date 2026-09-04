@@ -214,3 +214,41 @@ create policy "Store owners can update own review reports"
 --    who are only customers (stores.user_id remains the flag).
 -- ─────────────────────────────────────────────────────────────
 -- (no-op placeholder — keeps the file self-documenting)
+
+-- ─────────────────────────────────────────────────────────────
+-- 6. Resolution history — track WHO resolved a report and WHEN
+--    so vendors & admins can audit past moderation actions.
+-- ─────────────────────────────────────────────────────────────
+alter table product_reports add column if not exists resolved_by uuid references auth.users(id) on delete set null;
+alter table product_reports add column if not exists resolved_at timestamptz;
+alter table review_reports add column if not exists resolved_by uuid references auth.users(id) on delete set null;
+alter table review_reports add column if not exists resolved_at timestamptz;
+alter table moderation_flags add column if not exists resolved_by uuid references auth.users(id) on delete set null;
+alter table moderation_flags add column if not exists resolved_at timestamptz;
+
+create index if not exists idx_product_reports_resolved on product_reports(resolved_at desc);
+create index if not exists idx_review_reports_resolved on review_reports(resolved_at desc);
+create index if not exists idx_moderation_flags_resolved on moderation_flags(resolved_at desc);
+
+-- Keep updated_at in sync when a report is resolved (safety net for direct updates)
+drop trigger if exists trg_reports_touch_updated on product_reports;
+create or replace function touch_updated_at() returns trigger as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger trg_reports_touch_updated
+  before update on product_reports
+  for each row execute function touch_updated_at();
+
+drop trigger if exists trg_review_reports_touch_updated on review_reports;
+create trigger trg_review_reports_touch_updated
+  before update on review_reports
+  for each row execute function touch_updated_at();
+
+drop trigger if exists trg_moderation_flags_touch_updated on moderation_flags;
+create trigger trg_moderation_flags_touch_updated
+  before update on moderation_flags
+  for each row execute function touch_updated_at();

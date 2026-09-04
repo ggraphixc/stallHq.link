@@ -79,7 +79,10 @@ export async function GET(request: NextRequest) {
       query = query.eq("store_id", store.id);
     }
 
-    if (status !== "all") query = query.eq("status", status);
+    if (status !== "all") {
+      if (status.includes(",")) query = query.in("status", status.split(",").map((s) => s.trim()).filter(Boolean));
+      else query = query.eq("status", status);
+    }
 
     const { data, error } = await query;
     if (error) throw error;
@@ -122,7 +125,7 @@ export async function PATCH(request: NextRequest) {
 
     const { error } = await supabase
       .from("product_reports")
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status, resolved_at: new Date().toISOString(), resolved_by: user.id })
       .eq("id", id);
     if (error) throw error;
 

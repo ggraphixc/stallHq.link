@@ -9,9 +9,9 @@ import { useAuth } from "../../lib/auth";
 import { supabase } from "../../lib/supabase";
 import { postReviewReply } from "../../lib/reviewActions";
 import { Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
-import { ArrowLeft, Star, Trash2, Flag, ShieldAlert, MessageSquare, Inbox, Reply, X } from "lucide-react-native";
+import { ArrowLeft, Star, Trash2, Flag, ShieldAlert, MessageSquare, Inbox, Reply, X, CheckCircle2, Clock } from "lucide-react-native";
 
-type Mode = "reviews" | "reports";
+type Mode = "reviews" | "reports" | "history";
 
 const REASON_LABELS: Record<string, string> = {
   fake: "Fake/counterfeit", counterfeit: "Counterfeit", misleading: "Misleading",
@@ -25,11 +25,13 @@ const REVIEW_REPORT_LABELS: Record<string, string> = {
 
 export default function MonitoringScreen() {
   const router = useRouter();
-  const { store } = useAuth();
+  const { store, user } = useAuth();
   const [mode, setMode] = useState<Mode>("reviews");
   const [reviews, setReviews] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
   const [reviewReports, setReviewReports] = useState<any[]>([]);
+  const [resolvedReports, setResolvedReports] = useState<any[]>([]);
+  const [resolvedReviewReports, setResolvedReviewReports] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<any | null>(null);
@@ -37,7 +39,7 @@ export default function MonitoringScreen() {
 
   const load = useCallback(async () => {
     if (!store) return;
-    const [r, p, rr] = await Promise.all([
+    const [r, p, rr, hr, hrr] = await Promise.all([
       supabase
         .from("reviews")
         .select("*, products(name)")
@@ -58,10 +60,26 @@ export default function MonitoringScreen() {
         .eq("status", "pending")
         .order("created_at", { ascending: false })
         .limit(100),
+      supabase
+        .from("product_reports")
+        .select("*, products(name)")
+        .eq("store_id", store.id)
+        .in("status", ["reviewed", "dismissed"])
+        .order("resolved_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("review_reports")
+        .select("*, reviews(id, rating, comment, reviewer_name)")
+        .eq("store_id", store.id)
+        .in("status", ["reviewed", "dismissed"])
+        .order("resolved_at", { ascending: false })
+        .limit(100),
     ]);
     setReviews(r.data ?? []);
     setReports(p.data ?? []);
     setReviewReports(rr.data ?? []);
+    setResolvedReports(hr.data ?? []);
+    setResolvedReviewReports(hrr.data ?? []);
   }, [store?.id]);
 
   useEffect(() => { load(); }, [load]);
@@ -99,26 +117,34 @@ export default function MonitoringScreen() {
     setBusyId(id);
     await supabase
       .from("product_reports")
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status, resolved_at: new Date().toISOString(), resolved_by: user?.id ?? null })
       .eq("id", id);
-    setReports((prev) => prev.filter((x) => x.id !== id));
+    await load();
     setBusyId(null);
   };
 
   const resolveReviewReport = async (id: string, status: "reviewed" | "dismissed", hideReview: boolean) => {
     setBusyId(id);
-    const updates: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
     if (hideReview) {
       // Vendor treats the review as a violation — hide it and resolve the report
-      const target = reviewReports.find((x) => x.id === id);
+      const target = reviewReports.find((x) => x.id === id) ?? resolvedReviewReports.find((x) => x.id === id);
       if (target?.review_id) {
         await supabase.from("reviews").update({ hidden: true, updated_at: new Date().toISOString() }).eq("id", target.review_id);
       }
     }
-    await supabase.from("review_reports").update(updates).eq("id", id);
-    setReviewReports((prev) => prev.filter((x) => x.id !== id));
+    await supabase
+      .from("review_reports")
+      .update({ status, resolved_at: new Date().toISOString(), resolved_by: user?.id ?? null })
+      .eq("id", id);
+    await load();
     setBusyId(null);
   };
+
+  const tabs: { key: Mode; label: string; count: number }[] = [
+    { key: "reviews", label: "Reviews", count: reviews.length },
+    { key: "reports", label: "Reports", count: reports.length + reviewReports.length },
+    { key: "history", label: "History", count: resolvedReports.length + resolvedReviewReports.length },
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -133,15 +159,21 @@ export default function MonitoringScreen() {
       </View>
 
       <View style={styles.tabs}>
-        {(["reviews", "reports"] as Mode[]).map((m) => (
+        {tabs.map((t) => (
           <TouchableOpacity
-            key={m}
-            style={[styles.tab, mode === m && styles.tabActive]}
-            onPress={() => setMode(m)}
+            key={t.key}
+            style={[styles.tab, mode === t.key && styles.tabActive]}
+            onPress={() => setMode(t.key)}
           >
-            {m === "reviews" ? <MessageSquare size={13} color={mode === m ? Colors.purple : Colors.textMuted} /> : <Flag size={13} color={mode === m ? Colors.red : Colors.textMuted} />}
-            <Text style={[styles.tabText, mode === m && styles.tabTextActive]}>
-              {m === "reviews" ? `Reviews (${reviews.length})` : `Reports (${reports.length + reviewReports.length})`}
+            {t.key === "reviews" ? (
+              <MessageSquare size={13} color={mode === t.key ? Colors.purple : Colors.textMuted} />
+            ) : t.key === "reports" ? (
+              <Flag size={13} color={mode === t.key ? Colors.red : Colors.textMuted} />
+            ) : (
+              <Clock size={13} color={mode === t.key ? Colors.cyan : Colors.textMuted} />
+            )}
+            <Text style={[styles.tabText, mode === t.key && styles.tabTextActive]}>
+              {t.label} ({t.count})
             </Text>
           </TouchableOpacity>
         ))}
@@ -191,6 +223,11 @@ export default function MonitoringScreen() {
                   </View>
                 </View>
                 {r.comment ? <Text style={styles.comment}>{r.comment}</Text> : null}
+                {r.hidden ? (
+                  <Text style={{ fontSize: FontSize.xs, color: Colors.amber, marginTop: Spacing.sm, fontWeight: "600" }}>
+                    Hidden from public — visible only to you
+                  </Text>
+                ) : null}
                 {r.reply ? (
                   <View style={styles.replyBox}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 }}>
@@ -205,79 +242,139 @@ export default function MonitoringScreen() {
               </View>
             ))
           )
-        ) : reports.length === 0 && reviewReports.length === 0 ? (
+        ) : mode === "reports" ? (
+          reports.length === 0 && reviewReports.length === 0 ? (
+            <View style={styles.emptyState}>
+              <ShieldAlert size={36} color={Colors.green} />
+              <Text style={styles.emptyTitle}>All clear</Text>
+              <Text style={styles.emptySub}>No pending reports on your products or reviews. Nice!</Text>
+            </View>
+          ) : (
+            <>
+              {reports.map((r) => (
+                <View key={r.id} style={[styles.itemCard, { borderColor: "rgba(239,68,68,0.25)" }]}>
+                  <View style={styles.itemHead}>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
+                        <Flag size={12} color={Colors.red} />
+                        <Text style={[styles.itemName, { color: Colors.red }]}>{REASON_LABELS[r.reason] || r.reason}</Text>
+                      </View>
+                      <Text style={styles.itemMeta}>
+                        {r.products?.name ? `On: ${r.products.name} · ` : ""}
+                        {new Date(r.created_at).toLocaleDateString()}
+                      </Text>
+                      {r.details ? <Text style={styles.comment}>{r.details}</Text> : null}
+                    </View>
+                  </View>
+                  <View style={styles.actionsRow}>
+                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: Colors.redDim }]} onPress={() => resolveReport(r.id, "reviewed")} disabled={busyId === r.id}>
+                      <Text style={[styles.actionText, { color: Colors.red }]}>Keep hidden</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: Colors.greenDim }]} onPress={() => resolveReport(r.id, "dismissed")} disabled={busyId === r.id}>
+                      <Text style={[styles.actionText, { color: Colors.green }]}>Dismiss</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+              {reviewReports.map((rr) => {
+                const review = rr.reviews;
+                return (
+                  <View key={rr.id} style={[styles.itemCard, { borderColor: "rgba(239,68,68,0.25)" }]}>
+                    <View style={styles.itemHead}>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
+                          <Flag size={12} color={Colors.red} />
+                          <Text style={[styles.itemName, { color: Colors.red }]}>
+                            {REVIEW_REPORT_LABELS[rr.reason] || rr.reason}
+                          </Text>
+                        </View>
+                        <Text style={styles.itemMeta}>
+                          {review
+                            ? `${review.reviewer_name || "Customer"} · ${review.rating ?? 0}/5 stars${review.comment ? ` · "${String(review.comment).slice(0, 90)}"` : ""} · `
+                            : ""}
+                          {new Date(rr.created_at).toLocaleDateString()}
+                        </Text>
+                        {rr.details ? <Text style={styles.comment}>{rr.details}</Text> : null}
+                      </View>
+                    </View>
+                    <View style={styles.actionsRow}>
+                      <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: Colors.redDim }]}
+                        onPress={() => resolveReviewReport(rr.id, "reviewed", true)}
+                        disabled={busyId === rr.id}
+                      >
+                        <Text style={[styles.actionText, { color: Colors.red }]}>Hide review</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: Colors.greenDim }]}
+                        onPress={() => resolveReviewReport(rr.id, "dismissed", false)}
+                        disabled={busyId === rr.id}
+                      >
+                        <Text style={[styles.actionText, { color: Colors.green }]}>Dismiss</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
+            </>
+          )
+        ) : resolvedReports.length === 0 && resolvedReviewReports.length === 0 ? (
           <View style={styles.emptyState}>
-            <ShieldAlert size={36} color={Colors.green} />
-            <Text style={styles.emptyTitle}>All clear</Text>
-            <Text style={styles.emptySub}>No pending reports on your products or reviews. Nice!</Text>
+            <Clock size={36} color={Colors.textMuted} />
+            <Text style={styles.emptyTitle}>No history yet</Text>
+            <Text style={styles.emptySub}>Resolved and dismissed reports will appear here with timestamps.</Text>
           </View>
         ) : (
           <>
-          {reports.map((r) => (
-            <View key={r.id} style={[styles.itemCard, { borderColor: "rgba(239,68,68,0.25)" }]}>
-              <View style={styles.itemHead}>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
-                    <Flag size={12} color={Colors.red} />
-                    <Text style={[styles.itemName, { color: Colors.red }]}>{REASON_LABELS[r.reason] || r.reason}</Text>
-                  </View>
-                  <Text style={styles.itemMeta}>
-                    {r.products?.name ? `On: ${r.products.name} · ` : ""}
-                    {new Date(r.created_at).toLocaleDateString()}
-                  </Text>
-                  {r.details ? <Text style={styles.comment}>{r.details}</Text> : null}
-                </View>
-              </View>
-              <View style={styles.actionsRow}>
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: Colors.redDim }]} onPress={() => resolveReport(r.id, "reviewed")} disabled={busyId === r.id}>
-                  <Text style={[styles.actionText, { color: Colors.red }]}>Keep hidden</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: Colors.greenDim }]} onPress={() => resolveReport(r.id, "dismissed")} disabled={busyId === r.id}>
-                  <Text style={[styles.actionText, { color: Colors.green }]}>Dismiss</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-          {reviewReports.map((rr) => {
-            const review = rr.reviews;
-            return (
-              <View key={rr.id} style={[styles.itemCard, { borderColor: "rgba(239,68,68,0.25)" }]}>
+            {resolvedReports.map((r) => (
+              <View key={r.id} style={styles.itemCard}>
                 <View style={styles.itemHead}>
                   <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
-                      <Flag size={12} color={Colors.red} />
-                      <Text style={[styles.itemName, { color: Colors.red }]}>
-                        {REVIEW_REPORT_LABELS[rr.reason] || rr.reason}
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                      {r.status === "reviewed" ? (
+                        <CheckCircle2 size={13} color={Colors.red} />
+                      ) : (
+                        <CheckCircle2 size={13} color={Colors.green} />
+                      )}
+                      <Text style={[styles.itemName, { color: r.status === "reviewed" ? Colors.red : Colors.green, marginTop: 0 }]}>
+                        {REASON_LABELS[r.reason] || r.reason} — {r.status === "reviewed" ? "Acted on" : "Dismissed"}
                       </Text>
                     </View>
                     <Text style={styles.itemMeta}>
-                      {review
-                        ? `${review.reviewer_name || "Customer"} · ${review.rating ?? 0}/5 stars${review.comment ? ` · "${String(review.comment).slice(0, 90)}"` : ""} · `
-                        : ""}
-                      {new Date(rr.created_at).toLocaleDateString()}
+                      {r.products?.name ? `On: ${r.products.name} · ` : ""}
+                      {r.resolved_at ? `Resolved ${new Date(r.resolved_at).toLocaleDateString()} ${new Date(r.resolved_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
                     </Text>
-                    {rr.details ? <Text style={styles.comment}>{rr.details}</Text> : null}
+                    {r.details ? <Text style={styles.comment}>{r.details}</Text> : null}
                   </View>
                 </View>
-                <View style={styles.actionsRow}>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: Colors.redDim }]}
-                    onPress={() => resolveReviewReport(rr.id, "reviewed", true)}
-                    disabled={busyId === rr.id}
-                  >
-                    <Text style={[styles.actionText, { color: Colors.red }]}>Hide review</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: Colors.greenDim }]}
-                    onPress={() => resolveReviewReport(rr.id, "dismissed", false)}
-                    disabled={busyId === rr.id}
-                  >
-                    <Text style={[styles.actionText, { color: Colors.green }]}>Dismiss</Text>
-                  </TouchableOpacity>
-                </View>
               </View>
-            );
-          })}
+            ))}
+            {resolvedReviewReports.map((rr) => {
+              const review = rr.reviews;
+              return (
+                <View key={rr.id} style={styles.itemCard}>
+                  <View style={styles.itemHead}>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                        {rr.status === "reviewed" ? (
+                          <CheckCircle2 size={13} color={Colors.red} />
+                        ) : (
+                          <CheckCircle2 size={13} color={Colors.green} />
+                        )}
+                        <Text style={[styles.itemName, { color: rr.status === "reviewed" ? Colors.red : Colors.green, marginTop: 0 }]}>
+                          {REVIEW_REPORT_LABELS[rr.reason] || rr.reason} — {rr.status === "reviewed" ? "Review hidden" : "Dismissed"}
+                        </Text>
+                      </View>
+                      <Text style={styles.itemMeta}>
+                        {review ? `${review.reviewer_name || "Customer"} · ${review.rating ?? 0}/5 stars · ` : ""}
+                        {rr.resolved_at ? `Resolved ${new Date(rr.resolved_at).toLocaleDateString()} ${new Date(rr.resolved_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
+                      </Text>
+                      {rr.details ? <Text style={styles.comment}>{rr.details}</Text> : null}
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
           </>
         )}
       </ScrollView>

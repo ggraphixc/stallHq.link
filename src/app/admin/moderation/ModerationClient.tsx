@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ShieldAlert, ShieldCheck, Loader2, Search, Ban, Check, Flag, User, Sparkles, Star, MessageSquare, Eye, EyeOff, Trash2 } from "lucide-react";
+import { ShieldAlert, ShieldCheck, Loader2, Search, Ban, Check, Flag, User, Sparkles, Star, MessageSquare, Eye, EyeOff, Trash2, Clock, CheckCircle2 } from "lucide-react";
 
 interface Flag {
   id: string;
@@ -12,6 +12,7 @@ interface Flag {
   ai_reviewed: boolean;
   status: string;
   created_at: string;
+  resolved_at?: string | null;
   stores: { name: string; slug: string; whatsapp_number: string } | null;
 }
 
@@ -56,8 +57,32 @@ interface UserReport {
   reporter_email: string | null;
   status: string;
   created_at: string;
+  resolved_at?: string | null;
   products: { name: string; id: string } | null;
   stores: { name: string; slug: string } | null;
+}
+
+interface AdminReviewReport {
+  id: string;
+  reason: string;
+  details: string | null;
+  status: string;
+  created_at: string;
+  resolved_at?: string | null;
+  reviews: { id: string; rating: number; comment: string | null; reviewer_name: string; product_id: string | null } | null;
+  stores: { name: string; slug: string } | null;
+}
+
+interface HistoryItem {
+  kind: "flag" | "product_report" | "review_report";
+  id: string;
+  status: string;
+  created_at: string;
+  resolvedAt?: string;
+  title: string;
+  context: string;
+  extra?: string;
+  comment?: string | null;
 }
 
 const REASON_LABELS: Record<string, string> = {
@@ -71,10 +96,11 @@ const reportColor = (reason: string) =>
       : "var(--glow-cyan)";
 
 export function ModerationClient() {
-  const [tab, setTab] = useState<"flags" | "reports" | "reviews">("flags");
+  const [tab, setTab] = useState<"flags" | "reports" | "reviews" | "history">("flags");
   const [flags, setFlags] = useState<Flag[]>([]);
   const [reports, setReports] = useState<UserReport[]>([]);
   const [reviews, setReviews] = useState<AdminReview[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [useAI, setUseAI] = useState(false);
@@ -108,10 +134,62 @@ export function ModerationClient() {
     setLoading(false);
   };
 
+  const loadHistory = async () => {
+    setLoading(true);
+    try {
+      const [flagsRes, prodRes, revRes] = await Promise.all([
+        fetch("/api/admin/moderation?status=reviewed,dismissed"),
+        fetch("/api/reports?status=reviewed,dismissed"),
+        fetch("/api/review-reports?status=reviewed,dismissed"),
+      ]);
+      const flagData: Flag[] = flagsRes.ok ? await flagsRes.json() : [];
+      const prodData: UserReport[] = prodRes.ok ? await prodRes.json() : [];
+      const revData: AdminReviewReport[] = revRes.ok ? await revRes.json() : [];
+
+      const items: HistoryItem[] = [
+        ...flagData.map((f) => ({
+          kind: "flag" as const,
+          id: f.id,
+          status: f.status,
+          created_at: f.created_at,
+          resolvedAt: f.resolved_at || f.created_at,
+          title: f.product_name || "Unknown product",
+          context: `AI flag · ${f.reason}`,
+          extra: f.stores?.name || "Store removed",
+        })),
+        ...prodData.map((p) => ({
+          kind: "product_report" as const,
+          id: p.id,
+          status: p.status,
+          created_at: p.created_at,
+          resolvedAt: p.resolved_at || p.created_at,
+          title: p.products?.name || "Unknown product",
+          context: REASON_LABELS[p.reason] || p.reason,
+          extra: p.stores?.name || "Store removed",
+        })),
+        ...revData.map((r) => ({
+          kind: "review_report" as const,
+          id: r.id,
+          status: r.status,
+          created_at: r.created_at,
+          resolvedAt: r.resolved_at || r.created_at,
+          title: `Review by ${r.reviews?.reviewer_name || "a customer"}`,
+          context: REASON_LABELS[r.reason] || r.reason,
+          extra: r.stores?.name || "",
+          comment: r.reviews?.comment,
+        })),
+      ];
+      items.sort((a, b) => (b.resolvedAt || b.created_at).localeCompare(a.resolvedAt || a.created_at));
+      setHistory(items);
+    } catch { /* ignore */ }
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (tab === "flags") loadFlags();
     else if (tab === "reports") loadReports();
-    else loadReviews();
+    else if (tab === "reviews") loadReviews();
+    else loadHistory();
   }, [tab]);
 
   const toggleReviewHidden = async (review: AdminReview) => {
@@ -210,6 +288,7 @@ export function ModerationClient() {
           { key: "flags" as const, label: "AI Flags", icon: ShieldCheck, count: flags.length },
           { key: "reports" as const, label: "User Reports", icon: Flag, count: reports.length },
           { key: "reviews" as const, label: "Reviews", icon: MessageSquare, count: reviews.filter((r) => !r.hidden).length },
+          { key: "history" as const, label: "History", icon: Clock, count: 0 },
         ]).map(({ key, label, icon: Icon, count }) => (
           <button
             key={key}
@@ -395,6 +474,56 @@ export function ModerationClient() {
                 </div>
               </div>
             ))}
+          </div>
+        )
+      )}
+
+      {/* History list */}
+      {tab === "history" && (
+        loading ? (
+          <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)" }}>Loading history…</div>
+        ) : history.length === 0 ? (
+          <div style={{ ...glassCard, padding: "3rem 1.5rem", textAlign: "center" }}>
+            <div style={{ width: "3rem", height: "3rem", borderRadius: "0.75rem", background: "rgba(168,133,247,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
+              <Clock size={20} style={{ color: "var(--glow-purple)" }} />
+            </div>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.25rem" }}>No moderation history yet</h3>
+            <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Resolved AI flags and user reports will appear here with timestamps.</p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            {history.map((item) => {
+              const acted = item.status === "reviewed";
+              const kindColor =
+                item.kind === "flag" ? "var(--glow-amber)"
+                  : item.kind === "review_report" ? "var(--glow-purple)"
+                    : "var(--glow-red)";
+              return (
+                <div key={`${item.kind}-${item.id}`} style={{ ...glassCard, padding: "0.875rem 1rem", display: "flex", alignItems: "center", gap: "0.875rem", flexWrap: "wrap" }}>
+                  <div style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", background: `${kindColor}1a`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    {item.kind === "flag" ? <ShieldCheck size={14} style={{ color: kindColor }} /> : item.kind === "review_report" ? <MessageSquare size={14} style={{ color: kindColor }} /> : <Flag size={14} style={{ color: kindColor }} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>{item.title}</span>
+                      <span style={{ fontSize: "0.625rem", fontWeight: 700, padding: "0.125rem 0.375rem", borderRadius: "0.25rem", background: `${kindColor}22`, color: kindColor, textTransform: "uppercase" }}>
+                        {item.context}
+                      </span>
+                      <span style={{ fontSize: "0.625rem", fontWeight: 700, padding: "0.125rem 0.375rem", borderRadius: "0.25rem", background: acted ? "rgba(239,68,68,0.12)" : "rgba(34,197,94,0.1)", color: acted ? "var(--glow-red)" : "var(--glow-green)", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                        {acted ? <CheckCircle2 size={9} /> : <Check size={9} />}
+                        {acted ? "Acted on" : "Dismissed"}
+                      </span>
+                    </div>
+                    {item.comment && <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.125rem", fontStyle: "italic" }}>&ldquo;{item.comment}&rdquo;</p>}
+                    <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                      {item.kind === "flag" ? "AI flag" : item.kind === "review_report" ? "Review report" : "Product report"}
+                      {item.extra ? ` · ${item.extra}` : ""}
+                      {" · "}{timeAgo(item.resolvedAt || item.created_at)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )
       )}
