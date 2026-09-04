@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { ModerationQueueBadge } from "@/components/ModerationQueueBadge";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -77,6 +78,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <Icon size={16} />
                 {label}
+                {href === "/admin/moderation" && <ModerationQueueBadge />}
               </Link>
             );
           })}
@@ -169,6 +171,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <Icon size={16} />
                 {label}
+                {href === "/admin/moderation" && <ModerationQueueBadge />}
               </Link>
             );
           })}
