@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase as anonClient } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/api";
 import { adminClient } from "@/lib/ai";
 import { apiRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
@@ -29,15 +28,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Details must be 1000 characters or less" }, { status: 400 });
     }
 
-    // Resolve the review's store so reports group under the owning store
-    const { data: review } = await anonClient
+    // Resolve the review's store so reports group under the owning store.
+    // Server-side insert uses the service role — RLS only lets store owners
+    // read report rows, so an anon read-back would 500 after a valid insert.
+    const admin = adminClient();
+    const { data: review } = await admin
       .from("reviews")
       .select("id, store_id")
       .eq("id", review_id)
       .single();
     if (!review) return NextResponse.json({ error: "Review not found" }, { status: 404 });
 
-    const { data, error } = await anonClient
+    const { data, error } = await admin
       .from("review_reports")
       .insert({
         review_id,

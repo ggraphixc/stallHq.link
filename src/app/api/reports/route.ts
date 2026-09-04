@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/api";
+import { adminClient } from "@/lib/ai";
 import { apiRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
 const ADMIN_IDS = (process.env.ADMIN_USER_ID || "")
@@ -11,6 +11,9 @@ const ADMIN_IDS = (process.env.ADMIN_USER_ID || "")
 const REASONS = ["fake", "counterfeit", "misleading", "prohibited", "offensive", "other"];
 
 // POST /api/reports — submit a report about a product
+// Insert runs server-side with the service role (RLS select policies only let
+// store owners read report rows, so an anon read-back would 500 after a
+// successful insert). Validation + rate limiting still apply here.
 export async function POST(request: NextRequest) {
   try {
     const rateLimitResult = await apiRateLimit(request);
@@ -28,7 +31,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Details must be 1000 characters or less" }, { status: 400 });
     }
 
-    const { data, error } = await supabase
+    const admin = adminClient();
+    const { data, error } = await admin
       .from("product_reports")
       .insert({
         product_id,
@@ -60,14 +64,14 @@ export async function GET(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const status = request.nextUrl.searchParams.get("status") || "pending";
+    const isAdmin = ADMIN_IDS.includes(user.id);
+    const db = isAdmin ? adminClient() : authSupabase;
 
-    let query = supabase
+    let query = db
       .from("product_reports")
       .select("*, products(id, name, image_url, store_id), stores(name, slug)")
       .order("created_at", { ascending: false })
       .limit(100);
-
-    const isAdmin = ADMIN_IDS.includes(user.id);
 
     if (!isAdmin) {
       const { data: store } = await authSupabase
@@ -108,9 +112,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     const isAdmin = ADMIN_IDS.includes(user.id);
+    const db = isAdmin ? adminClient() : authSupabase;
 
     // Fetch report with store owner for permission check
-    const { data: report } = await authSupabase
+    const { data: report } = await db
       .from("product_reports")
       .select("id, product_id, stores(user_id)")
       .eq("id", id)
@@ -123,14 +128,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const { error } = await supabase
+    const { error } = await db
       .from("product_reports")
       .update({ status, resolved_at: new Date().toISOString(), resolved_by: user.id })
       .eq("id", id);
     if (error) throw error;
 
     if (hideProduct) {
-      await supabase.from("products").update({ in_stock: false }).eq("id", report.product_id);
+      await db.from("products").update({ in_stock: false }).eq("id", report.product_id);
     }
 
     return NextResponse.json({ success: true });
