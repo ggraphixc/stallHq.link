@@ -105,7 +105,7 @@ export interface Order {
 
 export interface Review {
   id: string;
-  product_id: string;
+  product_id: string | null;
   store_id: string;
   reviewer_name: string;
   rating: number;

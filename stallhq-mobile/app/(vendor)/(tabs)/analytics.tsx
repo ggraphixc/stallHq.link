@@ -3,10 +3,11 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { useAuth } from "../../../lib/auth";
 import { supabase } from "../../../lib/supabase";
 import { Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
-import { Eye, Link, ShoppingCart, DollarSign, TrendingUp, Calendar } from "lucide-react-native";
+import { Eye, Link, ShoppingCart, DollarSign, TrendingUp, Calendar, ChevronRight } from "lucide-react-native";
 import { IconBox } from "../../../components/ui/IconBox";
 
 type Period = "7d" | "30d" | "all";
@@ -21,6 +22,7 @@ interface DayPoint {
 }
 
 export default function AnalyticsScreen() {
+  const router = useRouter();
   const { store } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [period, setPeriod] = useState<Period>("7d");
@@ -141,6 +143,17 @@ export default function AnalyticsScreen() {
 
   const maxVisits = Math.max(...data.dailyData.map((d) => d.visits), 1);
 
+  const openDetail = (metric: "visits" | "clicks" | "orders" | "bestday" | "funnel") => {
+    router.push({ pathname: "/(vendor)/analytics/[metric]", params: { metric, period } });
+  };
+
+  const DetailLink = ({ metric }: { metric: "visits" | "clicks" | "orders" | "bestday" | "funnel" }) => (
+    <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", alignSelf: "flex-end", marginTop: 4 }} onPress={() => openDetail(metric)}>
+      <Text style={{ fontSize: FontSize.xs, fontWeight: "600", color: Colors.purple }}>View details</Text>
+      <ChevronRight size={12} color={Colors.purple} />
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -165,32 +178,36 @@ export default function AnalyticsScreen() {
           ))}
         </View>
 
-        <View style={styles.heroRow}>
+        <TouchableOpacity style={styles.heroRow} onPress={() => openDetail("visits")} activeOpacity={0.8}>
           <View style={styles.heroCard}>
             <IconBox size="sm" accent="purple"><Eye size={14} color={Colors.purple} /></IconBox>
             <Text style={styles.heroLabel}>Visits</Text>
             <Text style={styles.heroValue}>{data.visits.toLocaleString()}</Text>
+            <DetailLink metric="visits" />
           </View>
           <View style={styles.heroCard}>
             <IconBox size="sm" accent="cyan"><Link size={14} color={Colors.cyan} /></IconBox>
             <Text style={styles.heroLabel}>WA Clicks</Text>
             <Text style={styles.heroValue}>{data.clicks.toLocaleString()}</Text>
+            <DetailLink metric="clicks" />
           </View>
-        </View>
-        <View style={styles.heroRow}>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.heroRow} onPress={() => openDetail("orders")} activeOpacity={0.8}>
           <View style={styles.heroCard}>
             <IconBox size="sm" accent="amber"><ShoppingCart size={14} color={Colors.amber} /></IconBox>
             <Text style={styles.heroLabel}>Orders</Text>
             <Text style={styles.heroValue}>{data.orders}</Text>
+            <DetailLink metric="orders" />
           </View>
           <View style={styles.heroCard}>
             <IconBox size="sm" accent="green"><DollarSign size={14} color={Colors.green} /></IconBox>
             <Text style={styles.heroLabel}>Revenue</Text>
             <Text style={[styles.heroValue, { color: Colors.green }]}>₦{data.revenue.toLocaleString()}</Text>
+            <DetailLink metric="orders" />
           </View>
-        </View>
+        </TouchableOpacity>
 
-        <View style={styles.card}>
+        <TouchableOpacity style={styles.card} onPress={() => openDetail("funnel")} activeOpacity={0.8}>
           <Text style={styles.cardTitle}>Conversion Funnel</Text>
           <View style={styles.funnelRow}>
             <View style={styles.funnelItem}><Text style={styles.funnelValue}>{data.visits}</Text><Text style={styles.funnelLabel}>Visits</Text></View>
@@ -207,18 +224,20 @@ export default function AnalyticsScreen() {
               {data.views} product view{data.views !== 1 ? "s" : ""}
             </Text>
           )}
-        </View>
+          <DetailLink metric="funnel" />
+        </TouchableOpacity>
 
         {data.bestDay ? (
-          <View style={styles.card}>
+          <TouchableOpacity style={styles.card} onPress={() => openDetail("bestday")} activeOpacity={0.8}>
             <View style={styles.cardTitleRow}><Calendar size={16} color={Colors.purple} /><Text style={styles.cardTitle}>Best Day</Text></View>
             <Text style={styles.bestDay}>{data.bestDay}</Text>
             <Text style={styles.bestDaySub}>Your busiest day of the week</Text>
-          </View>
+            <DetailLink metric="bestday" />
+          </TouchableOpacity>
         ) : null}
 
         {data.dailyData.length > 0 && (
-          <View style={styles.card}>
+          <TouchableOpacity style={styles.card} onPress={() => openDetail("visits")} activeOpacity={0.8}>
             <View style={styles.cardTitleRow}><TrendingUp size={16} color={Colors.purple} /><Text style={styles.cardTitle}>Daily Visits</Text></View>
             <View style={styles.chartRow}>
               {data.dailyData.slice(-7).map((d, i) => (
@@ -230,7 +249,8 @@ export default function AnalyticsScreen() {
                 </View>
               ))}
             </View>
-          </View>
+            <DetailLink metric="visits" />
+          </TouchableOpacity>
         )}
       </ScrollView>
     </SafeAreaView>

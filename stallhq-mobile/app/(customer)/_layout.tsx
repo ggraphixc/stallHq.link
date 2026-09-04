@@ -14,6 +14,14 @@ export default function CustomerLayout() {
         name="store/[slug]"
         options={{ animation: "slide_from_right" }}
       />
+      <Stack.Screen
+        name="product/[id]"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="become-vendor"
+        options={{ animation: "slide_from_right" }}
+      />
     </Stack>
   );
 }

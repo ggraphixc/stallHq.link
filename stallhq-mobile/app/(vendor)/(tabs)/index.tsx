@@ -422,6 +422,13 @@ export default function VendorDashboard() {
             <IconBox size="sm" accent="amber"><BarChart3 size={14} color={Colors.amber} /></IconBox>
             <Text style={styles.actionText}>Analytics</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => router.push("/(vendor)/monitoring")}
+          >
+            <IconBox size="sm" accent="green"><AlertTriangle size={14} color={Colors.green} /></IconBox>
+            <Text style={styles.actionText}>Reviews & Reports</Text>
+          </TouchableOpacity>
         </View>
 
         {/* ── Discover other stores ── */}

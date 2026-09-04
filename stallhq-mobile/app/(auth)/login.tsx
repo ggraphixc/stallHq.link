@@ -33,7 +33,7 @@ export default function LoginScreen() {
     const { error } = await signIn(email.trim(), password);
     setLoading(false);
     if (error) Alert.alert("Login Failed", error);
-    else router.replace("/(vendor)/(tabs)");
+    else router.replace("/");
   };
 
   return (
@@ -53,7 +53,7 @@ export default function LoginScreen() {
           </View>
 
           <Text style={styles.heading}>Welcome back</Text>
-          <Text style={styles.subheading}>Sign in to manage your store</Text>
+          <Text style={styles.subheading}>Sign in to your stallHq account</Text>
 
           <View style={styles.form}>
             <Text style={styles.label}>Email</Text>

@@ -26,7 +26,19 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#06060b",
+          "image": "./assets/android-icon-foreground.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#06060b"
+          }
+        }
+      ]
     ],
     "extra": {
       "router": {},

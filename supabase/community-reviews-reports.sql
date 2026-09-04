@@ -1,0 +1,98 @@
+-- StallHq: Store reviews + product reports + customer accounts groundwork
+-- Run this in your Supabase SQL Editor (idempotent — safe to run multiple times)
+
+-- ─────────────────────────────────────────────────────────────
+-- 1. Reviews: allow store-level reviews (product_id optional)
+--    + track reviewer identity (user_id) for ownership/monitoring
+-- ─────────────────────────────────────────────────────────────
+alter table reviews alter column product_id drop not null;
+alter table reviews add column if not exists user_id uuid references auth.users(id) on delete set null;
+
+create index if not exists idx_reviews_user_id on reviews(user_id);
+
+drop policy if exists "Anyone can create reviews" on reviews;
+drop policy if exists "Store owners can delete reviews" on reviews;
+
+-- Anyone can leave a review (product OR store level)
+create policy "Anyone can create reviews"
+  on reviews for insert
+  with check (true);
+
+-- Store owners can remove reviews about their store (product or store level)
+create policy "Store owners can delete reviews"
+  on reviews for delete
+  using (
+    exists (
+      select 1 from stores
+      where stores.id = reviews.store_id
+      and stores.user_id = auth.uid()
+    )
+  );
+
+-- ─────────────────────────────────────────────────────────────
+-- 2. product_reports — user-submitted reports on product listings
+-- ─────────────────────────────────────────────────────────────
+create table if not exists product_reports (
+  id uuid default gen_random_uuid() primary key,
+  product_id uuid references products(id) on delete cascade not null,
+  store_id uuid references stores(id) on delete cascade not null,
+  reporter_name varchar(100),
+  reporter_email varchar(255),
+  reason varchar(50) not null check (reason in (
+    'fake', 'counterfeit', 'misleading', 'prohibited', 'offensive', 'other'
+  )),
+  details text,
+  status varchar(20) default 'pending' check (status in ('pending', 'reviewed', 'dismissed')),
+  created_at timestamptz default now() not null,
+  updated_at timestamptz default now() not null
+);
+
+create index if not exists idx_product_reports_status on product_reports(status);
+create index if not exists idx_product_reports_store on product_reports(store_id);
+create index if not exists idx_product_reports_created on product_reports(created_at desc);
+
+alter table product_reports enable row level security;
+
+-- Anyone can submit a report (anonymous marketplace)
+drop policy if exists "Anyone can insert product reports" on product_reports;
+create policy "Anyone can insert product reports"
+  on product_reports for insert
+  with check (true);
+
+-- Store owners can view & manage reports on their own products
+drop policy if exists "Store owners can view own product reports" on product_reports;
+create policy "Store owners can view own product reports"
+  on product_reports for select
+  using (
+    exists (
+      select 1 from stores
+      where stores.id = product_reports.store_id
+      and stores.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Store owners can update own product reports" on product_reports;
+create policy "Store owners can update own product reports"
+  on product_reports for update
+  using (
+    exists (
+      select 1 from stores
+      where stores.id = product_reports.store_id
+      and stores.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from stores
+      where stores.id = product_reports.store_id
+      and stores.user_id = auth.uid()
+    )
+  );
+
+-- ─────────────────────────────────────────────────────────────
+-- 3. Customer accounts groundwork
+--    users are created via /api/auth/signup (admin API). Nothing
+--    to migrate here, but ensure no store rows exist for users
+--    who are only customers (stores.user_id remains the flag).
+-- ─────────────────────────────────────────────────────────────
+-- (no-op placeholder — keeps the file self-documenting)

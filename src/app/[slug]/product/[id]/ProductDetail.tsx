@@ -9,6 +9,7 @@ import { ReviewForm } from "@/components/ReviewForm";
 import { ReviewList } from "@/components/ReviewList";
 import { useFavorites } from "@/hooks/useFavorites";
 import { ProductShareModal } from "@/components/ProductShareModal";
+import { ReportProduct } from "@/components/ReportProduct";
 
 interface ProductDetailProps {
   product: Product & {
@@ -191,30 +192,38 @@ export function ProductDetail({ product }: ProductDetailProps) {
               ₦{displayPrice.toLocaleString()}
             </div>
 
-            {/* Share */}
-            <button
-              onClick={() => setShowShareModal(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                padding: "0.625rem 1rem",
-                borderRadius: "0.5rem",
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-subtle)",
-                color: "var(--text-secondary)",
-                fontSize: "0.8125rem",
-                fontWeight: 500,
-                cursor: "pointer",
-                transition: "all 0.15s",
-                width: "fit-content",
-              }}
-              onMouseOver={(e) => { e.currentTarget.style.borderColor = "var(--glow-purple)"; e.currentTarget.style.color = "var(--text-primary)"; }}
-              onMouseOut={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-            >
-              <Share2 size={16} />
-              Share Product
-            </button>
+            {/* Share + Report */}
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <button
+                onClick={() => setShowShareModal(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.625rem 1rem",
+                  borderRadius: "0.5rem",
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border-subtle)",
+                  color: "var(--text-secondary)",
+                  fontSize: "0.8125rem",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  width: "fit-content",
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.borderColor = "var(--glow-purple)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                onMouseOut={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+              >
+                <Share2 size={16} />
+                Share Product
+              </button>
+
+              <ReportProduct
+                productId={product.id}
+                storeId={product.store_id}
+                productName={product.name}
+              />
+            </div>
 
             <ProductShareModal
               isOpen={showShareModal}

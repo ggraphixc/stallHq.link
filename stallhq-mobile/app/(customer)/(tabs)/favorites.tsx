@@ -1,38 +1,46 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter, useFocusEffect } from "expo-router";
 import { supabase, Store } from "../../../lib/supabase";
 import { Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
 import { Heart, Store as StoreIcon, ChevronRight } from "lucide-react-native";
-
-const FAVORITES_KEY = "stallhq_favorites";
+import { loadFavoriteSlugs } from "../../../components/StoreFavoriteButton";
 
 export default function FavoritesScreen() {
   const router = useRouter();
   const [stores, setStores] = useState<Store[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const stored = await AsyncStorage.getItem(FAVORITES_KEY);
-        if (!stored || cancelled) return;
-        const slugs: string[] = JSON.parse(stored);
-        if (slugs.length === 0) return;
-        const { data } = await supabase
-          .from("stores")
-          .select("*")
-          .in("slug", slugs)
-          .eq("setup_complete", true);
-        if (!cancelled) setStores(data ?? []);
-      } catch {}
-    })();
-    return () => { cancelled = true; };
+  const load = useCallback(async () => {
+    try {
+      const slugs = await loadFavoriteSlugs();
+      if (slugs.length === 0) {
+        setStores([]);
+        return;
+      }
+      const { data } = await supabase
+        .from("stores")
+        .select("*")
+        .in("slug", slugs)
+        .eq("setup_complete", true);
+      if (data) setStores(data);
+    } catch {}
   }, []);
+
+  // Reload whenever the tab regains focus so hearts added from Explore appear instantly.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        await load();
+        if (active) setLoading(false);
+      })();
+      return () => { active = false; };
+    }, [load])
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -54,11 +62,15 @@ export default function FavoritesScreen() {
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Heart size={40} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>No favorites yet</Text>
-            <Text style={styles.emptySub}>Tap the heart on a store to save it</Text>
-          </View>
+          loading ? (
+            <Text style={{ textAlign: "center", color: Colors.textMuted, marginTop: 40 }}>Loading favorites…</Text>
+          ) : (
+            <View style={styles.emptyState}>
+              <Heart size={40} color={Colors.textMuted} />
+              <Text style={styles.emptyTitle}>No favorites yet</Text>
+              <Text style={styles.emptySub}>Tap the heart on a store to save it</Text>
+            </View>
+          )
         }
       />
     </SafeAreaView>

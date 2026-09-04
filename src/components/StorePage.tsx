@@ -17,6 +17,7 @@ import { ShareCard } from "@/components/ShareCard";
 import { StoreAssistant } from "@/components/StoreAssistant";
 import { createClient } from "@/lib/supabase/client";
 import { hasWhatsApp, hasInstagram, generateInstagramUrl } from "@/lib/channel";
+import { StoreReviews } from "@/components/StoreReviews";
 import {
   MessageCircle,
   Instagram,
@@ -29,6 +30,7 @@ import {
   Store as StoreIcon,
   ShieldCheck,
   LayoutDashboard,
+  MessageSquare,
 } from "lucide-react";
 
 interface StorePageProps {
@@ -134,7 +136,7 @@ export function StorePage({ store, products, aiAssistantEnabled }: StorePageProp
   const supabase = createClient();
 
   const [isOwner, setIsOwner] = useState(false);
-  const [activeTab, setActiveTab] = useState<"products" | "about">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "reviews" | "about">("products");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
 
   // Count the visit once, unless the viewer is the store owner (their own preview)
@@ -352,6 +354,7 @@ export function StorePage({ store, products, aiAssistantEnabled }: StorePageProp
         <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1.5rem", borderBottom: "1px solid var(--border-subtle)", paddingBottom: "0" }}>
           {[
             { key: "products" as const, label: "Products", icon: Package, count: products.length },
+            { key: "reviews" as const, label: "Reviews", icon: MessageSquare },
             { key: "about" as const, label: "About", icon: StoreIcon },
           ].map(({ key, label, icon: Icon, count }) => (
             <button
@@ -471,6 +474,13 @@ export function StorePage({ store, products, aiAssistantEnabled }: StorePageProp
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── Reviews Tab ──────────────────────────── */}
+        {activeTab === "reviews" && (
+          <div style={{ maxWidth: "40rem" }}>
+            <StoreReviews storeId={store.id} />
           </div>
         )}
 

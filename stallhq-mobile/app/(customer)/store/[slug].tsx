@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Image,
-  Linking, RefreshControl,
+  Linking, RefreshControl, TextInput, Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -9,17 +9,157 @@ import { supabase, Store, Product } from "../../../lib/supabase";
 import { trackStoreVisit, trackStoreClick } from "../../../lib/track";
 import { BrandLoader } from "../../../components/BrandLoader";
 import { Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
-import { ArrowLeft, Store as StoreIcon, MessageCircle, Camera, Minus, Plus, Package, Bot } from "lucide-react-native";
+import {
+  ArrowLeft, Store as StoreIcon, MessageCircle, Camera, Package, Bot,
+  ChevronRight, Star, Heart, Send,
+} from "lucide-react-native";
 import { AssistantChat } from "../../../components/AssistantChat";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { WEB_API_URL } from "../../../lib/auth";
+
+const FAVORITES_KEY = "stallhq_favorites";
+
+function StoreReviews({ storeId }: { storeId: string }) {
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [avg, setAvg] = useState(0);
+  const [name, setName] = useState("");
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    try {
+      const res = await fetch(`${WEB_API_URL}/api/reviews?store_id=${storeId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const storeReviews = (data.reviews || []).filter((r: any) => !r.product_id);
+        setReviews(storeReviews);
+        if (storeReviews.length) {
+          setAvg(Math.round((storeReviews.reduce((s: number, r: any) => s + r.rating, 0) / storeReviews.length) * 10) / 10);
+        }
+      }
+    } catch {}
+  };
+  useEffect(() => { load(); }, [storeId]);
+
+  const submit = async () => {
+    if (!name.trim()) { Alert.alert("Missing name", "Please enter your name."); return; }
+    if (!rating) { Alert.alert("Missing rating", "Tap a star to rate this store."); return; }
+    setBusy(true);
+    try {
+      const res = await fetch(`${WEB_API_URL}/api/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ store_id: storeId, reviewer_name: name.trim(), rating, comment: comment.trim() || undefined }),
+      });
+      if (res.ok) {
+        setName(""); setRating(0); setComment(""); setShowForm(false);
+        await load();
+      } else {
+        const d = await res.json();
+        Alert.alert("Review failed", d.error || "Please try again.");
+      }
+    } catch {
+      Alert.alert("Network error", "Please check your connection.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const Stars = ({ value, size = 14 }: { value: number; size?: number }) => (
+    <View style={{ flexDirection: "row", gap: 1 }}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star key={i} size={size} color={i <= Math.round(value) ? Colors.amber : Colors.textMuted} fill={i <= Math.round(value) ? Colors.amber : "none"} />
+      ))}
+    </View>
+  );
+
+  return (
+    <View style={styles.reviewSection}>
+      <View style={styles.sectionHeaderRow}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm }}>
+          <Star size={16} color={Colors.amber} />
+          <Text style={styles.sectionTitle}>Store Reviews</Text>
+          {reviews.length > 0 && <Text style={{ fontSize: FontSize.xs, color: Colors.textMuted }}>({avg} ★ · {reviews.length})</Text>}
+        </View>
+        {!showForm && (
+          <TouchableOpacity style={styles.writeReviewBtn} onPress={() => setShowForm(true)}>
+            <Text style={styles.writeReviewText}>Write review</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {showForm && (
+        <View style={styles.reviewForm}>
+          <Text style={styles.reviewFormLabel}>Your name</Text>
+          <TextInput style={styles.reviewInput} placeholder="Name" placeholderTextColor={Colors.textMuted} value={name} onChangeText={setName} maxLength={100} />
+          <Text style={styles.reviewFormLabel}>Rating</Text>
+          <View style={{ flexDirection: "row", gap: Spacing.sm }}>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <TouchableOpacity key={i} onPress={() => setRating(i)}>
+                <Star size={30} color={i <= rating ? Colors.amber : Colors.textMuted} fill={i <= rating ? Colors.amber : "none"} />
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.reviewFormLabel}>Comment (optional)</Text>
+          <TextInput style={[styles.reviewInput, { minHeight: 70, textAlignVertical: "top" }]} placeholder="How was shopping here?" placeholderTextColor={Colors.textMuted} value={comment} onChangeText={setComment} multiline maxLength={1000} />
+          <TouchableOpacity style={[styles.submitReviewBtn, busy && { opacity: 0.6 }]} onPress={submit} disabled={busy}>
+            <Send size={14} color="#fff" />
+            <Text style={{ color: "#fff", fontSize: FontSize.sm, fontWeight: "700" }}>{busy ? "Submitting…" : "Submit Review"}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {reviews.length === 0 && !showForm ? (
+        <Text style={{ fontSize: FontSize.sm, color: Colors.textMuted, marginVertical: Spacing.md }}>
+          No reviews yet — be the first to review this store.
+        </Text>
+      ) : (
+        reviews.map((r) => (
+          <View key={r.id} style={styles.reviewCard}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm }}>
+              <View style={styles.reviewAvatar}><Text style={{ color: Colors.purple, fontWeight: "700", fontSize: FontSize.xs }}>{String(r.reviewer_name || "?").slice(0, 2).toUpperCase()}</Text></View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: FontSize.sm, fontWeight: "600", color: Colors.text }}>{r.reviewer_name}</Text>
+                <Text style={{ fontSize: 10, color: Colors.textMuted }}>{new Date(r.created_at).toLocaleDateString()}</Text>
+              </View>
+              <Stars value={r.rating} />
+            </View>
+            {r.comment ? <Text style={{ fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: Spacing.sm, lineHeight: 19 }}>{r.comment}</Text> : null}
+          </View>
+        ))
+      )}
+    </View>
+  );
+}
 
 export default function StoreDetailScreen() {
   const router = useRouter();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const [store, setStore] = useState<Store | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  const [selected, setSelected] = useState<Map<string, number>>(new Map());
   const [refreshing, setRefreshing] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [faved, setFaved] = useState(false);
+
+  // Favorite (store) state
+  const loadFav = async () => {
+    try {
+      const raw = await AsyncStorage.getItem(FAVORITES_KEY);
+      const slugs: string[] = raw ? JSON.parse(raw) : [];
+      setFaved(slugs.includes(slug || ""));
+    } catch {}
+  };
+  const toggleFav = async () => {
+    try {
+      const raw = await AsyncStorage.getItem(FAVORITES_KEY);
+      const slugs: string[] = raw ? JSON.parse(raw) : [];
+      const next = faved ? slugs.filter((s) => s !== slug) : [...slugs, slug as string];
+      await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
+      setFaved(!faved);
+    } catch {}
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -31,15 +171,11 @@ export default function StoreDetailScreen() {
         setStore(s);
         const { data: p } = await supabase.from("products").select("*").eq("store_id", s.id).eq("in_stock", true).order("created_at", { ascending: false });
         if (!cancelled) setProducts(p ?? []);
-        // Count the visit — unless the viewer is the store owner (their own preview)
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user || user.id !== s.user_id) {
-          trackStoreVisit(s.id);
-        }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || user.id !== s.user_id) trackStoreVisit(s.id);
       }
     })();
+    loadFav();
     return () => { cancelled = true; };
   }, [slug]);
 
@@ -54,39 +190,34 @@ export default function StoreDetailScreen() {
   };
   const onRefresh = async () => { setRefreshing(true); await fetchData(); setRefreshing(false); };
 
-  const toggle = (id: string) => {
-    setSelected((prev) => { const n = new Map(prev); if (n.has(id)) n.delete(id); else n.set(id, 1); return n; });
-  };
-  const updateQty = (id: string, q: number) => {
-    if (q < 1) { toggle(id); return; }
-    setSelected((prev) => { const n = new Map(prev); n.set(id, q); return n; });
-  };
-
-  const orderWhatsApp = () => {
+  const openWhatsApp = () => {
     if (!store?.whatsapp_number) return;
-    trackStoreClick(store.id);
+    trackStoreClick(store.id, "whatsapp");
     const num = store.whatsapp_number.replace(/[^0-9]/g, "");
-    let msg = `Hi! I'd like to order from ${store.name}:\n\n`;
-    selected.forEach((qty, id) => {
-      const p = products.find((pp) => pp.id === id);
-      if (p) msg += `• ${qty}× ${p.name} — ₦${(p.price * qty).toLocaleString()}\n`;
-    });
-    const total = Array.from(selected.entries()).reduce((s, [id, q]) => { const p = products.find((pp) => pp.id === id); return s + (p ? p.price * q : 0); }, 0);
-    msg += `\nTotal: ₦${total.toLocaleString()}`;
-    Linking.openURL(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`);
+    Linking.openURL(`https://wa.me/${num}?text=${encodeURIComponent(`Hi ${store.name}! 👋`)}`);
   };
 
-  const total = Array.from(selected.entries()).reduce((s, [id, q]) => { const p = products.find((pp) => pp.id === id); return s + (p ? p.price * q : 0); }, 0);
-  const totalQty = Array.from(selected.values()).reduce((s, q) => s + q, 0);
+  const openInstagram = () => {
+    if (!store?.instagram_handle) return;
+    trackStoreClick(store.id, "instagram");
+    const handle = store.instagram_handle.replace(/^@/, "");
+    Linking.openURL(`https://instagram.com/${handle}`);
+  };
 
   if (!store) return <BrandLoader label="Opening store" />;
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.purple} />}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <ArrowLeft size={18} color={Colors.purple} /><Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
+        <View style={styles.topRow}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <ArrowLeft size={18} color={Colors.purple} />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.favBtn, faved && { borderColor: Colors.red }]} onPress={toggleFav}>
+            <Heart size={18} color={faved ? Colors.red : Colors.textMuted} fill={faved ? Colors.red : "none"} />
+          </TouchableOpacity>
+        </View>
 
         {store.banner_url && <Image source={{ uri: store.banner_url }} style={styles.banner} />}
 
@@ -95,77 +226,75 @@ export default function StoreDetailScreen() {
             {store.logo_url ? <Image source={{ uri: store.logo_url }} style={styles.logo} /> : (
               <View style={styles.logoPlaceholder}><StoreIcon size={22} color={Colors.textMuted} /></View>
             )}
-            <View><Text style={styles.storeName}>{store.name}</Text><Text style={styles.storeSlug}>/{store.slug}</Text></View>
+            <View style={{ flex: 1 }}><Text style={styles.storeName}>{store.name}</Text><Text style={styles.storeSlug}>/{store.slug}</Text></View>
+            <ChevronRight size={18} color={Colors.textMuted} />
           </View>
           {store.description && <Text style={styles.description}>{store.description}</Text>}
+
+          {/* Channel chips — now tappable */}
           <View style={styles.channels}>
-            {store.whatsapp_number && <View style={styles.chip}><MessageCircle size={12} color={Colors.green} /><Text style={styles.chipText}>WhatsApp</Text></View>}
-            {store.instagram_handle && <View style={styles.chip}><Camera size={12} color={Colors.purple} /><Text style={styles.chipText}>@{store.instagram_handle}</Text></View>}
+            {store.whatsapp_number ? (
+              <TouchableOpacity style={[styles.chip, { borderColor: "rgba(37,211,102,0.3)" }]} onPress={openWhatsApp} activeOpacity={0.7}>
+                <MessageCircle size={13} color={Colors.green} />
+                <Text style={[styles.chipText, { color: Colors.green }]}>WhatsApp</Text>
+              </TouchableOpacity>
+            ) : null}
+            {store.instagram_handle ? (
+              <TouchableOpacity style={[styles.chip, { borderColor: "rgba(225,48,108,0.3)" }]} onPress={openInstagram} activeOpacity={0.7}>
+                <Camera size={13} color={Colors.purple} />
+                <Text style={[styles.chipText, { color: Colors.purple }]}>@{store.instagram_handle.replace(/^@/, "")}</Text>
+              </TouchableOpacity>
+            ) : null}
             <TouchableOpacity style={[styles.chip, { backgroundColor: Colors.purpleDim }]} onPress={() => setChatOpen(true)} activeOpacity={0.7}>
-              <Bot size={12} color={Colors.purple} />
+              <Bot size={13} color={Colors.purple} />
               <Text style={[styles.chipText, { color: Colors.purple }]}>Ask AI</Text>
             </TouchableOpacity>
           </View>
         </View>
 
+        {/* Products — each opens product detail */}
         <View style={styles.productsSection}>
           <Text style={styles.sectionTitle}>Products ({products.length})</Text>
           {products.length === 0 ? (
             <View style={styles.emptyCard}><Package size={40} color={Colors.textMuted} /><Text style={styles.emptyText}>No products yet</Text></View>
-          ) : products.map((p) => {
-            const qty = selected.get(p.id) ?? 0;
-            return (
-              <TouchableOpacity key={p.id} style={[styles.productCard, qty > 0 && styles.productCardSelected]} onPress={() => toggle(p.id)} activeOpacity={0.7}>
-                {p.image_url ? <Image source={{ uri: p.image_url }} style={styles.productImage} /> : (
-                  <View style={styles.productImagePlaceholder}><Package size={20} color={Colors.textMuted} /></View>
-                )}
-                <View style={styles.productInfo}>
-                  <Text style={styles.productName} numberOfLines={1}>{p.name}</Text>
-                  {p.description && <Text style={styles.productDesc} numberOfLines={2}>{p.description}</Text>}
-                  <Text style={styles.productPrice}>₦{p.price.toLocaleString()}</Text>
-                </View>
-                {qty > 0 && (
-                  <View style={styles.qtyControls}>
-                    <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQty(p.id, qty - 1)}><Minus size={14} color="#fff" /></TouchableOpacity>
-                    <Text style={styles.qtyText}>{qty}</Text>
-                    <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQty(p.id, qty + 1)}><Plus size={14} color="#fff" /></TouchableOpacity>
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+          ) : products.map((p) => (
+            <TouchableOpacity
+              key={p.id}
+              style={styles.productCard}
+              activeOpacity={0.7}
+              onPress={() => router.push({ pathname: "/(customer)/product/[id]", params: { id: p.id, slug: store.slug } })}
+            >
+              {p.image_url ? <Image source={{ uri: p.image_url }} style={styles.productImage} /> : (
+                <View style={styles.productImagePlaceholder}><Package size={20} color={Colors.textMuted} /></View>
+              )}
+              <View style={styles.productInfo}>
+                <Text style={styles.productName} numberOfLines={1}>{p.name}</Text>
+                {p.description ? <Text style={styles.productDesc} numberOfLines={2}>{p.description}</Text> : null}
+                <Text style={styles.productPrice}>₦{p.price.toLocaleString()}</Text>
+              </View>
+              <ChevronRight size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Store reviews */}
+        <View style={styles.productsSection}>
+          <StoreReviews storeId={store.id} />
         </View>
       </ScrollView>
 
-      {/* AI Assistant chat */}
-      <AssistantChat
-        visible={chatOpen}
-        onClose={() => setChatOpen(false)}
-        storeSlug={store.slug}
-        storeName={store.name}
-      />
-
-      {totalQty > 0 && (
-        <View style={styles.orderBar}>
-          <View>
-            <Text style={styles.orderCount}>{totalQty} item{totalQty !== 1 ? "s" : ""}</Text>
-            <Text style={styles.orderTotal}>₦{total.toLocaleString()}</Text>
-          </View>
-          <TouchableOpacity style={styles.orderBtn} onPress={orderWhatsApp} activeOpacity={0.8}>
-            <MessageCircle size={18} color="#fff" /><Text style={styles.orderBtnText}>Order via WhatsApp</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <AssistantChat visible={chatOpen} onClose={() => setChatOpen(false)} storeSlug={store.slug} storeName={store.name} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { paddingBottom: 100 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  backBtn: { flexDirection: "row", alignItems: "center", gap: 6, padding: Spacing.lg, paddingBottom: Spacing.sm },
+  scroll: { paddingBottom: 60 },
+  topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: Spacing.lg, paddingBottom: Spacing.sm },
+  backBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
   backText: { fontSize: FontSize.md, color: Colors.purple },
+  favBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: Colors.borderSubtle, backgroundColor: Colors.bgCard, justifyContent: "center", alignItems: "center" },
   banner: { width: "100%", height: 180 },
   storeInfo: { padding: Spacing.lg },
   storeRow: { flexDirection: "row", alignItems: "center", marginBottom: Spacing.md },
@@ -174,27 +303,28 @@ const styles = StyleSheet.create({
   storeName: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
   storeSlug: { fontSize: FontSize.sm, color: Colors.textMuted },
   description: { fontSize: FontSize.md, color: Colors.textSecondary, lineHeight: 22, marginBottom: Spacing.md },
-  channels: { flexDirection: "row", gap: Spacing.sm },
-  chip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: BorderRadius.sm, backgroundColor: Colors.bgCard },
-  chipText: { fontSize: FontSize.xs, color: Colors.textMuted },
+  channels: { flexDirection: "row", gap: Spacing.sm, flexWrap: "wrap" },
+  chip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: BorderRadius.full, backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle },
+  chipText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textMuted },
   productsSection: { padding: Spacing.lg, paddingTop: 0 },
   sectionTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text, marginBottom: Spacing.md },
   emptyCard: { alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xxxl * 2, gap: 12 },
   emptyText: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.textSecondary },
   productCard: { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.md, marginBottom: Spacing.sm },
-  productCardSelected: { borderColor: Colors.purple, backgroundColor: "rgba(168,85,247,0.03)" },
   productImage: { width: 64, height: 64, borderRadius: BorderRadius.sm, marginRight: Spacing.md },
   productImagePlaceholder: { width: 64, height: 64, borderRadius: BorderRadius.sm, backgroundColor: Colors.bgSecondary, justifyContent: "center", alignItems: "center", marginRight: Spacing.md },
   productInfo: { flex: 1 },
   productName: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },
   productDesc: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2, lineHeight: 16 },
   productPrice: { fontSize: FontSize.md, fontWeight: "700", color: Colors.green, marginTop: 4 },
-  qtyControls: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
-  qtyBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.purple, justifyContent: "center", alignItems: "center" },
-  qtyText: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text, minWidth: 24, textAlign: "center" },
-  orderBar: { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: Colors.bgSecondary, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, padding: Spacing.xl, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  orderCount: { fontSize: FontSize.sm, color: Colors.textMuted },
-  orderTotal: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.green },
-  orderBtn: { backgroundColor: "#25d366", paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, flexDirection: "row", alignItems: "center", gap: 6 },
-  orderBtnText: { color: "#fff", fontSize: FontSize.md, fontWeight: "700" },
+  sectionHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.md },
+  writeReviewBtn: { paddingVertical: 6, paddingHorizontal: Spacing.md, borderRadius: BorderRadius.full, backgroundColor: Colors.purpleDim },
+  writeReviewText: { fontSize: FontSize.xs, fontWeight: "700", color: Colors.purple },
+  reviewSection: { marginTop: Spacing.md },
+  reviewForm: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.md, gap: Spacing.xs },
+  reviewFormLabel: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textSecondary, marginTop: Spacing.sm },
+  reviewInput: { backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: FontSize.sm, color: Colors.text },
+  submitReviewBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: Colors.purple, borderRadius: BorderRadius.lg, padding: Spacing.md, marginTop: Spacing.md },
+  reviewCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  reviewAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.purpleDim, justifyContent: "center", alignItems: "center" },
 });

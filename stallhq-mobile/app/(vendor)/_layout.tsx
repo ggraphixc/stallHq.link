@@ -43,6 +43,14 @@ export default function VendorLayout() {
         name="browse"
         options={{ animation: "slide_from_right" }}
       />
+      <Stack.Screen
+        name="analytics/[metric]"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="monitoring"
+        options={{ animation: "slide_from_right" }}
+      />
     </Stack>
   );
 }
