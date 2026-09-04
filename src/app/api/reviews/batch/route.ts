@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
       .from("reviews")
       .select("product_id, rating")
+      .eq("hidden", false)
       .in("product_id", ids);
 
     if (error) throw error;

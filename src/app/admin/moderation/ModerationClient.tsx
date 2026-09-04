@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ShieldAlert, ShieldCheck, Loader2, Search, Ban, Check, Flag, User, Sparkles } from "lucide-react";
+import { ShieldAlert, ShieldCheck, Loader2, Search, Ban, Check, Flag, User, Sparkles, Star, MessageSquare, Eye, EyeOff, Trash2 } from "lucide-react";
 
 interface Flag {
   id: string;
@@ -35,6 +35,19 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+interface AdminReview {
+  id: string;
+  product_id: string | null;
+  store_id: string;
+  reviewer_name: string;
+  rating: number;
+  comment: string | null;
+  hidden: boolean;
+  created_at: string;
+  stores: { name: string; slug: string } | null;
+  products: { name: string } | null;
+}
+
 interface UserReport {
   id: string;
   reason: string;
@@ -58,9 +71,10 @@ const reportColor = (reason: string) =>
       : "var(--glow-cyan)";
 
 export function ModerationClient() {
-  const [tab, setTab] = useState<"flags" | "reports">("flags");
+  const [tab, setTab] = useState<"flags" | "reports" | "reviews">("flags");
   const [flags, setFlags] = useState<Flag[]>([]);
   const [reports, setReports] = useState<UserReport[]>([]);
+  const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [useAI, setUseAI] = useState(false);
@@ -85,10 +99,47 @@ export function ModerationClient() {
     setLoading(false);
   };
 
+  const loadReviews = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/reviews");
+      if (res.ok) setReviews(await res.json());
+    } catch { /* ignore */ }
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (tab === "flags") loadFlags();
-    else loadReports();
+    else if (tab === "reports") loadReports();
+    else loadReviews();
   }, [tab]);
+
+  const toggleReviewHidden = async (review: AdminReview) => {
+    setUpdatingId(review.id);
+    try {
+      const res = await fetch("/api/admin/reviews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: review.id, hidden: !review.hidden }),
+      });
+      if (res.ok) {
+        setReviews((prev) => prev.map((r) => (r.id === review.id ? { ...r, hidden: !r.hidden } : r)));
+      }
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const deleteReview = async (id: string) => {
+    if (!confirm("Permanently delete this review? This cannot be undone.")) return;
+    setUpdatingId(id);
+    try {
+      const res = await fetch(`/api/admin/reviews?id=${id}`, { method: "DELETE" });
+      if (res.ok) setReviews((prev) => prev.filter((r) => r.id !== id));
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const runScan = async () => {
     setScanning(true);
@@ -148,7 +199,7 @@ export function ModerationClient() {
           </div>
           <div>
             <h1 style={{ fontSize: "1.125rem", fontWeight: 700 }}>Content Moderation</h1>
-            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>AI-flagged listings + user-submitted product reports</p>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>AI-flagged listings + user reports + review moderation</p>
           </div>
         </div>
       </div>
@@ -158,6 +209,7 @@ export function ModerationClient() {
         {([
           { key: "flags" as const, label: "AI Flags", icon: ShieldCheck, count: flags.length },
           { key: "reports" as const, label: "User Reports", icon: Flag, count: reports.length },
+          { key: "reviews" as const, label: "Reviews", icon: MessageSquare, count: reviews.filter((r) => !r.hidden).length },
         ]).map(({ key, label, icon: Icon, count }) => (
           <button
             key={key}
@@ -271,6 +323,74 @@ export function ModerationClient() {
                     style={{ padding: "0.5rem 0.75rem", fontSize: "0.75rem", border: "none", borderRadius: "0.5rem", background: "rgba(34,197,94,0.1)", color: "var(--glow-green)", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.375rem" }}
                   >
                     <Check size={12} /> OK
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
+
+      {/* Reviews list */}
+      {tab === "reviews" && (
+        loading ? (
+          <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)" }}>Loading reviews…</div>
+        ) : reviews.length === 0 ? (
+          <div style={{ ...glassCard, padding: "3rem 1.5rem", textAlign: "center" }}>
+            <div style={{ width: "3rem", height: "3rem", borderRadius: "0.75rem", background: "rgba(34,197,94,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
+              <MessageSquare size={20} style={{ color: "var(--glow-green)" }} />
+            </div>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.25rem" }}>No reviews yet</h3>
+            <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Reviews left on stores and products will appear here.</p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            {reviews.map((review) => (
+              <div key={review.id} style={{ ...glassCard, padding: "0.875rem 1rem", display: "flex", alignItems: "center", gap: "0.875rem", flexWrap: "wrap", opacity: review.hidden ? 0.6 : 1 }}>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
+                    <MessageSquare size={13} style={{ color: "var(--glow-purple)" }} />
+                    <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>{review.reviewer_name}</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.125rem" }}>
+                      {[1, 2, 3, 4, 5].map((v) => (
+                        <Star key={v} size={12} style={{ color: v <= review.rating ? "var(--glow-amber)" : "var(--text-muted)" }} fill={v <= review.rating ? "currentColor" : "none"} />
+                      ))}
+                    </span>
+                    {review.hidden && (
+                      <span style={{ fontSize: "0.625rem", fontWeight: 700, padding: "0.125rem 0.375rem", borderRadius: "0.25rem", background: "rgba(239,68,68,0.12)", color: "var(--glow-red)", textTransform: "uppercase" }}>Hidden</span>
+                    )}
+                  </div>
+                  {review.comment && <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.125rem" }}>{review.comment}</p>}
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                    on {review.products ? review.products.name : "this store"}
+                    {review.stores && (
+                      <>
+                        {" · "}
+                        <a href={`/${review.stores.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--glow-cyan)", textDecoration: "none" }}>
+                          {review.stores.name}
+                        </a>
+                      </>
+                    )}{" "}· {timeAgo(review.created_at)}
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", flexShrink: 0 }}>
+                  <button
+                    onClick={() => toggleReviewHidden(review)}
+                    disabled={updatingId === review.id}
+                    title={review.hidden ? "Show on storefront" : "Hide from storefront"}
+                    style={{ padding: "0.5rem 0.75rem", fontSize: "0.75rem", border: "none", borderRadius: "0.5rem", background: review.hidden ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.12)", color: review.hidden ? "var(--glow-green)" : "var(--glow-red)", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.375rem" }}
+                  >
+                    {review.hidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                    {review.hidden ? "Show" : "Hide"}
+                  </button>
+                  <button
+                    onClick={() => deleteReview(review.id)}
+                    disabled={updatingId === review.id}
+                    title="Permanently delete review"
+                    style={{ padding: "0.5rem 0.75rem", fontSize: "0.75rem", border: "none", borderRadius: "0.5rem", background: "rgba(239,68,68,0.12)", color: "var(--glow-red)", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.375rem" }}
+                  >
+                    <Trash2 size={12} /> Delete
                   </button>
                 </div>
               </div>

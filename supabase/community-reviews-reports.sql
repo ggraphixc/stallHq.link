@@ -7,6 +7,7 @@
 -- ─────────────────────────────────────────────────────────────
 alter table reviews alter column product_id drop not null;
 alter table reviews add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table reviews add column if not exists updated_at timestamptz default now();
 
 create index if not exists idx_reviews_user_id on reviews(user_id);
 
@@ -90,7 +91,29 @@ create policy "Store owners can update own product reports"
   );
 
 -- ─────────────────────────────────────────────────────────────
--- 3. Customer accounts groundwork
+-- 3. Review moderation: hidden flag for admin soft-hide
+-- ─────────────────────────────────────────────────────────────
+alter table reviews add column if not exists hidden boolean not null default false;
+
+create index if not exists idx_reviews_hidden on reviews(hidden);
+
+-- Public (anon) reads exclude hidden reviews; store owners still see
+-- reviews about their own store (incl. hidden) so they can appeal.
+drop policy if exists "Public can view reviews" on reviews;
+drop policy if exists "Public can view non-hidden reviews" on reviews;
+create policy "Public can view non-hidden reviews"
+  on reviews for select
+  using (
+    hidden = false
+    or exists (
+      select 1 from stores
+      where stores.id = reviews.store_id
+      and stores.user_id = auth.uid()
+    )
+  );
+
+-- ─────────────────────────────────────────────────────────────
+-- 4. Customer accounts groundwork
 --    users are created via /api/auth/signup (admin API). Nothing
 --    to migrate here, but ensure no store rows exist for users
 --    who are only customers (stores.user_id remains the flag).

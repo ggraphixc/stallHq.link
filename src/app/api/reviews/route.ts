@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let query = supabase.from("reviews").select("*");
+    let query = supabase.from("reviews").select("*").eq("hidden", false);
 
     if (productId) {
       query = query.eq("product_id", productId);
