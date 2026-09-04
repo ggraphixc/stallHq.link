@@ -1,7 +1,16 @@
-import { Stack } from "expo-router";
+import { Stack, Redirect } from "expo-router";
 import { Colors } from "../../lib/theme";
+import { useAuth } from "../../lib/auth";
+import { BrandLoader } from "../../components/BrandLoader";
 
 export default function VendorLayout() {
+  const { session, loading } = useAuth();
+
+  // Session guard — vendors must be signed in. Prevents screens from sitting
+  // on a forever "Loading..." state after sign-out.
+  if (loading) return <BrandLoader label="Opening stallHq" />;
+  if (!session) return <Redirect href="/(auth)/select-role" />;
+
   return (
     <Stack
       screenOptions={{

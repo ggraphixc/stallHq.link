@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
 import { Store, ShoppingBag, ChevronRight } from "lucide-react-native";
+import { BrandLogo } from "../../components/BrandLogo";
 
 export default function SelectRoleScreen() {
   const router = useRouter();
@@ -14,8 +15,7 @@ export default function SelectRoleScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <View style={styles.logoIcon}><Store size={28} color={Colors.purple} /></View>
-          <Text style={styles.logoText}>stallHq</Text>
+          <BrandLogo />
           <Text style={styles.tagline}>Digital Storefronts</Text>
         </View>
 
@@ -55,8 +55,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { flex: 1, paddingHorizontal: Spacing.xxl, justifyContent: "center" },
   logoContainer: { alignItems: "center", marginBottom: Spacing.xxxl },
-  logoIcon: { width: 64, height: 64, borderRadius: BorderRadius.xl, backgroundColor: Colors.purpleDim, justifyContent: "center", alignItems: "center", marginBottom: Spacing.lg },
-  logoText: { fontSize: FontSize.hero, fontWeight: "800", color: Colors.purple },
   tagline: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: Spacing.xs },
   heading: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, textAlign: "center", marginBottom: Spacing.xs },
   subheading: { fontSize: FontSize.md, color: Colors.textSecondary, textAlign: "center", marginBottom: Spacing.xxxl },

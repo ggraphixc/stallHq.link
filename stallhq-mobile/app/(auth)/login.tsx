@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth";
+import { BrandLogo } from "../../components/BrandLogo";
 import { Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../lib/theme";
 
 export default function LoginScreen() {
@@ -46,12 +47,9 @@ export default function LoginScreen() {
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
 
-          {/* Logo */}
+          {/* Logo — dynamic from admin branding settings */}
           <View style={styles.logoContainer}>
-            <View style={styles.logoIcon}>
-              <Text style={{ fontSize: 24 }}>🏪</Text>
-            </View>
-            <Text style={styles.logo}>stallHq</Text>
+            <BrandLogo size={56} />
           </View>
 
           <Text style={styles.heading}>Welcome back</Text>
@@ -121,16 +119,6 @@ const styles = StyleSheet.create({
   backBtn: { position: "absolute", top: Spacing.xl, left: Spacing.xxl },
   backText: { color: Colors.textSecondary, fontSize: FontSize.md },
   logoContainer: { alignItems: "center", marginBottom: Spacing.xxl },
-  logoIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.purpleDim,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.md,
-  },
-  logo: { fontSize: FontSize.hero, fontWeight: "800", color: Colors.purple },
   heading: {
     fontSize: FontSize.xxl,
     fontWeight: "700",

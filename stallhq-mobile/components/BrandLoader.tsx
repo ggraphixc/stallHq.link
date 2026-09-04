@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, Animated, StyleSheet, Easing, StyleProp, ViewStyle } from "react-native";
+import { View, Text, Image, Animated, StyleSheet, Easing, StyleProp, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Circle } from "react-native-svg";
 import { Store } from "lucide-react-native";
 import { Colors, FontSize } from "../lib/theme";
+import { useBranding } from "../lib/branding";
 
 interface BrandLoaderProps {
   label?: string;
@@ -15,6 +16,7 @@ interface BrandLoaderProps {
  * wordmark. Fill the parent: give it style={{ flex: 1 }} when used inline.
  */
 export function BrandLoader({ label = "Loading…", style }: BrandLoaderProps) {
+  const { logo_url, platform_name } = useBranding();
   const spin = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(0)).current;
   const dotAnims = useRef([0, 1, 2].map(() => new Animated.Value(0))).current;
@@ -101,7 +103,7 @@ export function BrandLoader({ label = "Loading…", style }: BrandLoaderProps) {
           </Svg>
         </Animated.View>
 
-        {/* pulsing gradient mark */}
+        {/* pulsing mark — admin logo when set, gradient mark otherwise */}
         <Animated.View style={[styles.markWrap, { transform: [{ scale }] }]}>
           <Animated.View
             style={[
@@ -109,19 +111,29 @@ export function BrandLoader({ label = "Loading…", style }: BrandLoaderProps) {
               { backgroundColor: markGlow },
             ]}
           />
-          <LinearGradient
-            colors={["#a855f7", "#7c3aed", "#06b6d4"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.mark}
-          >
-            <Store size={26} color="#fff" strokeWidth={2.2} />
-          </LinearGradient>
+          {logo_url ? (
+            <View style={styles.markImageWrap}>
+              <Image
+                source={{ uri: logo_url }}
+                style={styles.markImage}
+                resizeMode="contain"
+              />
+            </View>
+          ) : (
+            <LinearGradient
+              colors={["#a855f7", "#7c3aed", "#06b6d4"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.mark}
+            >
+              <Store size={26} color="#fff" strokeWidth={2.2} />
+            </LinearGradient>
+          )}
         </Animated.View>
       </View>
 
       <View style={styles.copy}>
-        <Text style={styles.wordmark}>stallHq</Text>
+        <Text style={styles.wordmark}>{platform_name}</Text>
         <View style={styles.dots}>
           {[Colors.purple, Colors.cyan, Colors.green].map((c, i) => (
             <Animated.View
@@ -194,6 +206,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 12,
   },
+  markImageWrap: {
+    width: 58,
+    height: 58,
+    borderRadius: 17,
+    backgroundColor: "rgba(10,10,15,0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  markImage: { width: "70%", height: "70%" },
   copy: { alignItems: "center", gap: 14, marginTop: 4 },
   wordmark: {
     fontSize: 24,

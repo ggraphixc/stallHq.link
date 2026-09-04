@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { router } from "expo-router";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase, Store } from "./supabase";
 
@@ -114,7 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Clear state immediately (don't wait on the auth subscription) so no
+    // screen lingers on a stale "Loading..." state after signing out.
+    setSession(null);
     setStore(null);
+    router.replace("/(auth)/select-role");
   };
 
   const refreshStore = async () => {
