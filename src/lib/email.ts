@@ -2101,3 +2101,66 @@ export async function sendReviewModerationEmail({
     },
   });
 }
+
+// Notifies a review author when the store owner posts a public reply.
+export async function sendReviewReplyNotification({
+  email,
+  authorName,
+  storeName,
+  storeSlug,
+  reply,
+}: {
+  email: string;
+  authorName?: string;
+  storeName: string;
+  storeSlug: string;
+  reply: string;
+}) {
+  const platformName = await getPlatformName();
+  const greeting = authorName ? authorName : "there";
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#06b6d4,#a855f7);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#128172;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">${storeName} replied to your review</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${platformName}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">Hi ${greeting},</p>
+          <p style="margin:12px 0 0;font-size:15px;color:#e0e0e0;line-height:1.6;"><strong>${storeName}</strong> responded to your review:</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <div style="background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.15);border-left:3px solid #06b6d4;border-radius:8px;padding:14px 16px;">
+            <p style="margin:0;font-size:13px;color:#e0e0e0;font-style:italic;line-height:1.6;">&ldquo;${reply.slice(0, 300)}${reply.length > 300 ? "…" : ""}&rdquo;</p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/${storeSlug}?utm_source=brevo&utm_medium=email&utm_campaign=review_reply" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View ${storeName}</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `${storeName} replied to your review on ${platformName}`,
+    htmlContent: html,
+    tags: ["reviews", "reply"],
+    templateSlug: "review-reply-notification",
+    templateVars: {
+      store_name: storeName,
+      store_slug: storeSlug,
+      reply,
+      platform_name: platformName,
+      app_url: APP_URL,
+    },
+  });
+}

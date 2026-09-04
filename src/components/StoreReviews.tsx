@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Star, MessageSquare, Send, Reply, Pencil, Trash2, Check, X } from "lucide-react";
 import { Review } from "@/types";
 import { createClient } from "@/lib/supabase/client";
+import { ReportReview } from "@/components/ReportReview";
 
 interface StoreReviewsProps {
   storeId: string;
@@ -141,6 +142,7 @@ function ReviewRow({
           </p>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.375rem" }}>
+          <ReportReview reviewId={review.id} />
           {(isStoreOwner || isAuthor) && (
             <button onClick={() => setEditing(true)} title="Edit review" disabled={busy} style={{ padding: "0.25rem", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
               <Pencil size={13} />

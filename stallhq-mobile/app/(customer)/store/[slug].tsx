@@ -7,17 +7,27 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase, Store, Product } from "../../../lib/supabase";
 import { trackStoreVisit, trackStoreClick } from "../../../lib/track";
+import { postReviewReply } from "../../../lib/reviewActions";
 import { BrandLoader } from "../../../components/BrandLoader";
 import { Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
 import {
   ArrowLeft, Store as StoreIcon, MessageCircle, Camera, Package, Bot,
-  ChevronRight, Star, Heart, Send, Pencil, Trash2, Reply, X,
+  ChevronRight, Star, Heart, Send, Pencil, Trash2, Reply, X, Flag,
 } from "lucide-react-native";
 import { AssistantChat } from "../../../components/AssistantChat";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WEB_API_URL } from "../../../lib/auth";
 
 const FAVORITES_KEY = "stallhq_favorites";
+
+const REVIEW_REPORT_REASONS = [
+  { value: "fake", label: "Fake review" },
+  { value: "offensive", label: "Offensive language" },
+  { value: "spam", label: "Spam or irrelevant" },
+  { value: "harassment", label: "Harassment or bullying" },
+  { value: "irrelevant", label: "Wrong product/store" },
+  { value: "other", label: "Something else" },
+];
 
 function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; storeName?: string; storeUserId?: string }) {
   const [reviews, setReviews] = useState<any[]>([]);
@@ -34,6 +44,12 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
   const [editComment, setEditComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<any | null>(null);
   const [replyDraft, setReplyDraft] = useState("");
+  // Review report state
+  const [reportReviewTarget, setReportReviewTarget] = useState<any | null>(null);
+  const [reviewReason, setReviewReason] = useState("");
+  const [reviewReportDetails, setReviewReportDetails] = useState("");
+  const [reviewReportBusy, setReviewReportBusy] = useState(false);
+  const [reviewReportDone, setReviewReportDone] = useState(false);
 
   const load = async () => {
     try {
@@ -118,26 +134,40 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
     ]);
   };
 
+  const submitReviewReport = async () => {
+    if (!reportReviewTarget) return;
+    if (!reviewReason) { Alert.alert("Pick a reason", "Choose why you're reporting this review."); return; }
+    setReviewReportBusy(true);
+    try {
+      const res = await fetch(`${WEB_API_URL}/api/review-reports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ review_id: reportReviewTarget.id, reason: reviewReason, details: reviewReportDetails.trim() || undefined }),
+      });
+      if (res.ok) { setReviewReportDone(true); }
+      else {
+        const d = await res.json();
+        Alert.alert("Report failed", d.error || "Please try again.");
+        setReportReviewTarget(null);
+      }
+    } catch {
+      Alert.alert("Network error", "Please check your connection.");
+      setReportReviewTarget(null);
+    } finally {
+      setReviewReportBusy(false);
+    }
+  };
+
   const saveReply = async () => {
     if (!replyingTo) return;
     setBusy(true);
-    try {
-      const trimmed = replyDraft.trim();
-      const { error } = await supabase
-        .from("reviews")
-        .update({
-          reply: trimmed || null,
-          replied_at: trimmed ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", replyingTo.id);
-      if (error) { Alert.alert("Reply failed", error.message); }
-      else { setReplyingTo(null); setReplyDraft(""); await load(); }
-    } catch {
-      Alert.alert("Network error", "Please check your connection.");
-    } finally {
-      setBusy(false);
-    }
+    const trimmed = replyDraft.trim();
+    const err = await postReviewReply(replyingTo.id, trimmed);
+    setBusy(false);
+    if (err) { Alert.alert("Reply failed", err); return; }
+    setReplyingTo(null);
+    setReplyDraft("");
+    await load();
   };
 
   const Stars = ({ value, size = 14 }: { value: number; size?: number }) => (
@@ -203,6 +233,14 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
               <Stars value={r.rating} />
             </View>
             {r.comment ? <Text style={{ fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: Spacing.sm, lineHeight: 19 }}>{r.comment}</Text> : null}
+
+            {/* Report review — available to everyone */}
+            <TouchableOpacity
+              style={{ flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", marginTop: Spacing.sm }}
+              onPress={() => { setReportReviewTarget(r); setReviewReason(""); setReviewReportDetails(""); setReviewReportDone(false); }}
+            >
+              <Flag size={11} color={Colors.textMuted} /><Text style={{ fontSize: 10, color: Colors.textMuted }}>Report review</Text>
+            </TouchableOpacity>
 
             {/* Author / owner actions */}
             {canManage(r) ? (
@@ -286,6 +324,45 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
             <TouchableOpacity style={[styles.submitReviewBtn, busy && { opacity: 0.6 }]} onPress={saveReply} disabled={busy}>
               <Text style={{ color: "#fff", fontSize: FontSize.md, fontWeight: "700" }}>{busy ? "Posting…" : replyDraft.trim() ? "Post reply" : "Remove reply"}</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Report review modal */}
+      <Modal visible={!!reportReviewTarget} transparent animationType="slide" onRequestClose={() => setReportReviewTarget(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            {reviewReportDone ? (
+              <>
+                <View style={styles.doneIcon}><Flag size={20} color={Colors.green} /></View>
+                <Text style={styles.modalTitle}>Report submitted</Text>
+                <Text style={styles.modalSub}>Thanks — our moderation team will review this review.</Text>
+                <TouchableOpacity style={styles.submitReviewBtn} onPress={() => setReportReviewTarget(null)}>
+                  <Text style={{ color: "#fff", fontSize: FontSize.md, fontWeight: "700" }}>Done</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                  <Text style={styles.modalTitle}>Report review</Text>
+                  <TouchableOpacity onPress={() => setReportReviewTarget(null)}><X size={18} color={Colors.textMuted} /></TouchableOpacity>
+                </View>
+                <Text style={{ fontSize: FontSize.sm, color: Colors.textMuted }}>Why is this review inappropriate?</Text>
+                {REVIEW_REPORT_REASONS.map((r) => (
+                  <TouchableOpacity
+                    key={r.value}
+                    style={[styles.reasonBtn, reviewReason === r.value && { borderColor: Colors.amber, backgroundColor: Colors.amberDim }]}
+                    onPress={() => setReviewReason(r.value)}
+                  >
+                    <Text style={{ color: reviewReason === r.value ? Colors.amber : Colors.textSecondary, fontSize: FontSize.sm, fontWeight: "600" }}>{r.label}</Text>
+                  </TouchableOpacity>
+                ))}
+                <TextInput style={[styles.reviewInput, { minHeight: 60, textAlignVertical: "top" }]} placeholder="Add details (optional)" placeholderTextColor={Colors.textMuted} value={reviewReportDetails} onChangeText={setReviewReportDetails} multiline maxLength={1000} />
+                <TouchableOpacity style={[styles.submitReviewBtn, reviewReportBusy && { opacity: 0.6 }]} onPress={submitReviewReport} disabled={reviewReportBusy}>
+                  <Text style={{ color: "#fff", fontSize: FontSize.md, fontWeight: "700" }}>{reviewReportBusy ? "Submitting…" : "Submit report"}</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -487,6 +564,9 @@ const styles = StyleSheet.create({
   reviewCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   reviewAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.purpleDim, justifyContent: "center", alignItems: "center" },
   replyBox: { marginTop: Spacing.sm, backgroundColor: "rgba(6,182,212,0.05)", borderWidth: 1, borderColor: "rgba(6,182,212,0.15)", borderRadius: BorderRadius.md, padding: Spacing.md },
+  reasonBtn: { padding: Spacing.md, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.borderSubtle, backgroundColor: Colors.bgCard, marginTop: 2 },
+  doneIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: Colors.greenDim, justifyContent: "center", alignItems: "center", alignSelf: "center" },
+  modalSub: { fontSize: FontSize.sm, color: Colors.textMuted, lineHeight: 19 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
   modalCard: { backgroundColor: Colors.bgSecondary, borderTopLeftRadius: BorderRadius.xxl, borderTopRightRadius: BorderRadius.xxl, padding: Spacing.xxl, gap: Spacing.md, paddingBottom: 44 },
   modalTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text },

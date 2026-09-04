@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/api";
+import { adminClient } from "@/lib/ai";
+import { sendReviewReplyNotification } from "@/lib/email";
 import { apiRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
 export async function GET(request: NextRequest) {
@@ -152,7 +154,7 @@ export async function PATCH(request: NextRequest) {
     // Fetch review with store owner info
     const { data: review } = await authSupabase
       .from("reviews")
-      .select("id, user_id, store_id, stores(user_id, name)")
+      .select("id, user_id, store_id, reviewer_name, stores(user_id, name, slug)")
       .eq("id", id)
       .single();
     if (!review) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -161,13 +163,14 @@ export async function PATCH(request: NextRequest) {
     const isStoreOwner = !!storeData && storeData.user_id === user.id;
     const isReviewAuthor = review.user_id === user.id;
 
+    const trimmedReply = typeof reply === "string" ? reply.trim() : undefined;
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
-    if (reply !== undefined) {
+    if (trimmedReply !== undefined) {
       // Only the store owner can post/edit a public reply
       if (!isStoreOwner) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      if (reply) {
-        updates.reply = reply;
+      if (trimmedReply) {
+        updates.reply = trimmedReply;
         updates.replied_at = new Date().toISOString();
       } else {
         updates.reply = null;
@@ -189,6 +192,26 @@ export async function PATCH(request: NextRequest) {
       .select()
       .single();
     if (error) throw error;
+
+    // Notify the review author when a reply is published (web reply path)
+    if (trimmedReply && review.user_id) {
+      try {
+        const admin = adminClient();
+        const { data: author } = await admin.auth.admin.getUserById(review.user_id);
+        const authorEmail = author?.user?.email;
+        if (authorEmail && storeData) {
+          await sendReviewReplyNotification({
+            email: authorEmail,
+            authorName: review.reviewer_name || undefined,
+            storeName: storeData.name,
+            storeSlug: storeData.slug,
+            reply: trimmedReply,
+          });
+        }
+      } catch (notifyError) {
+        console.error("Review reply notification failed:", notifyError);
+      }
+    }
 
     return NextResponse.json(data);
   } catch (error) {

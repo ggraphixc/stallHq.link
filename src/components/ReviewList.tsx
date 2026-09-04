@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Star, Trash2, Reply, Pencil, Check, X } from "lucide-react";
 import { Review } from "@/types";
 import { createClient } from "@/lib/supabase/client";
+import { ReportReview } from "@/components/ReportReview";
 
 interface ReviewListProps {
   productId: string;
@@ -144,6 +145,7 @@ function ReviewCard({
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+              <ReportReview reviewId={review.id} />
               {canReply && (
                 <button
                   onClick={() => { setReply(review.reply || ""); setReplying(!replying); }}

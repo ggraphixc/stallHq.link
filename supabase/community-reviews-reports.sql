@@ -149,7 +149,66 @@ alter table reviews add column if not exists reply text;
 alter table reviews add column if not exists replied_at timestamptz;
 
 -- ─────────────────────────────────────────────────────────────
--- 4. Customer accounts groundwork
+-- 4. review_reports — customers can flag abusive reviews
+-- ─────────────────────────────────────────────────────────────
+create table if not exists review_reports (
+  id uuid default gen_random_uuid() primary key,
+  review_id uuid references reviews(id) on delete cascade not null,
+  store_id uuid references stores(id) on delete cascade not null,
+  reporter_name varchar(100),
+  reason varchar(50) not null check (reason in (
+    'fake', 'offensive', 'spam', 'harassment', 'irrelevant', 'other'
+  )),
+  details text,
+  status varchar(20) default 'pending' check (status in ('pending', 'reviewed', 'dismissed')),
+  created_at timestamptz default now() not null,
+  updated_at timestamptz default now() not null
+);
+
+create index if not exists idx_review_reports_status on review_reports(status);
+create index if not exists idx_review_reports_review on review_reports(review_id);
+create index if not exists idx_review_reports_store on review_reports(store_id);
+
+alter table review_reports enable row level security;
+
+-- Anyone can report a review (anonymous marketplace)
+drop policy if exists "Anyone can insert review reports" on review_reports;
+create policy "Anyone can insert review reports"
+  on review_reports for insert
+  with check (true);
+
+-- Store owners can view & resolve reports about their store's reviews
+drop policy if exists "Store owners can view own review reports" on review_reports;
+create policy "Store owners can view own review reports"
+  on review_reports for select
+  using (
+    exists (
+      select 1 from stores
+      where stores.id = review_reports.store_id
+      and stores.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Store owners can update own review reports" on review_reports;
+create policy "Store owners can update own review reports"
+  on review_reports for update
+  using (
+    exists (
+      select 1 from stores
+      where stores.id = review_reports.store_id
+      and stores.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from stores
+      where stores.id = review_reports.store_id
+      and stores.user_id = auth.uid()
+    )
+  );
+
+-- ─────────────────────────────────────────────────────────────
+-- 5. Customer accounts groundwork
 --    users are created via /api/auth/signup (admin API). Nothing
 --    to migrate here, but ensure no store rows exist for users
 --    who are only customers (stores.user_id remains the flag).
