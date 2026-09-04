@@ -125,6 +125,77 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH /api/reviews — edit own review (author) or reply as store owner
+// body: { id, rating?, comment?, reply? }
+export async function PATCH(request: NextRequest) {
+  try {
+    const authSupabase = await createClient();
+    const { data: { user } } = await authSupabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const body = await request.json();
+    const { id, rating, comment, reply } = body;
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    if (rating !== undefined && (rating < 1 || rating > 5)) {
+      return NextResponse.json({ error: "Rating must be between 1 and 5" }, { status: 400 });
+    }
+    if (comment !== undefined && comment.length > 1000) {
+      return NextResponse.json({ error: "Comment must be 1000 characters or less" }, { status: 400 });
+    }
+    if (reply !== undefined && reply.length > 1000) {
+      return NextResponse.json({ error: "Reply must be 1000 characters or less" }, { status: 400 });
+    }
+    if (rating === undefined && comment === undefined && reply === undefined) {
+      return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+    }
+
+    // Fetch review with store owner info
+    const { data: review } = await authSupabase
+      .from("reviews")
+      .select("id, user_id, store_id, stores(user_id, name)")
+      .eq("id", id)
+      .single();
+    if (!review) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const storeData = Array.isArray(review.stores) ? review.stores[0] : review.stores;
+    const isStoreOwner = !!storeData && storeData.user_id === user.id;
+    const isReviewAuthor = review.user_id === user.id;
+
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+    if (reply !== undefined) {
+      // Only the store owner can post/edit a public reply
+      if (!isStoreOwner) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      if (reply) {
+        updates.reply = reply;
+        updates.replied_at = new Date().toISOString();
+      } else {
+        updates.reply = null;
+        updates.replied_at = null;
+      }
+    } else {
+      // Rating/comment edits — only the review author (or store owner)
+      if (!isReviewAuthor && !isStoreOwner) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
+      if (rating !== undefined) updates.rating = rating;
+      if (comment !== undefined) updates.comment = comment || null;
+    }
+
+    const { data, error } = await authSupabase
+      .from("reviews")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+
+    return NextResponse.json(data);
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to update review" }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     const authSupabase = await createClient();

@@ -9,7 +9,7 @@ import { supabase, Product } from "../../../lib/supabase";
 import { trackStoreClick, trackEvent } from "../../../lib/track";
 import { BrandLoader } from "../../../components/BrandLoader";
 import { Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
-import { ArrowLeft, Package, MessageCircle, Star, Send, Flag, ChevronRight } from "lucide-react-native";
+import { ArrowLeft, Package, MessageCircle, Star, Send, Flag, ChevronRight, Pencil, Trash2, Reply, X } from "lucide-react-native";
 import { WEB_API_URL } from "../../../lib/auth";
 
 const REASONS = [
@@ -38,6 +38,8 @@ export default function ProductDetailScreen() {
   const [product, setProduct] = useState<(Product & { store?: any }) | null>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [avg, setAvg] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isStoreOwner, setIsStoreOwner] = useState(false);
   const [name, setName] = useState("");
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -47,30 +49,44 @@ export default function ProductDetailScreen() {
   const [details, setDetails] = useState("");
   const [reporting, setReporting] = useState(false);
   const [reported, setReported] = useState(false);
+  // Author edit state
+  const [editingReview, setEditingReview] = useState<any | null>(null);
+  const [editRating, setEditRating] = useState(5);
+  const [editComment, setEditComment] = useState("");
+  // Owner reply state
+  const [replyingTo, setReplyingTo] = useState<any | null>(null);
+  const [replyDraft, setReplyDraft] = useState("");
+
+  const loadReviews = async (pid: string) => {
+    try {
+      const res = await fetch(`${WEB_API_URL}/api/reviews?product_id=${pid}`);
+      if (res.ok) {
+        const data = await res.json();
+        const list = data.reviews || [];
+        setReviews(list);
+        if (list.length) setAvg(Math.round((list.reduce((s2: number, r: any) => s2 + r.rating, 0) / list.length) * 10) / 10);
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!id) return;
-      const { data: p } = await supabase.from("products").select("*").eq("id", id).single();
+      const { data: p } = await supabase.from("products").select("*, stores(name, slug, user_id, whatsapp_number, instagram_handle)").eq("id", id).single();
       if (cancelled || !p) return;
-      setProduct(p as any);
+      const storeRow = Array.isArray(p.stores) ? p.stores[0] : p.stores;
+      setProduct({ ...(p as any), store: storeRow || undefined });
       trackEvent(p.store_id, "product_view", { productId: p.id });
 
-      // Store info for channel buttons
-      const { data: s } = await supabase.from("stores").select("name, slug, whatsapp_number, instagram_handle").eq("id", p.store_id).single();
-      if (!cancelled && s) setProduct({ ...(p as any), store: s });
+      // Current signed-in user (for author edit/delete + owner reply)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!cancelled && user) {
+        setCurrentUserId(user.id);
+        if (storeRow && storeRow.user_id === user.id) setIsStoreOwner(true);
+      }
 
-      // Reviews
-      try {
-        const res = await fetch(`${WEB_API_URL}/api/reviews?product_id=${p.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          const list = data.reviews || [];
-          setReviews(list);
-          if (list.length) setAvg(Math.round((list.reduce((s2: number, r: any) => s2 + r.rating, 0) / list.length) * 10) / 10);
-        }
-      } catch {}
+      await loadReviews(p.id);
     })();
     return () => { cancelled = true; };
   }, [id]);
@@ -89,20 +105,92 @@ export default function ProductDetailScreen() {
     if (!product) return;
     setBusy(true);
     try {
-      const res = await fetch(`${WEB_API_URL}/api/reviews`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_id: product.id, store_id: product.store_id, reviewer_name: name.trim(), rating, comment: comment.trim() || undefined }),
-      });
-      if (res.ok) {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from("reviews")
+        .insert({
+          product_id: product.id,
+          store_id: product.store_id,
+          reviewer_name: name.trim(),
+          rating,
+          comment: comment.trim() || null,
+          user_id: user?.id || null,
+        })
+        .select()
+        .single();
+      if (error) {
+        Alert.alert("Review failed", error.message || "Please try again.");
+      } else if (data) {
         setName(""); setRating(0); setComment("");
-        const data = await res.json();
         const fresh = [data, ...reviews];
         setReviews(fresh);
         setAvg(Math.round((fresh.reduce((s2, r) => s2 + r.rating, 0) / fresh.length) * 10) / 10);
-      } else {
-        const d = await res.json();
-        Alert.alert("Review failed", d.error || "Please try again.");
+      }
+    } catch {
+      Alert.alert("Network error", "Please check your connection.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveEdit = async () => {
+    if (!editingReview) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from("reviews")
+        .update({ rating: editRating, comment: editComment.trim() || null, updated_at: new Date().toISOString() })
+        .eq("id", editingReview.id);
+      if (error) { Alert.alert("Update failed", error.message); }
+      else {
+        const fresh = reviews.map((r) => (r.id === editingReview.id ? { ...r, rating: editRating, comment: editComment.trim() || null } : r));
+        setReviews(fresh);
+        if (fresh.length) setAvg(Math.round((fresh.reduce((s2, r) => s2 + r.rating, 0) / fresh.length) * 10) / 10);
+        setEditingReview(null);
+      }
+    } catch {
+      Alert.alert("Network error", "Please check your connection.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteReview = async (reviewId: string) => {
+    Alert.alert("Delete review?", "This cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete", style: "destructive",
+        onPress: async () => {
+          const { error } = await supabase.from("reviews").delete().eq("id", reviewId);
+          if (error) { Alert.alert("Delete failed", error.message); return; }
+          const fresh = reviews.filter((r) => r.id !== reviewId);
+          setReviews(fresh);
+          if (fresh.length) setAvg(Math.round((fresh.reduce((s2, r) => s2 + r.rating, 0) / fresh.length) * 10) / 10);
+          else setAvg(0);
+        },
+      },
+    ]);
+  };
+
+  const saveReply = async () => {
+    if (!replyingTo) return;
+    setBusy(true);
+    try {
+      const trimmed = replyDraft.trim();
+      const { error } = await supabase
+        .from("reviews")
+        .update({
+          reply: trimmed || null,
+          replied_at: trimmed ? new Date().toISOString() : null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", replyingTo.id);
+      if (error) { Alert.alert("Reply failed", error.message); }
+      else {
+        const fresh = reviews.map((r) => (r.id === replyingTo.id ? { ...r, reply: trimmed || null, replied_at: trimmed ? new Date().toISOString() : null } : r));
+        setReviews(fresh);
+        setReplyingTo(null);
+        setReplyDraft("");
       }
     } catch {
       Alert.alert("Network error", "Please check your connection.");
@@ -134,6 +222,7 @@ export default function ProductDetailScreen() {
   if (!product) return <BrandLoader label="Loading product" />;
 
   const images = [product.image_url, ...(product.images || [])].filter(Boolean) as string[];
+  const canManage = (r: any) => isStoreOwner || (currentUserId !== null && r.user_id === currentUserId);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -219,17 +308,93 @@ export default function ProductDetailScreen() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm }}>
                   <View style={styles.avatar}><Text style={{ color: Colors.purple, fontWeight: "700", fontSize: FontSize.xs }}>{String(r.reviewer_name || "?").slice(0, 2).toUpperCase()}</Text></View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: FontSize.sm, fontWeight: "600", color: Colors.text }}>{r.reviewer_name}</Text>
+                    <Text style={{ fontSize: FontSize.sm, fontWeight: "600", color: Colors.text }}>
+                      {r.reviewer_name}
+                      {currentUserId && r.user_id === currentUserId ? <Text style={{ color: Colors.purple, fontSize: 10 }}> (you)</Text> : null}
+                    </Text>
                     <Text style={{ fontSize: 10, color: Colors.textMuted }}>{new Date(r.created_at).toLocaleDateString()}</Text>
                   </View>
                   <Stars value={r.rating} />
                 </View>
                 {r.comment ? <Text style={{ fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: Spacing.sm, lineHeight: 19 }}>{r.comment}</Text> : null}
+
+                {/* Author / owner actions */}
+                {canManage(r) || isStoreOwner ? (
+                  <View style={{ flexDirection: "row", gap: Spacing.md, marginTop: Spacing.sm }}>
+                    {isStoreOwner ? (
+                      <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 4 }} onPress={() => { setReplyingTo(r); setReplyDraft(r.reply || ""); }}>
+                        <Reply size={13} color={Colors.cyan} /><Text style={{ fontSize: 11, color: Colors.cyan, fontWeight: "600" }}>{r.reply ? "Edit reply" : "Reply"}</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                    {canManage(r) ? (
+                      <>
+                        <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 4 }} onPress={() => { setEditingReview(r); setEditRating(r.rating); setEditComment(r.comment || ""); }}>
+                          <Pencil size={13} color={Colors.textMuted} /><Text style={{ fontSize: 11, color: Colors.textMuted, fontWeight: "600" }}>Edit</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 4 }} onPress={() => deleteReview(r.id)}>
+                          <Trash2 size={13} color={Colors.red} /><Text style={{ fontSize: 11, color: Colors.red, fontWeight: "600" }}>Delete</Text>
+                        </TouchableOpacity>
+                      </>
+                    ) : null}
+                  </View>
+                ) : null}
+
+                {/* Store reply */}
+                {r.reply ? (
+                  <View style={styles.replyBox}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                      <Reply size={12} color={Colors.cyan} />
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: Colors.cyan }}>
+                        {product.store?.name || "Store"}
+                        {r.replied_at ? ` · ${new Date(r.replied_at).toLocaleDateString()}` : ""}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: FontSize.sm, color: Colors.textSecondary, lineHeight: 18 }}>{r.reply}</Text>
+                  </View>
+                ) : null}
               </View>
             ))}
           </View>
         </View>
       </ScrollView>
+
+      {/* Edit review modal */}
+      <Modal visible={!!editingReview} transparent animationType="slide" onRequestClose={() => setEditingReview(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text style={styles.modalTitle}>Edit review</Text>
+              <TouchableOpacity onPress={() => setEditingReview(null)}><X size={18} color={Colors.textMuted} /></TouchableOpacity>
+            </View>
+            <Text style={styles.label}>Rating</Text>
+            <Stars value={editRating} size={30} onSelect={setEditRating} />
+            <Text style={styles.label}>Comment (optional)</Text>
+            <TextInput style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]} value={editComment} onChangeText={setEditComment} multiline maxLength={1000} placeholderTextColor={Colors.textMuted} placeholder="Share your experience…" />
+            <TouchableOpacity style={[styles.primaryBtn, busy && { opacity: 0.6 }]} onPress={saveEdit} disabled={busy}>
+              <Text style={styles.primaryBtnText}>{busy ? "Saving…" : "Save changes"}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Owner reply modal */}
+      <Modal visible={!!replyingTo} transparent animationType="slide" onRequestClose={() => setReplyingTo(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text style={styles.modalTitle}>Reply to review</Text>
+              <TouchableOpacity onPress={() => setReplyingTo(null)}><X size={18} color={Colors.textMuted} /></TouchableOpacity>
+            </View>
+            <Text style={{ fontSize: FontSize.xs, color: Colors.textMuted }}>
+              {replyingTo?.reviewer_name}: {replyingTo?.comment ? String(replyingTo.comment).slice(0, 120) : "no comment"}
+            </Text>
+            <TextInput style={[styles.input, { minHeight: 80, textAlignVertical: "top", marginTop: Spacing.md }]} value={replyDraft} onChangeText={setReplyDraft} multiline maxLength={1000} placeholderTextColor={Colors.textMuted} placeholder={`Reply as ${product.store?.name || "store"}…`} />
+            <TouchableOpacity style={[styles.primaryBtn, busy && { opacity: 0.6 }]} onPress={saveReply} disabled={busy}>
+              <Text style={styles.primaryBtnText}>{busy ? "Posting…" : replyDraft.trim() ? "Post reply" : "Remove reply"}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Report modal */}
       <Modal visible={reportOpen} transparent animationType="slide" onRequestClose={() => setReportOpen(false)}>
@@ -298,6 +463,7 @@ const styles = StyleSheet.create({
   submitBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: Colors.purple, borderRadius: BorderRadius.lg, padding: Spacing.md, marginTop: Spacing.md },
   reviewCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.purpleDim, justifyContent: "center", alignItems: "center" },
+  replyBox: { marginTop: Spacing.sm, backgroundColor: "rgba(6,182,212,0.05)", borderWidth: 1, borderColor: "rgba(6,182,212,0.15)", borderRadius: BorderRadius.md, padding: Spacing.md },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
   modalCard: { backgroundColor: Colors.bgSecondary, borderTopLeftRadius: BorderRadius.xxl, borderTopRightRadius: BorderRadius.xxl, padding: Spacing.xxl, gap: Spacing.md, paddingBottom: 44 },
   modalTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text },

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Star, Trash2 } from "lucide-react";
+import { Star, Trash2, Reply, Pencil, Check, X } from "lucide-react";
 import { Review } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 
 interface ReviewListProps {
   productId: string;
   storeId: string;
+  storeName?: string;
 }
 
 function StarRating({ rating }: { rating: number }) {
@@ -25,8 +26,42 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function ReviewCard({ review, onDelete, canDelete }: { review: Review; onDelete?: (id: string) => void; canDelete?: boolean }) {
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "0.625rem 0.75rem",
+  fontSize: "0.8125rem",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border-subtle)",
+  borderRadius: "0.5rem",
+  color: "var(--text-primary)",
+  outline: "none",
+  resize: "none",
+};
+
+function ReviewCard({
+  review,
+  onDelete,
+  canDelete,
+  canEdit,
+  canReply,
+  storeName,
+  onEdited,
+}: {
+  review: Review;
+  onDelete?: (id: string) => void;
+  canDelete?: boolean;
+  canEdit?: boolean;
+  canReply?: boolean;
+  storeName?: string;
+  onEdited?: (updated: Review) => void;
+}) {
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [replying, setReplying] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [rating, setRating] = useState(review.rating);
+  const [comment, setComment] = useState(review.comment || "");
+  const [reply, setReply] = useState(review.reply || "");
 
   const handleDelete = async () => {
     if (!confirm("Delete this review?")) return;
@@ -39,44 +74,162 @@ function ReviewCard({ review, onDelete, canDelete }: { review: Review; onDelete?
     }
   };
 
+  const saveEdit = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: review.id, rating, comment: comment.trim() || null }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        onEdited?.(updated);
+        setEditing(false);
+      }
+    } catch { /* Silent */ } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveReply = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: review.id, reply: reply.trim() || null }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        onEdited?.(updated);
+        setReplying(false);
+      }
+    } catch { /* Silent */ } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", padding: "1rem" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <StarRating rating={review.rating} />
-            <span style={{ fontSize: "0.8125rem", fontWeight: 600 }}>{review.reviewer_name}</span>
+      {editing ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div style={{ display: "flex", gap: "0.25rem" }}>
+            {[1, 2, 3, 4, 5].map((v) => (
+              <button key={v} type="button" onClick={() => setRating(v)} style={{ background: "none", border: "none", cursor: "pointer", padding: "0" }}>
+                <Star size={20} style={{ color: v <= rating ? "var(--glow-amber)" : "var(--text-muted)" }} fill={v <= rating ? "currentColor" : "none"} />
+              </button>
+            ))}
           </div>
-          <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
-            {new Date(review.created_at).toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric" })}
-          </p>
+          <textarea style={inputStyle} value={comment} onChange={(e) => setComment(e.target.value)} maxLength={1000} />
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button onClick={saveEdit} disabled={busy} className="glow-button" style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "0.375rem" }}>
+              <Check size={13} /> Save
+            </button>
+            <button onClick={() => { setEditing(false); setRating(review.rating); setComment(review.comment || ""); }} style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem", background: "none", border: "1px solid var(--border-subtle)", borderRadius: "0.5rem", color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.375rem" }}>
+              <X size={13} /> Cancel
+            </button>
+          </div>
         </div>
-        {canDelete && onDelete && (
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            style={{ padding: "0.375rem", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", borderRadius: "0.375rem", transition: "color 0.15s" }}
-            onMouseOver={(e) => (e.currentTarget.style.color = "var(--glow-red)")}
-            onMouseOut={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
-            title="Delete review"
-          >
-            <Trash2 size={16} />
-          </button>
-        )}
-      </div>
-      {review.comment && (
-        <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: "0.75rem" }}>{review.comment}</p>
+      ) : (
+        <>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <StarRating rating={review.rating} />
+                <span style={{ fontSize: "0.8125rem", fontWeight: 600 }}>{review.reviewer_name}</span>
+              </div>
+              <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                {new Date(review.created_at).toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric" })}
+              </p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+              {canReply && (
+                <button
+                  onClick={() => { setReply(review.reply || ""); setReplying(!replying); }}
+                  style={{ padding: "0.375rem", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", borderRadius: "0.375rem", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.6875rem", transition: "color 0.15s" }}
+                  onMouseOver={(e) => (e.currentTarget.style.color = "var(--glow-cyan)")}
+                  onMouseOut={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                  title="Reply as store"
+                >
+                  <Reply size={14} /> Reply
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  onClick={() => setEditing(true)}
+                  style={{ padding: "0.375rem", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", borderRadius: "0.375rem", transition: "color 0.15s" }}
+                  onMouseOver={(e) => (e.currentTarget.style.color = "var(--glow-purple)")}
+                  onMouseOut={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                  title="Edit review"
+                >
+                  <Pencil size={14} />
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  style={{ padding: "0.375rem", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", borderRadius: "0.375rem", transition: "color 0.15s" }}
+                  onMouseOver={(e) => (e.currentTarget.style.color = "var(--glow-red)")}
+                  onMouseOut={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                  title="Delete review"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+          {review.comment && (
+            <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: "0.75rem" }}>{review.comment}</p>
+          )}
+        </>
+      )}
+
+      {/* Store reply */}
+      {!editing && (
+        <>
+          {replying ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.875rem", background: "rgba(6,182,212,0.04)", border: "1px solid rgba(6,182,212,0.12)", borderRadius: "0.625rem", padding: "0.75rem" }}>
+              <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--glow-cyan)", display: "flex", alignItems: "center", gap: "0.375rem", margin: 0 }}>
+                <Reply size={12} /> Reply as {storeName || "this store"}
+              </p>
+              <textarea style={{ ...inputStyle, background: "var(--bg-secondary)" }} value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Thank the customer or clarify anything…" maxLength={1000} />
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button onClick={saveReply} disabled={busy} className="glow-button" style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem" }}>
+                  {busy ? "Saving…" : "Post reply"}
+                </button>
+                <button onClick={() => setReplying(false)} style={{ padding: "0.5rem 0.875rem", fontSize: "0.75rem", background: "none", border: "1px solid var(--border-subtle)", borderRadius: "0.5rem", color: "var(--text-muted)", cursor: "pointer" }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : review.reply ? (
+            <div style={{ display: "flex", gap: "0.625rem", marginTop: "0.875rem", background: "rgba(6,182,212,0.04)", border: "1px solid rgba(6,182,212,0.12)", borderRadius: "0.625rem", padding: "0.75rem" }}>
+              <div style={{ width: "1.5rem", height: "1.5rem", borderRadius: "50%", background: "rgba(6,182,212,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Reply size={12} style={{ color: "var(--glow-cyan)" }} />
+              </div>
+              <div>
+                <p style={{ margin: "0 0 0.25rem", fontSize: "0.75rem", fontWeight: 700, color: "var(--glow-cyan)" }}>
+                  {storeName || "Store"} · {review.replied_at ? new Date(review.replied_at).toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric" }) : ""}
+                </p>
+                <p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>{review.reply}</p>
+              </div>
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );
 }
 
-export function ReviewList({ productId, storeId }: ReviewListProps) {
+export function ReviewList({ productId, storeId, storeName }: ReviewListProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [summary, setSummary] = useState({ count: 0, average: 0 });
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isStoreOwner, setIsStoreOwner] = useState(false);
+  const [storeDisplayName, setStoreDisplayName] = useState<string | null>(storeName || null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -84,12 +237,15 @@ export function ReviewList({ productId, storeId }: ReviewListProps) {
       if (user) {
         setCurrentUserId(user.id);
         // Check if user owns this store
-        supabase.from("stores").select("id").eq("id", storeId).eq("user_id", user.id).single().then(({ data }) => {
-          setIsStoreOwner(!!data);
+        supabase.from("stores").select("id, name").eq("id", storeId).eq("user_id", user.id).single().then(({ data }) => {
+          if (data) {
+            setIsStoreOwner(true);
+            if (!storeDisplayName) setStoreDisplayName((data as any).name || null);
+          }
         });
       }
     });
-  }, [storeId]);
+  }, [storeId, storeDisplayName]);
 
   const fetchReviews = async () => {
     try {
@@ -107,11 +263,23 @@ export function ReviewList({ productId, storeId }: ReviewListProps) {
   useEffect(() => { fetchReviews(); }, [productId]);
 
   const handleReviewDeleted = (id: string) => {
-    setReviews((prev) => prev.filter((r) => r.id !== id));
-    const remaining = reviews.filter((r) => r.id !== id);
-    const count = remaining.length;
-    const average = count > 0 ? remaining.reduce((sum, r) => sum + r.rating, 0) / count : 0;
-    setSummary({ count, average: Math.round(average * 10) / 10 });
+    setReviews((prev) => {
+      const remaining = prev.filter((r) => r.id !== id);
+      const count = remaining.length;
+      const average = count > 0 ? remaining.reduce((sum, r) => sum + r.rating, 0) / count : 0;
+      setSummary({ count, average: Math.round(average * 10) / 10 });
+      return remaining;
+    });
+  };
+
+  const handleReviewEdited = (updated: Review) => {
+    setReviews((prev) => {
+      const remaining = prev.map((r) => (r.id === updated.id ? updated : r));
+      const count = remaining.length;
+      const average = count > 0 ? remaining.reduce((sum, r) => sum + r.rating, 0) / count : 0;
+      setSummary({ count, average: Math.round(average * 10) / 10 });
+      return remaining;
+    });
   };
 
   if (loading) {
@@ -148,7 +316,11 @@ export function ReviewList({ productId, storeId }: ReviewListProps) {
               key={review.id}
               review={review}
               onDelete={handleReviewDeleted}
+              onEdited={handleReviewEdited}
               canDelete={isStoreOwner || (currentUserId !== null && review.user_id === currentUserId)}
+              canEdit={isStoreOwner || (currentUserId !== null && review.user_id === currentUserId)}
+              canReply={isStoreOwner}
+              storeName={storeDisplayName || undefined}
             />
           ))}
         </div>

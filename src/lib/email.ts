@@ -2025,3 +2025,79 @@ export async function sendOnboardingChecklist({
     },
   });
 }
+
+// ─── Review moderation emails ────────────────────────────────────────────────
+// Notifies a store owner when the admin team hides or deletes a review
+// about their store.
+
+export async function sendReviewModerationEmail({
+  email,
+  storeName,
+  storeSlug,
+  reviewerName,
+  reviewSnippet,
+  action,
+}: {
+  email: string;
+  storeName: string;
+  storeSlug: string;
+  reviewerName: string;
+  reviewSnippet?: string;
+  action: "hidden" | "deleted";
+}) {
+  const platformName = await getPlatformName();
+  const isHidden = action === "hidden";
+  const headline = isHidden
+    ? "A review was hidden from your store"
+    : "A review was removed from your store";
+  const body = isHidden
+    ? `A review from <strong>${reviewerName}</strong> about <strong>${storeName}</strong> was hidden by our moderation team. It is no longer visible to customers, but you can still see it and reach out to appeal.`
+    : `A review from <strong>${reviewerName}</strong> about <strong>${storeName}</strong> was removed by our moderation team for violating our community guidelines.`;
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#ef4444,#f59e0b);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#9888;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">${headline}</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">${storeName}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${body}</p>
+        </td>
+      </tr>
+      ${reviewSnippet ? `
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-left:3px solid #ef4444;border-radius:8px;padding:14px 16px;">
+            <p style="margin:0 0 6px 0;font-size:12px;color:#94a3b8;"><strong style="color:#f1f5f9;">${reviewerName}</strong> said:</p>
+            <p style="margin:0;font-size:13px;color:#e0e0e0;font-style:italic;">&ldquo;${reviewSnippet.slice(0, 300)}${reviewSnippet.length > 300 ? "…" : ""}&rdquo;</p>
+          </div>
+        </td>
+      </tr>` : ""}
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${APP_URL}/${storeSlug}?utm_source=brevo&utm_medium=email&utm_campaign=review_moderation" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">View Your Store</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `${isHidden ? "Hidden" : "Removed"} review on ${storeName} — ${platformName}`,
+    htmlContent: html,
+    tags: ["moderation", "review", action],
+    templateSlug: "review-moderation",
+    templateVars: {
+      store_name: storeName,
+      store_slug: storeSlug,
+      reviewer_name: reviewerName,
+      review_snippet: reviewSnippet || "",
+      platform_name: platformName,
+      app_url: APP_URL,
+    },
+  });
+}

@@ -111,7 +111,11 @@ export interface Review {
   rating: number;
   comment: string | null;
   created_at: string;
-  user_id?: string;
+  updated_at?: string | null;
+  hidden?: boolean;
+  reply?: string | null;
+  replied_at?: string | null;
+  user_id?: string | null;
 }
 
 export interface ProductWithRating extends Product {

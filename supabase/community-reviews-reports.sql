@@ -112,6 +112,42 @@ create policy "Public can view non-hidden reviews"
     )
   );
 
+-- Review authors can edit or delete their own reviews
+-- (matches the web API DELETE guard which already allows the author)
+drop policy if exists "Review authors can update own reviews" on reviews;
+drop policy if exists "Review authors can delete own reviews" on reviews;
+create policy "Review authors can update own reviews"
+  on reviews for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+create policy "Review authors can delete own reviews"
+  on reviews for delete
+  using (auth.uid() = user_id);
+
+-- Store owners can update reviews about their store (public reply, edit)
+-- Delete rights already covered by "Store owners can delete reviews".
+drop policy if exists "Store owners can update reviews" on reviews;
+create policy "Store owners can update reviews"
+  on reviews for update
+  using (
+    exists (
+      select 1 from stores
+      where stores.id = reviews.store_id
+      and stores.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from stores
+      where stores.id = reviews.store_id
+      and stores.user_id = auth.uid()
+    )
+  );
+
+-- Owner public reply on a review (single reply per review)
+alter table reviews add column if not exists reply text;
+alter table reviews add column if not exists replied_at timestamptz;
+
 -- ─────────────────────────────────────────────────────────────
 -- 4. Customer accounts groundwork
 --    users are created via /api/auth/signup (admin API). Nothing

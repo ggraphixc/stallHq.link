@@ -357,6 +357,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
               <ReviewList
                 productId={product.id}
                 storeId={product.store_id}
+                storeName={product.stores.name}
               />
               <ReviewForm
                 productId={product.id}

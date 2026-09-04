@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/api";
 import { adminClient } from "@/lib/ai";
+import { sendReviewModerationEmail } from "@/lib/email";
 
 const ADMIN_IDS = (process.env.ADMIN_USER_ID || "")
   .split(",")
@@ -42,6 +43,24 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// Resolve the store owner's email for moderation notifications.
+// Prefers the store's public email; falls back to the auth account email.
+async function getStoreOwnerEmail(supabase: ReturnType<typeof adminClient>, storeId: string): Promise<{ email: string | null; storeName: string; storeSlug: string } | null> {
+  const { data: store } = await supabase
+    .from("stores")
+    .select("name, slug, email, user_id")
+    .eq("id", storeId)
+    .single();
+  if (!store) return null;
+
+  let ownerEmail = store.email || null;
+  if (!ownerEmail && store.user_id) {
+    const { data: user } = await supabase.auth.admin.getUserById(store.user_id);
+    ownerEmail = user?.user?.email || null;
+  }
+  return { email: ownerEmail, storeName: store.name, storeSlug: store.slug };
+}
+
 // PATCH /api/admin/reviews — body: { id, hidden: boolean } (soft hide / unhide)
 export async function PATCH(req: NextRequest) {
   try {
@@ -54,7 +73,11 @@ export async function PATCH(req: NextRequest) {
     }
 
     const supabase = adminClient();
-    const { data: existing } = await supabase.from("reviews").select("id").eq("id", id).single();
+    const { data: existing } = await supabase
+      .from("reviews")
+      .select("id, hidden, store_id, reviewer_name, comment")
+      .eq("id", id)
+      .single();
     if (!existing) return NextResponse.json({ error: "Review not found" }, { status: 404 });
 
     const { error } = await supabase
@@ -62,6 +85,25 @@ export async function PATCH(req: NextRequest) {
       .update({ hidden, updated_at: new Date().toISOString() })
       .eq("id", id);
     if (error) throw error;
+
+    // Notify the store owner when a review is first hidden (not on unhide)
+    if (hidden && !existing.hidden) {
+      try {
+        const owner = await getStoreOwnerEmail(supabase, existing.store_id);
+        if (owner?.email) {
+          await sendReviewModerationEmail({
+            email: owner.email,
+            storeName: owner.storeName,
+            storeSlug: owner.storeSlug,
+            reviewerName: existing.reviewer_name || "Anonymous",
+            reviewSnippet: existing.comment || undefined,
+            action: "hidden",
+          });
+        }
+      } catch (emailError: any) {
+        console.error("Review hidden notification failed:", emailError?.message || emailError);
+      }
+    }
 
     return NextResponse.json({ success: true, hidden });
   } catch (error: any) {
@@ -80,8 +122,32 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
     const supabase = adminClient();
+    const { data: doomed } = await supabase
+      .from("reviews")
+      .select("id, store_id, reviewer_name, comment")
+      .eq("id", id)
+      .single();
+    if (!doomed) return NextResponse.json({ error: "Review not found" }, { status: 404 });
+
     const { error } = await supabase.from("reviews").delete().eq("id", id);
     if (error) throw error;
+
+    // Notify the store owner that the review was permanently removed
+    try {
+      const owner = await getStoreOwnerEmail(supabase, doomed.store_id);
+      if (owner?.email) {
+        await sendReviewModerationEmail({
+          email: owner.email,
+          storeName: owner.storeName,
+          storeSlug: owner.storeSlug,
+          reviewerName: doomed.reviewer_name || "Anonymous",
+          reviewSnippet: doomed.comment || undefined,
+          action: "deleted",
+        });
+      }
+    } catch (emailError: any) {
+      console.error("Review deletion notification failed:", emailError?.message || emailError);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

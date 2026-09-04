@@ -480,7 +480,7 @@ export function StorePage({ store, products, aiAssistantEnabled }: StorePageProp
         {/* ── Reviews Tab ──────────────────────────── */}
         {activeTab === "reviews" && (
           <div style={{ maxWidth: "40rem" }}>
-            <StoreReviews storeId={store.id} />
+            <StoreReviews storeId={store.id} storeName={store.name} />
           </div>
         )}
 
