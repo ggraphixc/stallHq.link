@@ -7,7 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "stallhq",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.stallhq.app"
@@ -18,11 +17,7 @@
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "package": "com.stallhq.app",
-      "versionCode": 1,
-      "extraMavenRepos": [
-        "https://maven-central.storage-download.googleapis.com/maven2",
-        "https://maven.aliyun.com/repository/central"
-      ]
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -30,7 +25,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "expo-sharing"
     ],
     "extra": {
       "router": {},
@@ -38,6 +34,6 @@
         "projectId": "e7290b84-fabd-4bc4-904a-9c2dcf422129"
       }
     },
-    "owner": "zerupthcodes"
+    "owner": "ggraphixc"
   }
 }
