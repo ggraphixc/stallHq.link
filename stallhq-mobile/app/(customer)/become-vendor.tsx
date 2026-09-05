@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from "react-native";
+import { alert } from "../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth";
@@ -16,17 +17,17 @@ export default function BecomeVendorScreen() {
 
   const start = async () => {
     if (!storeName.trim()) {
-      Alert.alert("Store name required", "Give your store a name to get started.");
+      alert("Store name required", "Give your store a name to get started.");
       return;
     }
     setLoading(true);
     const { error } = await becomeVendor(storeName.trim());
     setLoading(false);
     if (error) {
-      Alert.alert("Couldn't create store", error);
+      alert("Couldn't create store", error);
       return;
     }
-    Alert.alert("Store created! 🎉", "Welcome to the vendor side of stallHq.", [
+    alert("Store created! 🎉", "Welcome to the vendor side of stallHq.", [
       { text: "Open Dashboard", onPress: () => router.replace("/(vendor)/(tabs)") },
     ]);
   };

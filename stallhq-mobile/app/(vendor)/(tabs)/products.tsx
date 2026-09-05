@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, Image,
-  TextInput, RefreshControl, Alert, ActivityIndicator,
+  TextInput, RefreshControl, ActivityIndicator,
 } from "react-native";
+import { alert } from "../../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../../lib/auth";
@@ -35,7 +36,7 @@ export default function ProductsScreen() {
   const onRefresh = async () => { setRefreshing(true); await fetchProducts(); setRefreshing(false); };
 
   const deleteProduct = (product: Product) => {
-    Alert.alert("Delete Product", `Delete "${product.name}"?`, [
+    alert("Delete Product", `Delete "${product.name}"?`, [
       { text: "Cancel", style: "cancel" },
       { text: "Delete", style: "destructive", onPress: async () => {
         await supabase.from("products").delete().eq("id", product.id);
@@ -50,10 +51,10 @@ export default function ProductsScreen() {
   const runBulkAI = async () => {
     if (!store || bulkAI.running) return;
     if (isTrial) {
-      Alert.alert("Pro feature", "AI descriptions require a paid plan. Upgrade to generate descriptions for all your products at once.");
+      alert("Pro feature", "AI descriptions require a paid plan. Upgrade to generate descriptions for all your products at once.");
       return;
     }
-    Alert.alert(
+    alert(
       "Generate descriptions",
       `Create AI descriptions for ${missingCount} product${missingCount !== 1 ? "s" : ""} without one? This may take a minute or two.`,
       [
@@ -76,7 +77,7 @@ export default function ProductsScreen() {
               throw new Error(data?.error || "Generation failed");
             }
             setBulkAI((s) => ({ ...s, done: data.processed ?? missingCount }));
-            Alert.alert("Done", `${data.succeeded ?? 0} description${data.succeeded !== 1 ? "s" : ""} generated${data.failed ? `, ${data.failed} failed` : ""}.`);
+            alert("Done", `${data.succeeded ?? 0} description${data.succeeded !== 1 ? "s" : ""} generated${data.failed ? `, ${data.failed} failed` : ""}.`);
             await fetchProducts();
           } catch (e: any) {
             setBulkAI((s) => ({ ...s, error: e?.message || "Something went wrong" }));

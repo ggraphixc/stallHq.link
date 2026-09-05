@@ -110,6 +110,7 @@ export interface Review {
   reviewer_name: string;
   rating: number;
   comment: string | null;
+  photos?: string[];
   created_at: string;
   updated_at?: string | null;
   hidden?: boolean;

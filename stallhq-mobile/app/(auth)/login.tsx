@@ -5,11 +5,11 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { alert } from "../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth";
@@ -26,13 +26,13 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      alert("Error", "Please fill in all fields");
       return;
     }
     setLoading(true);
     const { error } = await signIn(email.trim(), password);
     setLoading(false);
-    if (error) Alert.alert("Login Failed", error);
+    if (error) alert("Login Failed", error);
     else router.replace("/");
   };
 
@@ -83,6 +83,12 @@ export default function LoginScreen() {
                 style={styles.eyeBtn}
               >
                 <Text style={styles.eyeText}>{showPassword ? "🙈" : "👁️"}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.forgotRow}>
+              <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
+                <Text style={styles.forgotLink}>Forgot password?</Text>
               </TouchableOpacity>
             </View>
 
@@ -167,4 +173,6 @@ const styles = StyleSheet.create({
   signupRow: { flexDirection: "row", justifyContent: "center", marginTop: Spacing.xxxl },
   signupText: { fontSize: FontSize.md, color: Colors.textSecondary },
   signupLink: { fontSize: FontSize.md, color: Colors.purple, fontWeight: "600" },
+  forgotRow: { alignItems: "flex-end", marginTop: Spacing.sm },
+  forgotLink: { fontSize: FontSize.sm, color: Colors.purple, fontWeight: "600" },
 });

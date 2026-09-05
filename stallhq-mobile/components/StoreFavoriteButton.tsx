@@ -1,38 +1,31 @@
 import React, { useEffect, useState } from "react";
 import { TouchableOpacity, StyleSheet } from "react-native";
 import { Heart } from "lucide-react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "../lib/theme";
-
-export const FAVORITES_KEY = "stallhq_favorites";
+import { addStoreFavorite, removeStoreFavorite, getStoreFavorites } from "../lib/storeFavorites";
 
 export async function loadFavoriteSlugs(): Promise<string[]> {
   try {
-    const raw = await AsyncStorage.getItem(FAVORITES_KEY);
-    const list: unknown = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list.filter((x): x is string => typeof x === "string") : [];
+    const favs = await getStoreFavorites();
+    return favs.map((f: any) => f.stores?.slug || "").filter(Boolean);
   } catch {
     return [];
   }
 }
 
-export async function setStoreFavorite(slug: string, faved: boolean): Promise<string[]> {
-  const slugs = await loadFavoriteSlugs();
-  const next = faved
-    ? slugs.includes(slug) ? slugs : [...slugs, slug]
-    : slugs.filter((s) => s !== slug);
-  try {
-    await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
-  } catch {}
-  return next;
+export async function setStoreFavorite(_slug: string, _faved: boolean): Promise<string[]> {
+  // Kept for backward compatibility — actual logic moved to StoreFavoriteButton
+  return loadFavoriteSlugs();
 }
 
 export function StoreFavoriteButton({
   slug,
+  storeId,
   size = 20,
   onChange,
 }: {
   slug: string;
+  storeId?: string;
   size?: number;
   onChange?: (faved: boolean) => void;
 }) {
@@ -41,16 +34,28 @@ export function StoreFavoriteButton({
 
   useEffect(() => {
     let active = true;
-    loadFavoriteSlugs().then((slugs) => {
-      if (active) { setFaved(slugs.includes(slug)); setReady(true); }
-    });
+    (async () => {
+      try {
+        const favs = await getStoreFavorites();
+        const isFav = favs.some((f: any) => f.stores?.slug === slug);
+        if (active) { setFaved(isFav); setReady(true); }
+      } catch {
+        if (active) setReady(true);
+      }
+    })();
     return () => { active = false; };
   }, [slug]);
 
   const toggle = async () => {
     const next = !faved;
     setFaved(next);
-    await setStoreFavorite(slug, next);
+    if (storeId) {
+      if (next) {
+        await addStoreFavorite(storeId);
+      } else {
+        await removeStoreFavorite(storeId);
+      }
+    }
     onChange?.(next);
   };
 

@@ -31,7 +31,7 @@ import {
   MousePointerClick,
   TrendingUp,
   Store,
-  Sparkles,
+  CreditCard,
 } from "lucide-react-native";
 import { IconBox } from "../../../components/ui/IconBox";
 import { Sparkline } from "../../../components/ui/Sparkline";
@@ -410,13 +410,6 @@ export default function VendorDashboard() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => router.push("/(vendor)/promo-cards")}
-          >
-            <IconBox size="sm" accent="cyan"><Sparkles size={14} color={Colors.cyan} /></IconBox>
-            <Text style={styles.actionText}>Promo Cards</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
             onPress={() => router.push("/(vendor)/(tabs)/analytics")}
           >
             <IconBox size="sm" accent="amber"><BarChart3 size={14} color={Colors.amber} /></IconBox>
@@ -424,10 +417,10 @@ export default function VendorDashboard() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => router.push("/(vendor)/monitoring")}
+            onPress={() => router.push("/(vendor)/billing")}
           >
-            <IconBox size="sm" accent="green"><AlertTriangle size={14} color={Colors.green} /></IconBox>
-            <Text style={styles.actionText}>Reviews & Reports</Text>
+            <IconBox size="sm" accent="cyan"><CreditCard size={14} color={Colors.cyan} /></IconBox>
+            <Text style={styles.actionText}>Billing</Text>
           </TouchableOpacity>
         </View>
 

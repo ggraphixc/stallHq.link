@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet, Image,
-  ActivityIndicator, Share, Platform, Alert,
+  ActivityIndicator, Share, Platform,
 } from "react-native";
+import { alert } from "../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -82,10 +83,10 @@ export default function PromoCardsScreen() {
       } else if (Platform.OS === "ios") {
         await Share.share({ url: uri, message: caption });
       } else {
-        Alert.alert("Sharing unavailable", "Sharing isn't supported on this device.");
+        alert("Sharing unavailable", "Sharing isn't supported on this device.");
       }
     } catch (e) {
-      Alert.alert("Share failed", "Could not generate the card image. Try again.");
+      alert("Share failed", "Could not generate the card image. Try again.");
     } finally {
       setSharing(false);
     }

@@ -6,15 +6,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../../lib/auth";
 import { Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
-import { Store, Globe, Mail, FileText, Shield, LogOut, ChevronRight, User, Sparkles, LogIn } from "lucide-react-native";
+import { Store, Globe, Mail, FileText, Shield, LogOut, ChevronRight, User, Sparkles, LogIn, Package, Clock } from "lucide-react-native";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { session, signOut } = useAuth();
 
   const menuItems = [
+    { icon: <Package size={18} color={Colors.green} />, title: "My Orders", subtitle: "View order history & tracking", onPress: () => router.push("/(customer)/(tabs)/orders") },
+    { icon: <Mail size={18} color={Colors.amber} />, title: "Email Preferences", subtitle: "Manage notification emails", onPress: () => router.push("/(customer)/email-preferences") },
     { icon: <Globe size={18} color={Colors.cyan} />, title: "stallhq.com", subtitle: "Visit our website", onPress: () => Linking.openURL("https://hqlink.vercel.app") },
-    { icon: <Mail size={18} color={Colors.amber} />, title: "Email Preferences", subtitle: "Manage notification emails", onPress: () => Linking.openURL("https://hqlink.vercel.app/email-preferences") },
     { icon: <FileText size={18} color={Colors.textMuted} />, title: "Terms of Service", subtitle: "", onPress: () => Linking.openURL("https://hqlink.vercel.app/terms") },
     { icon: <Shield size={18} color={Colors.textMuted} />, title: "Privacy Policy", subtitle: "", onPress: () => Linking.openURL("https://hqlink.vercel.app/privacy") },
   ];

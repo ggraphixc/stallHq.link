@@ -21,6 +21,9 @@ android/
 .env
 .env.local
 
+# Google Play service account (contains private key — never commit real credentials)
+google-service-account.json
+
 # Misc
 .DS_Store
 npm-debug.log*

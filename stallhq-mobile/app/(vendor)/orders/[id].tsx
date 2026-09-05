@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Linking,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking,
 } from "react-native";
+import { alert } from "../../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase, Order } from "../../../lib/supabase";
@@ -28,7 +29,7 @@ export default function OrderDetailScreen() {
   const updateStatus = async (status: string) => {
     if (!order) return;
     const { error } = await supabase.from("orders").update({ status, updated_at: new Date().toISOString() }).eq("id", order.id);
-    if (error) Alert.alert("Error", error.message);
+    if (error) alert("Error", error.message);
     else setOrder({ ...order, status: status as Order["status"] });
   };
 
@@ -98,7 +99,7 @@ export default function OrderDetailScreen() {
           <View style={styles.statusGrid}>
             {STATUSES.map((s) => (
               <TouchableOpacity key={s} style={[styles.statusBtn, order.status === s && styles.statusBtnActive, { borderColor: getStatusColor(s) }]}
-                onPress={() => Alert.alert("Update", `Change to "${s}"?`, [{ text: "Cancel", style: "cancel" }, { text: "OK", onPress: () => updateStatus(s) }])}>
+                onPress={() => alert("Update", `Change to "${s}"?`, [{ text: "Cancel", style: "cancel" }, { text: "OK", onPress: () => updateStatus(s) }])}>
                 <Text style={[styles.statusBtnText, { color: getStatusColor(s) }, order.status === s && { fontWeight: "800" }]}>
                   {s.charAt(0).toUpperCase() + s.slice(1)}
                 </Text>

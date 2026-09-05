@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
-  Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  ActivityIndicator, KeyboardAvoidingView, Platform,
 } from "react-native";
+import { alert } from "../../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../../lib/auth";
@@ -20,14 +21,14 @@ export default function NewProductScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
-    if (!name.trim() || !price) { Alert.alert("Error", "Name and price are required"); return; }
+    if (!name.trim() || !price) { alert("Error", "Name and price are required"); return; }
     setLoading(true);
     const { error } = await supabase.from("products").insert({
       store_id: store?.id, name: name.trim(), description: description.trim() || null,
       price: parseFloat(price), category: category.trim() || null, in_stock: true, images: [],
     });
     setLoading(false);
-    if (error) Alert.alert("Error", error.message); else router.back();
+    if (error) alert("Error", error.message); else router.back();
   };
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Star, MessageSquare, Send, Reply, Pencil, Trash2, Check, X } from "lucide-react";
+import { Star, MessageSquare, Send, Reply, Pencil, Trash2, Check, X, Camera, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Review } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import { ReportReview } from "@/components/ReportReview";
@@ -172,6 +172,16 @@ function ReviewRow({
       ) : (
         <>
           {review.comment && <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>{review.comment}</p>}
+          {/* Review Photos */}
+          {review.photos && review.photos.length > 0 && (
+            <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap", marginTop: review.comment ? "0.5rem" : 0 }}>
+              {review.photos.map((url: string, i: number) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer" style={{ width: "3.5rem", height: "3.5rem", borderRadius: "0.5rem", overflow: "hidden", border: "1px solid var(--border-subtle)", display: "block" }}>
+                  <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </a>
+              ))}
+            </div>
+          )}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: review.comment ? "0.5rem" : 0 }}>
             <Stars value={review.rating} />
             {isStoreOwner && (
@@ -227,6 +237,8 @@ export function StoreReviews({ storeId, storeName }: StoreReviewsProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isStoreOwner, setIsStoreOwner] = useState(false);
   const [displayName, setDisplayName] = useState<string | undefined>(storeName);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Determine viewer role (author of a review / owner of the store)
   useEffect(() => {
@@ -262,6 +274,34 @@ export function StoreReviews({ storeId, storeName }: StoreReviewsProps) {
 
   useEffect(() => { load(); }, [load]);
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || photos.length >= 4) return;
+    setUploadingPhoto(true);
+    try {
+      for (let i = 0; i < Math.min(files.length, 4 - photos.length); i++) {
+        const file = files[i];
+        if (!file.type.startsWith("image/")) continue;
+        if (file.size > 5 * 1024 * 1024) continue; // 5MB limit
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("bucket", "products");
+        formData.append("folder", "review-photos");
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) setPhotos(prev => [...prev, data.url]);
+        }
+      }
+    } catch {}
+    setUploadingPhoto(false);
+    e.target.value = "";
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -277,11 +317,12 @@ export function StoreReviews({ storeId, storeName }: StoreReviewsProps) {
           reviewer_name: name.trim(),
           rating,
           comment: comment.trim() || undefined,
+          photos: photos.length > 0 ? photos : undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to submit");
-      setName(""); setRating(0); setComment(""); setShowForm(false);
+      setName(""); setRating(0); setComment(""); setPhotos([]); setShowForm(false);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit review");
@@ -336,6 +377,30 @@ export function StoreReviews({ storeId, storeName }: StoreReviewsProps) {
             placeholder="How was your experience with this store?"
             maxLength={1000}
           />
+
+          {/* Photo Upload */}
+          <div>
+            <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.375rem", marginBottom: "0.375rem" }}>
+              <Camera size={12} /> Photos (optional, max 4)
+            </label>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+              {photos.map((url, i) => (
+                <div key={i} style={{ position: "relative", width: "3.5rem", height: "3.5rem", borderRadius: "0.5rem", overflow: "hidden", border: "1px solid var(--border-subtle)" }}>
+                  <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <button type="button" onClick={() => removePhoto(i)} style={{ position: "absolute", top: 2, right: 2, width: "1rem", height: "1rem", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.5rem" }}>
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {photos.length < 4 && (
+                <label style={{ width: "3.5rem", height: "3.5rem", borderRadius: "0.5rem", border: "1px dashed var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: uploadingPhoto ? "wait" : "pointer", opacity: uploadingPhoto ? 0.5 : 1, color: "var(--text-muted)" }}>
+                  <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+                  {uploadingPhoto ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <ImageIcon size={14} />}
+                </label>
+              )}
+            </div>
+          </div>
+
           {error && <p style={{ fontSize: "0.75rem", color: "var(--glow-red)" }}>{error}</p>}
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <button type="submit" disabled={submitting} className="glow-button" style={{ padding: "0.625rem 1rem", fontSize: "0.8125rem" }}>

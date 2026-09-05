@@ -7,6 +7,7 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { FilterPills } from "@/components/ui/FilterPills";
 import { StoreAvatar } from "@/components/ui/StoreAvatar";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useBranding } from "@/hooks/useBranding";
 
 function Particles() {
@@ -205,6 +206,7 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
             <span style={{ fontWeight: 700, fontSize: "0.875rem" }}>StallHq</span>
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <NotificationBell />
             <Link
               href="/auth/login"
               style={{ fontSize: "0.75rem", color: "var(--text-secondary)", textDecoration: "none" }}
@@ -502,21 +504,13 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
                       {store.category && (
                         <span className="category-tag">{store.category}</span>
                       )}
-                      {store.productCount !== undefined && store.productCount > 0 && (
-                        <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                          <Package size={10} />
-                          {store.productCount}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
                       {store.verified && (
-                        <ShieldCheck size={14} style={{ color: "var(--glow-green)" }} />
+                        <ShieldCheck size={12} style={{ color: "var(--glow-green)" }} />
                       )}
-                      <span style={{ fontSize: "0.75rem", color: "var(--glow-purple)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                        Visit <ArrowRight style={{ width: "0.75rem", height: "0.75rem" }} />
-                      </span>
                     </div>
+                    <span style={{ fontSize: "0.75rem", color: "var(--glow-purple)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                      Visit <ArrowRight style={{ width: "0.75rem", height: "0.75rem" }} />
+                    </span>
                   </div>
                 </div>
               </Link>

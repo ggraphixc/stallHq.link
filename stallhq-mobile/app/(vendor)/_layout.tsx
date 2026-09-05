@@ -51,6 +51,14 @@ export default function VendorLayout() {
         name="monitoring"
         options={{ animation: "slide_from_right" }}
       />
+      <Stack.Screen
+        name="billing"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="support"
+        options={{ animation: "slide_from_right" }}
+      />
     </Stack>
   );
 }

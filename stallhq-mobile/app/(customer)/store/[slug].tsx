@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Image,
-  Linking, RefreshControl, TextInput, Alert, Modal,
+  Linking, RefreshControl, TextInput, Modal,
 } from "react-native";
+import { alert } from "../../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase, Store, Product } from "../../../lib/supabase";
@@ -13,10 +14,13 @@ import { Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
 import {
   ArrowLeft, Store as StoreIcon, MessageCircle, Camera, Package, Bot,
   ChevronRight, Star, Heart, Send, Pencil, Trash2, Reply, X, Flag,
+  ShoppingCart, Plus, Clock,
 } from "lucide-react-native";
 import { AssistantChat } from "../../../components/AssistantChat";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WEB_API_URL } from "../../../lib/auth";
+import { useCart } from "../../../lib/cart";
+import { ProductFavoriteButton } from "../../../components/ProductFavoriteButton";
 
 const FAVORITES_KEY = "stallhq_favorites";
 
@@ -72,8 +76,8 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
   }, [storeId]);
 
   const submit = async () => {
-    if (!name.trim()) { Alert.alert("Missing name", "Please enter your name."); return; }
-    if (!rating) { Alert.alert("Missing rating", "Tap a star to rate this store."); return; }
+    if (!name.trim()) { alert("Missing name", "Please enter your name."); return; }
+    if (!rating) { alert("Missing rating", "Tap a star to rate this store."); return; }
     setBusy(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -89,13 +93,13 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
         .select()
         .single();
       if (error) {
-        Alert.alert("Review failed", error.message || "Please try again.");
+        alert("Review failed", error.message || "Please try again.");
       } else if (data) {
         setName(""); setRating(0); setComment(""); setShowForm(false);
         await load();
       }
     } catch {
-      Alert.alert("Network error", "Please check your connection.");
+      alert("Network error", "Please check your connection.");
     } finally {
       setBusy(false);
     }
@@ -111,23 +115,23 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
         .from("reviews")
         .update({ rating: editRating, comment: editComment.trim() || null, updated_at: new Date().toISOString() })
         .eq("id", editingReview.id);
-      if (error) { Alert.alert("Update failed", error.message); }
+      if (error) { alert("Update failed", error.message); }
       else { setEditingReview(null); await load(); }
     } catch {
-      Alert.alert("Network error", "Please check your connection.");
+      alert("Network error", "Please check your connection.");
     } finally {
       setBusy(false);
     }
   };
 
   const removeReview = async (id: string) => {
-    Alert.alert("Delete review?", "This cannot be undone.", [
+    alert("Delete review?", "This cannot be undone.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete", style: "destructive",
         onPress: async () => {
           const { error } = await supabase.from("reviews").delete().eq("id", id);
-          if (error) { Alert.alert("Delete failed", error.message); return; }
+          if (error) { alert("Delete failed", error.message); return; }
           await load();
         },
       },
@@ -136,7 +140,7 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
 
   const submitReviewReport = async () => {
     if (!reportReviewTarget) return;
-    if (!reviewReason) { Alert.alert("Pick a reason", "Choose why you're reporting this review."); return; }
+    if (!reviewReason) { alert("Pick a reason", "Choose why you're reporting this review."); return; }
     setReviewReportBusy(true);
     try {
       const res = await fetch(`${WEB_API_URL}/api/review-reports`, {
@@ -147,11 +151,11 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
       if (res.ok) { setReviewReportDone(true); }
       else {
         const d = await res.json();
-        Alert.alert("Report failed", d.error || "Please try again.");
+        alert("Report failed", d.error || "Please try again.");
         setReportReviewTarget(null);
       }
     } catch {
-      Alert.alert("Network error", "Please check your connection.");
+      alert("Network error", "Please check your connection.");
       setReportReviewTarget(null);
     } finally {
       setReviewReportBusy(false);
@@ -164,7 +168,7 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
     const trimmed = replyDraft.trim();
     const err = await postReviewReply(replyingTo.id, trimmed);
     setBusy(false);
-    if (err) { Alert.alert("Reply failed", err); return; }
+    if (err) { alert("Reply failed", err); return; }
     setReplyingTo(null);
     setReplyDraft("");
     await load();
@@ -378,23 +382,25 @@ export default function StoreDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [faved, setFaved] = useState(false);
+  const cart = useCart();
 
-  // Favorite (store) state
+  // Favorite (store) state — uses server-side store_favorites API
   const loadFav = async () => {
     try {
-      const raw = await AsyncStorage.getItem(FAVORITES_KEY);
-      const slugs: string[] = raw ? JSON.parse(raw) : [];
-      setFaved(slugs.includes(slug || ""));
+      const favs = await import("../../../lib/storeFavorites").then(m => m.getStoreFavorites());
+      const isFav = favs.some((f: any) => f.stores?.slug === slug);
+      setFaved(isFav);
     } catch {}
   };
   const toggleFav = async () => {
-    try {
-      const raw = await AsyncStorage.getItem(FAVORITES_KEY);
-      const slugs: string[] = raw ? JSON.parse(raw) : [];
-      const next = faved ? slugs.filter((s) => s !== slug) : [...slugs, slug as string];
-      await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
-      setFaved(!faved);
-    } catch {}
+    if (!store?.id) return;
+    const { addStoreFavorite, removeStoreFavorite } = await import("../../../lib/storeFavorites");
+    if (faved) {
+      await removeStoreFavorite(store.id);
+    } else {
+      await addStoreFavorite(store.id);
+    }
+    setFaved(!faved);
   };
 
   useEffect(() => {
@@ -450,9 +456,22 @@ export default function StoreDetailScreen() {
             <ArrowLeft size={18} color={Colors.purple} />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.favBtn, faved && { borderColor: Colors.red }]} onPress={toggleFav}>
-            <Heart size={18} color={faved ? Colors.red : Colors.textMuted} fill={faved ? Colors.red : "none"} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: Spacing.sm }}>
+            <TouchableOpacity
+              style={styles.favBtn}
+              onPress={() => router.push("/(customer)/cart")}
+            >
+              <ShoppingCart size={18} color={Colors.text} />
+              {cart.itemCount > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>{cart.itemCount > 99 ? "99+" : cart.itemCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.favBtn, faved && { borderColor: Colors.red }]} onPress={toggleFav}>
+              <Heart size={18} color={faved ? Colors.red : Colors.textMuted} fill={faved ? Colors.red : "none"} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {store.banner_url && <Image source={{ uri: store.banner_url }} style={styles.banner} />}
@@ -466,6 +485,30 @@ export default function StoreDetailScreen() {
             <ChevronRight size={18} color={Colors.textMuted} />
           </View>
           {store.description && <Text style={styles.description}>{store.description}</Text>}
+
+          {/* Store hours */}
+          {store.store_hours?.enabled && (() => {
+            const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+            const now = new Date();
+            const todayKey = days[now.getDay()];
+            const todayHours = store.store_hours.days?.[todayKey];
+            if (!todayHours || todayHours.closed) {
+              return (
+                <View style={styles.hoursBadge}>
+                  <Clock size={13} color={Colors.red} />
+                  <Text style={[styles.hoursText, { color: Colors.red }]}>Closed today</Text>
+                </View>
+              );
+            }
+            return (
+              <View style={styles.hoursBadge}>
+                <Clock size={13} color={Colors.green} />
+                <Text style={[styles.hoursText, { color: Colors.green }]}>
+                  Open today: {todayHours.open} – {todayHours.close}
+                </Text>
+              </View>
+            );
+          })()}
 
           {/* Channel chips — now tappable */}
           <View style={styles.channels}>
@@ -494,22 +537,31 @@ export default function StoreDetailScreen() {
           {products.length === 0 ? (
             <View style={styles.emptyCard}><Package size={40} color={Colors.textMuted} /><Text style={styles.emptyText}>No products yet</Text></View>
           ) : products.map((p) => (
-            <TouchableOpacity
-              key={p.id}
-              style={styles.productCard}
-              activeOpacity={0.7}
-              onPress={() => router.push({ pathname: "/(customer)/product/[id]", params: { id: p.id, slug: store.slug } })}
-            >
-              {p.image_url ? <Image source={{ uri: p.image_url }} style={styles.productImage} /> : (
-                <View style={styles.productImagePlaceholder}><Package size={20} color={Colors.textMuted} /></View>
-              )}
-              <View style={styles.productInfo}>
-                <Text style={styles.productName} numberOfLines={1}>{p.name}</Text>
-                {p.description ? <Text style={styles.productDesc} numberOfLines={2}>{p.description}</Text> : null}
-                <Text style={styles.productPrice}>₦{p.price.toLocaleString()}</Text>
-              </View>
-              <ChevronRight size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
+            <View key={p.id} style={styles.productCard}>
+              <TouchableOpacity
+                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+                activeOpacity={0.7}
+                onPress={() => router.push({ pathname: "/(customer)/product/[id]", params: { id: p.id, slug: store.slug } })}
+              >
+                {p.image_url ? <Image source={{ uri: p.image_url }} style={styles.productImage} /> : (
+                  <View style={styles.productImagePlaceholder}><Package size={20} color={Colors.textMuted} /></View>
+                )}
+                <View style={styles.productInfo}>
+                  <Text style={styles.productName} numberOfLines={1}>{p.name}</Text>
+                  {p.description ? <Text style={styles.productDesc} numberOfLines={2}>{p.description}</Text> : null}
+                  <Text style={styles.productPrice}>₦{p.price.toLocaleString()}</Text>
+                </View>
+                <ChevronRight size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
+              <ProductFavoriteButton productId={p.id} storeId={store.id} size={14} />
+              <TouchableOpacity
+                style={styles.quickCartBtn}
+                onPress={() => cart.addItem(p, store)}
+                activeOpacity={0.7}
+              >
+                <Plus size={16} color={Colors.purple} />
+              </TouchableOpacity>
+            </View>
           ))}
         </View>
 
@@ -530,7 +582,13 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: Spacing.lg, paddingBottom: Spacing.sm },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
   backText: { fontSize: FontSize.md, color: Colors.purple },
-  favBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: Colors.borderSubtle, backgroundColor: Colors.bgCard, justifyContent: "center", alignItems: "center" },
+  favBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: Colors.borderSubtle, backgroundColor: Colors.bgCard, justifyContent: "center", alignItems: "center", position: "relative" },
+  cartBadge: {
+    position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9,
+    backgroundColor: Colors.purple, alignItems: "center", justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
   banner: { width: "100%", height: 180 },
   storeInfo: { padding: Spacing.lg },
   storeRow: { flexDirection: "row", alignItems: "center", marginBottom: Spacing.md },
@@ -539,6 +597,8 @@ const styles = StyleSheet.create({
   storeName: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
   storeSlug: { fontSize: FontSize.sm, color: Colors.textMuted },
   description: { fontSize: FontSize.md, color: Colors.textSecondary, lineHeight: 22, marginBottom: Spacing.md },
+  hoursBadge: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: Spacing.md },
+  hoursText: { fontSize: FontSize.sm, fontWeight: "600" },
   channels: { flexDirection: "row", gap: Spacing.sm, flexWrap: "wrap" },
   chip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: BorderRadius.full, backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle },
   chipText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textMuted },
@@ -546,7 +606,12 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text, marginBottom: Spacing.md },
   emptyCard: { alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xxxl * 2, gap: 12 },
   emptyText: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.textSecondary },
-  productCard: { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.md, marginBottom: Spacing.sm },
+  productCard: { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.md, marginBottom: Spacing.sm, gap: Spacing.xs },
+  quickCartBtn: {
+    width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.purpleDim,
+    borderWidth: 1, borderColor: Colors.purple, alignItems: "center", justifyContent: "center",
+    marginLeft: Spacing.sm,
+  },
   productImage: { width: 64, height: 64, borderRadius: BorderRadius.sm, marginRight: Spacing.md },
   productImagePlaceholder: { width: 64, height: 64, borderRadius: BorderRadius.sm, backgroundColor: Colors.bgSecondary, justifyContent: "center", alignItems: "center", marginRight: Spacing.md },
   productInfo: { flex: 1 },

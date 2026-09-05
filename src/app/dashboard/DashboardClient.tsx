@@ -38,10 +38,13 @@ import {
   LifeBuoy,
   Users,
   TrendingUp,
+  CreditCard,
+  FileWarning,
   MousePointerClick,
   MessageSquare,
 } from "lucide-react";
 import { Sparkline } from "@/components/ui/Sparkline";
+import { NotificationBell } from "@/components/NotificationBell";
 
 interface DashboardClientProps {
   store: Store;
@@ -320,8 +323,16 @@ export function DashboardClient({
 
               <div style={{ width: "1px", height: "1.25rem", background: "var(--border-subtle)", margin: "0 0.25rem" }} />
 
+              <NotificationBell />
+
               <a href={`/${store.slug}`} target="_blank" rel="noopener noreferrer" style={iconBtn} className="icon-button" title="View Store">
                 <ExternalLink size={16} />
+              </a>
+              <a href="/dashboard/billing" style={iconBtn} className="icon-button" title="Billing">
+                <CreditCard size={16} />
+              </a>
+              <a href="/dashboard/reports" style={iconBtn} className="icon-button" title="Reports">
+                <FileWarning size={16} />
               </a>
               <a href="/dashboard/settings" style={iconBtn} className="icon-button" title="Settings">
                 <Settings size={16} />
@@ -374,6 +385,8 @@ export function DashboardClient({
                       { icon: Upload, label: "Batch Upload", onClick: () => { setShowBatchUpload(true); setShowMobileMenu(false); } },
                       { icon: Sparkles, label: "Promo Cards", href: "/dashboard/promo" },
                       { icon: MessageSquare, label: "Reviews", href: "/dashboard/reviews" },
+                      { icon: CreditCard, label: "Billing", href: "/dashboard/billing" },
+                      { icon: FileWarning, label: "Reports", href: "/dashboard/reports" },
                       { icon: LifeBuoy, label: "Support", onClick: () => { window.location.href = "/dashboard/support"; } },
                     ].map(({ icon: Icon, label, onClick, href }) => (
                       href ? (

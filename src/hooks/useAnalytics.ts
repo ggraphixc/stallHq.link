@@ -48,6 +48,8 @@ export function useAnalytics() {
   const trackProductView = useCallback(
     (storeId: string, productId: string) => {
       trackEvent({ storeId, eventType: "product_view", productId });
+      // Also count a visit from product page for consistent visitor totals
+      trackEvent({ storeId, eventType: "visit" });
     },
     [trackEvent]
   );

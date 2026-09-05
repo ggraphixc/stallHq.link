@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { product_id, store_id, reviewer_name, rating, comment } = body;
+    const { product_id, store_id, reviewer_name, rating, comment, photos } = body;
 
     // Store-level reviews are allowed (product_id omitted); product reviews need both.
     if (!store_id || !reviewer_name || !rating) {
@@ -92,6 +92,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate photos: max 4, each must be a URL string
+    const validPhotos: string[] = Array.isArray(photos)
+      ? photos.filter((p: unknown) => typeof p === "string" && p.startsWith("http")).slice(0, 4)
+      : [];
+
     // Try to get user_id if logged in
     let userId: string | null = null;
     try {
@@ -109,6 +114,7 @@ export async function POST(request: NextRequest) {
         rating,
         comment: comment || null,
         user_id: userId,
+        photos: validPhotos.length > 0 ? validPhotos : null,
       })
       .select()
       .single();

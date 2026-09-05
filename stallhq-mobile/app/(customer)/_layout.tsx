@@ -19,7 +19,19 @@ export default function CustomerLayout() {
         options={{ animation: "slide_from_right" }}
       />
       <Stack.Screen
+        name="cart"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
         name="become-vendor"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="order/[id]"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="email-preferences"
         options={{ animation: "slide_from_right" }}
       />
     </Stack>

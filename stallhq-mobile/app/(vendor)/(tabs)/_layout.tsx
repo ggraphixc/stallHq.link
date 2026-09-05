@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, Package, ShoppingCart, BarChart3 } from "lucide-react-native";
+import { Home, Package, ShoppingCart, BarChart3, Bell } from "lucide-react-native";
 import { Colors, FontSize } from "../../../lib/theme";
 
 export default function VendorTabsLayout() {
@@ -53,9 +53,18 @@ export default function VendorTabsLayout() {
       <Tabs.Screen
         name="analytics"
         options={{
-          title: "Analytics",
+          title: "Stats",
           tabBarIcon: ({ color, focused }) => (
             <BarChart3 size={22} color={focused ? Colors.purple : color} strokeWidth={focused ? 2.5 : 1.8} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "Alerts",
+          tabBarIcon: ({ color, focused }) => (
+            <Bell size={22} color={focused ? Colors.purple : color} strokeWidth={focused ? 2.5 : 1.8} />
           ),
         }}
       />

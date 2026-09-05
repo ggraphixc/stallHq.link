@@ -1,14 +1,16 @@
 import { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated, Easing, Linking, Pressable, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Download, RefreshCw, Store } from "lucide-react-native";
+import { Download, RefreshCw, Store, Zap } from "lucide-react-native";
 import { Colors, FontSize, BorderRadius } from "../lib/theme";
 import { useBranding } from "../lib/branding";
 import { WEB_API_URL } from "../lib/config";
 import type { AppUpdateInfo } from "../lib/appVersion";
+import { restartToApplyUpdate } from "../lib/updates";
 
 interface ForceUpdateProps {
   info: AppUpdateInfo;
+  otaReady?: boolean;
 }
 
 /**
@@ -16,7 +18,7 @@ interface ForceUpdateProps {
  * version is below the admin-configured minimum. Styled to match the
  * BrandLoader / ambient design system.
  */
-export function ForceUpdate({ info }: ForceUpdateProps) {
+export function ForceUpdate({ info, otaReady }: ForceUpdateProps) {
   const { logo_url, platform_name } = useBranding();
   const pulse = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
@@ -95,15 +97,24 @@ export function ForceUpdate({ info }: ForceUpdateProps) {
           </View>
         ) : null}
 
-        <Pressable style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]} onPress={openDownload}>
-          <Download size={16} color="#fff" />
-          <Text style={styles.primaryBtnText}>Download Update</Text>
-        </Pressable>
+        {otaReady ? (
+          <Pressable style={({ pressed }) => [styles.primaryBtn, { backgroundColor: Colors.green }, pressed && { opacity: 0.85 }]} onPress={restartToApplyUpdate}>
+            <Zap size={16} color="#fff" />
+            <Text style={styles.primaryBtnText}>Restart to update</Text>
+          </Pressable>
+        ) : (
+          <Pressable style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]} onPress={openDownload}>
+            <Download size={16} color="#fff" />
+            <Text style={styles.primaryBtnText}>Download Update</Text>
+          </Pressable>
+        )}
 
-        <Pressable style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.85 }]} onPress={openDownload}>
-          <RefreshCw size={13} color={Colors.textSecondary} />
-          <Text style={styles.secondaryBtnText}>Open download page</Text>
-        </Pressable>
+        {!otaReady && (
+          <Pressable style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.85 }]} onPress={openDownload}>
+            <RefreshCw size={13} color={Colors.textSecondary} />
+            <Text style={styles.secondaryBtnText}>Open download page</Text>
+          </Pressable>
+        )}
       </View>
 
       <Text style={styles.footer}>stallHq v{info.currentVersion}</Text>

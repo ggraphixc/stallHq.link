@@ -17,7 +17,7 @@
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "package": "com.stallhq.app",
-      "versionCode": 1
+      "versionCode": 8
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -27,6 +27,19 @@
       "expo-router",
       "expo-font",
       "expo-sharing",
+      [
+        "expo-updates",
+        {
+          "url": "https://u.expo.dev/e7290b84-fabd-4bc4-904a-9c2dcf422129"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#a855f7"
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -46,6 +59,11 @@
         "projectId": "e7290b84-fabd-4bc4-904a-9c2dcf422129"
       }
     },
-    "owner": "ggraphixc"
+    "owner": "ggraphixc",
+    "updates": {
+      "url": "https://u.expo.dev/e7290b84-fabd-4bc4-904a-9c2dcf422129",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 300
+    }
   }
 }

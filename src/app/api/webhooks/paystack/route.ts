@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { verifyWebhookSignature, verifyTransaction, getSubscriptionExpiry } from "@/lib/paystack";
-import { sendUpgradeThankYou } from "@/lib/email";
+import { sendUpgradeThankYou, sendInvoiceEmail } from "@/lib/email";
 import { SubscriptionPlan } from "@/types";
 
 const supabaseAdmin = createClient(
@@ -120,6 +120,17 @@ export async function POST(request: NextRequest) {
           name: userData.user.user_metadata?.name || userData.user.user_metadata?.full_name,
           storeName: storeData?.name || "Your Store",
           plan,
+        }).catch(() => {});
+
+        // Send invoice email with PDF download link (non-blocking)
+        sendInvoiceEmail({
+          email: userData.user.email,
+          name: userData.user.user_metadata?.name || userData.user.user_metadata?.full_name,
+          storeName: storeData?.name || "Your Store",
+          plan,
+          amount: payment.amount,
+          invoiceUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://hqlink.vercel.app"}/api/invoices/${payment.id}`,
+          paymentReference: reference,
         }).catch(() => {});
       }
     } catch {

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
   ActivityIndicator, KeyboardAvoidingView, Platform, Switch,
 } from "react-native";
+import { alert } from "../../lib/alert";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
@@ -37,7 +38,7 @@ export default function SettingsScreen() {
 
   const handleSave = async () => {
     if (!store) return;
-    if (!name.trim() || !slug.trim()) { Alert.alert("Error", "Store name and URL are required"); return; }
+    if (!name.trim() || !slug.trim()) { alert("Error", "Store name and URL are required"); return; }
     setSaving(true);
     const { error } = await supabase.from("stores").update({
       name: name.trim(),
@@ -50,16 +51,16 @@ export default function SettingsScreen() {
       low_stock_threshold: parseInt(lowStockThreshold) || 5,
     }).eq("id", store.id);
     setSaving(false);
-    if (error) Alert.alert("Error", error.message);
+    if (error) alert("Error", error.message);
     else {
       await refreshStore();
-      Alert.alert("Saved", "Store settings updated", [{ text: "OK" }]);
+      alert("Saved", "Store settings updated", [{ text: "OK" }]);
     }
   };
 
   const handleChangePassword = async () => {
-    if (newPassword !== confirmPassword) { Alert.alert("Error", "New passwords do not match"); return; }
-    if (newPassword.length < 6) { Alert.alert("Error", "New password must be at least 6 characters"); return; }
+    if (newPassword !== confirmPassword) { alert("Error", "New passwords do not match"); return; }
+    if (newPassword.length < 6) { alert("Error", "New password must be at least 6 characters"); return; }
     setChangingPassword(true);
     try {
       const res = await fetch("https://hqlink.vercel.app/api/auth/change-password", {
@@ -68,21 +69,21 @@ export default function SettingsScreen() {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       const data = await res.json();
-      if (!res.ok) { Alert.alert("Error", data.error || "Failed to change password"); return; }
-      Alert.alert("Success", "Password changed successfully");
+      if (!res.ok) { alert("Error", data.error || "Failed to change password"); return; }
+      alert("Success", "Password changed successfully");
       setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
     } catch {
       // Fallback: try Supabase update directly
       const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) Alert.alert("Error", error.message);
-      else { Alert.alert("Success", "Password changed successfully"); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }
+      if (error) alert("Error", error.message);
+      else { alert("Success", "Password changed successfully"); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }
     } finally {
       setChangingPassword(false);
     }
   };
 
   const handleDelete = () => {
-    Alert.alert(
+    alert(
       "Delete Store?",
       `This will permanently delete "${store?.name}", all products, orders, and your account. This cannot be undone.`,
       [

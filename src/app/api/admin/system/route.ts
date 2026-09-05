@@ -45,7 +45,7 @@ export async function GET() {
     // Total reviews
     supabaseAdmin.from("reviews").select("id, rating", { count: "exact" }),
     // Payments
-    supabaseAdmin.from("payments").select("id, amount, paystack_status, created_at", { count: "exact" }),
+    supabaseAdmin.from("payments").select("id, amount, plan, paystack_status, created_at", { count: "exact" }),
     // Recent orders (last 7 days)
     supabaseAdmin.from("orders").select("id, created_at").gte("created_at", last7d),
     // Recent stores (last 7 days)
@@ -99,6 +99,25 @@ export async function GET() {
   const whatsappStores = stores.filter(s => s.whatsapp_number).length;
   const instagramStores = stores.filter(s => s.instagram_handle).length;
   const bothChannels = stores.filter(s => s.whatsapp_number && s.instagram_handle).length;
+
+  // ── Revenue KPIs ──────────────────────────────────────────────────────────
+  // MRR: sum of successful payments, normalized to monthly value
+  const monthlyRate: Record<string, number> = { monthly: 1, quarterly: 1/3, annual: 1/12 };
+  const mrr = successfulPayments.reduce((sum, p) => {
+    const plan = p.plan as string;
+    const rate = monthlyRate[plan] || 0;
+    return sum + ((p.amount || 0) * rate) / 100;
+  }, 0);
+
+  // Churn: stores whose subscription expired and haven't renewed
+  const churnedStores = stores.filter(s => {
+    if (s.plan === "trial") return s.trial_ends_at && new Date(s.trial_ends_at) < now;
+    return s.subscription_expires_at && new Date(s.subscription_expires_at) < now;
+  }).length;
+  const churnRate = totalStores > 0 ? Math.round((churnedStores / totalStores) * 100) : 0;
+
+  // Trial→Paid conversion: stores with plan !== trial / total stores
+  const trialToPaidRate = totalStores > 0 ? Math.round((paidStores / totalStores) * 100) : 0;
 
   // Period-based counts: daily, weekly, monthly
   const nowMs = now.getTime();
@@ -176,6 +195,9 @@ export async function GET() {
       whatsappStores,
       instagramStores,
       bothChannels,
+      mrr: Math.round(mrr * 100) / 100,
+      churnRate,
+      trialToPaidRate,
       period: {
         vendorsToday,
         vendorsWeek,

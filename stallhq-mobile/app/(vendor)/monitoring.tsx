@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Alert,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl,
   TextInput, Modal,
 } from "react-native";
+import { alert } from "../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth";
@@ -87,7 +88,7 @@ export default function MonitoringScreen() {
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
   const deleteReview = async (id: string) => {
-    Alert.alert("Delete review?", "This removes the review permanently.", [
+    alert("Delete review?", "This removes the review permanently.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete", style: "destructive",
@@ -107,7 +108,7 @@ export default function MonitoringScreen() {
     const trimmed = replyDraft.trim();
     const err = await postReviewReply(replyingTo.id, trimmed);
     setBusyId(null);
-    if (err) { Alert.alert("Reply failed", err); return; }
+    if (err) { alert("Reply failed", err); return; }
     setReplyingTo(null);
     setReplyDraft("");
     await load();

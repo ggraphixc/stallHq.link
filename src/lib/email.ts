@@ -1225,7 +1225,7 @@ export async function sendTrialNurtureDay10({
         </td>
       </tr>
       <tr>
-n        <td style="padding:0 32px 24px;">
+        <td style="padding:0 32px 24px;">
           <div style="padding:16px 20px;background:rgba(168,85,247,0.06);border-left:3px solid #a855f7;border-radius:0 8px 8px 0;">
             <p style="margin:0;font-size:14px;color:#e0e0e0;line-height:1.5;"><strong style="color:#a78bfa;">Tip:</strong> Upgrade before your trial ends to keep your store live without interruption. Your customers won't notice any downtime.</p>
           </div>
@@ -2253,5 +2253,73 @@ export async function sendModerationDigestEmail({
     subject: `${platformName} moderation digest — ${total} item${total === 1 ? "" : "s"} pending`,
     htmlContent: html,
     tags: ["moderation", "digest"],
+  });
+}
+
+// ─── Invoice Email ────────────────────────────────────────────────────────────
+export async function sendInvoiceEmail({
+  email,
+  name,
+  storeName,
+  plan,
+  amount,
+  invoiceUrl,
+  paymentReference,
+}: {
+  email: string;
+  name?: string;
+  storeName: string;
+  plan: SubscriptionPlan;
+  amount: number; // kobo
+  invoiceUrl: string;
+  paymentReference: string;
+}) {
+  const greeting = name ? `Hi ${name}` : "Hi there";
+  const platformName = await getPlatformName();
+  const planLabel = getPlanName(plan);
+
+  const html = emailWrapper(`
+      <tr>
+        <td style="padding:32px 32px 24px;text-align:center;">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#06b6d4);margin:0 auto 16px;line-height:48px;text-align:center;">
+            <span style="color:white;font-size:20px;">&#128179;</span>
+          </div>
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f1f5f9;">Payment Received</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:#94a3b8;">Your ${planLabel} subscription is active</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;color:#e0e0e0;line-height:1.6;">${greeting},</p>
+          <p style="margin:12px 0 0;font-size:15px;color:#e0e0e0;line-height:1.6;">We've received your payment for <strong>${storeName}</strong>. Your <strong>${planLabel}</strong> plan is now active.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:12px;">
+            <tr>
+              <td style="padding:16px 20px;">
+                <p style="margin:0 0 6px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Amount Paid</p>
+                <p style="margin:0;font-size:22px;font-weight:700;color:#10b981;">${formatNaira(amount)}</p>
+                <p style="margin:8px 0 0;font-size:12px;color:#94a3b8;">Ref: ${paymentReference}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 32px 32px;text-align:center;">
+          <a href="${invoiceUrl}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">Download Invoice (PDF)</a>
+        </td>
+      </tr>
+  `);
+
+  return sendBrevoEmail({
+    to: [{ email }],
+    subject: `Payment confirmed — ${planLabel} subscription for ${storeName}`,
+    htmlContent: html,
+    tags: ["billing", "invoice"],
+    templateSlug: "invoice",
+    templateVars: { greeting, store_name: storeName, plan: planLabel, platform_name: platformName, app_url: APP_URL, amount: formatNaira(amount), invoice_url: invoiceUrl, reference: paymentReference },
   });
 }

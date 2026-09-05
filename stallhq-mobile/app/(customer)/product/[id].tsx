@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Image,
-  Linking, TextInput, Alert, Modal,
+  Linking, TextInput, Modal,
 } from "react-native";
+import { alert } from "../../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase, Product } from "../../../lib/supabase";
-import { trackStoreClick, trackEvent } from "../../../lib/track";
+import { trackStoreClick, trackEvent, trackStoreVisit } from "../../../lib/track";
 import { postReviewReply } from "../../../lib/reviewActions";
 import { BrandLoader } from "../../../components/BrandLoader";
 import { Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
-import { ArrowLeft, Package, MessageCircle, Star, Send, Flag, ChevronRight, Pencil, Trash2, Reply, X } from "lucide-react-native";
+import { ArrowLeft, Package, MessageCircle, Star, Send, Flag, ChevronRight, Pencil, Trash2, Reply, X, ShoppingCart } from "lucide-react-native";
 import { WEB_API_URL } from "../../../lib/auth";
+import { useCart } from "../../../lib/cart";
+import { ProductFavoriteButton } from "../../../components/ProductFavoriteButton";
 
 const REASONS = [
   { value: "fake", label: "Fake or counterfeit" },
@@ -72,6 +75,8 @@ export default function ProductDetailScreen() {
   const [reviewReportDetails, setReviewReportDetails] = useState("");
   const [reviewReportBusy, setReviewReportBusy] = useState(false);
   const [reviewReportDone, setReviewReportDone] = useState(false);
+  const cart = useCart();
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const loadReviews = async (pid: string) => {
     try {
@@ -94,6 +99,8 @@ export default function ProductDetailScreen() {
       const storeRow = Array.isArray(p.stores) ? p.stores[0] : p.stores;
       setProduct({ ...(p as any), store: storeRow || undefined });
       trackEvent(p.store_id, "product_view", { productId: p.id });
+      // Also count a store visit from product page for accurate visitor totals
+      trackStoreVisit(p.store_id);
 
       // Current signed-in user (for author edit/delete + owner reply)
       const { data: { user } } = await supabase.auth.getUser();
@@ -116,8 +123,8 @@ export default function ProductDetailScreen() {
   };
 
   const submitReview = async () => {
-    if (!name.trim()) { Alert.alert("Missing name", "Enter your name."); return; }
-    if (!rating) { Alert.alert("Missing rating", "Tap a star to rate."); return; }
+    if (!name.trim()) { alert("Missing name", "Enter your name."); return; }
+    if (!rating) { alert("Missing rating", "Tap a star to rate."); return; }
     if (!product) return;
     setBusy(true);
     try {
@@ -135,7 +142,7 @@ export default function ProductDetailScreen() {
         .select()
         .single();
       if (error) {
-        Alert.alert("Review failed", error.message || "Please try again.");
+        alert("Review failed", error.message || "Please try again.");
       } else if (data) {
         setName(""); setRating(0); setComment("");
         const fresh = [data, ...reviews];
@@ -143,7 +150,7 @@ export default function ProductDetailScreen() {
         setAvg(Math.round((fresh.reduce((s2, r) => s2 + r.rating, 0) / fresh.length) * 10) / 10);
       }
     } catch {
-      Alert.alert("Network error", "Please check your connection.");
+      alert("Network error", "Please check your connection.");
     } finally {
       setBusy(false);
     }
@@ -157,7 +164,7 @@ export default function ProductDetailScreen() {
         .from("reviews")
         .update({ rating: editRating, comment: editComment.trim() || null, updated_at: new Date().toISOString() })
         .eq("id", editingReview.id);
-      if (error) { Alert.alert("Update failed", error.message); }
+      if (error) { alert("Update failed", error.message); }
       else {
         const fresh = reviews.map((r) => (r.id === editingReview.id ? { ...r, rating: editRating, comment: editComment.trim() || null } : r));
         setReviews(fresh);
@@ -165,20 +172,20 @@ export default function ProductDetailScreen() {
         setEditingReview(null);
       }
     } catch {
-      Alert.alert("Network error", "Please check your connection.");
+      alert("Network error", "Please check your connection.");
     } finally {
       setBusy(false);
     }
   };
 
   const deleteReview = async (reviewId: string) => {
-    Alert.alert("Delete review?", "This cannot be undone.", [
+    alert("Delete review?", "This cannot be undone.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete", style: "destructive",
         onPress: async () => {
           const { error } = await supabase.from("reviews").delete().eq("id", reviewId);
-          if (error) { Alert.alert("Delete failed", error.message); return; }
+          if (error) { alert("Delete failed", error.message); return; }
           const fresh = reviews.filter((r) => r.id !== reviewId);
           setReviews(fresh);
           if (fresh.length) setAvg(Math.round((fresh.reduce((s2, r) => s2 + r.rating, 0) / fresh.length) * 10) / 10);
@@ -190,7 +197,7 @@ export default function ProductDetailScreen() {
 
   const submitReviewReport = async () => {
     if (!reportReviewTarget) return;
-    if (!reviewReason) { Alert.alert("Pick a reason", "Choose why you're reporting this review."); return; }
+    if (!reviewReason) { alert("Pick a reason", "Choose why you're reporting this review."); return; }
     setReviewReportBusy(true);
     try {
       const res = await fetch(`${WEB_API_URL}/api/review-reports`, {
@@ -201,11 +208,11 @@ export default function ProductDetailScreen() {
       if (res.ok) { setReviewReportDone(true); }
       else {
         const d = await res.json();
-        Alert.alert("Report failed", d.error || "Please try again.");
+        alert("Report failed", d.error || "Please try again.");
         setReportReviewTarget(null);
       }
     } catch {
-      Alert.alert("Network error", "Please check your connection.");
+      alert("Network error", "Please check your connection.");
       setReportReviewTarget(null);
     } finally {
       setReviewReportBusy(false);
@@ -218,7 +225,7 @@ export default function ProductDetailScreen() {
     const trimmed = replyDraft.trim();
     const err = await postReviewReply(replyingTo.id, trimmed);
     setBusy(false);
-    if (err) { Alert.alert("Reply failed", err); return; }
+    if (err) { alert("Reply failed", err); return; }
     const fresh = reviews.map((r) => (r.id === replyingTo.id ? { ...r, reply: trimmed || null, replied_at: trimmed ? new Date().toISOString() : null } : r));
     setReviews(fresh);
     setReplyingTo(null);
@@ -226,7 +233,7 @@ export default function ProductDetailScreen() {
   };
 
   const submitReport = async () => {
-    if (!reason) { Alert.alert("Pick a reason", "Choose why you're reporting this product."); return; }
+    if (!reason) { alert("Pick a reason", "Choose why you're reporting this product."); return; }
     if (!product) return;
     setReporting(true);
     try {
@@ -236,9 +243,9 @@ export default function ProductDetailScreen() {
         body: JSON.stringify({ product_id: product.id, store_id: product.store_id, reason, details: details.trim() || undefined }),
       });
       if (res.ok) setReported(true);
-      else { const d = await res.json(); Alert.alert("Report failed", d.error || "Please try again."); setReportOpen(false); }
+      else { const d = await res.json(); alert("Report failed", d.error || "Please try again."); setReportOpen(false); }
     } catch {
-      Alert.alert("Network error", "Please check your connection.");
+      alert("Network error", "Please check your connection.");
       setReportOpen(false);
     } finally {
       setReporting(false);
@@ -257,16 +264,37 @@ export default function ProductDetailScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <ArrowLeft size={18} color={Colors.purple} /><Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
+          {product && <ProductFavoriteButton productId={product.id} storeId={product.store_id} />}
         </View>
 
         {/* Gallery */}
-        {images.length > 0 ? (
-          <Image source={{ uri: images[0] }} style={styles.heroImage} />
-        ) : (
-          <View style={[styles.heroImage, { justifyContent: "center", alignItems: "center", backgroundColor: Colors.bgSecondary }]}>
-            <Package size={60} color={Colors.textMuted} />
-          </View>
-        )}
+        <View style={styles.galleryContainer}>
+          {images.length > 0 ? (
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(e) => {
+                setActiveImageIndex(Math.round(e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width));
+              }}
+            >
+              {images.map((uri, idx) => (
+                <Image key={idx} source={{ uri }} style={styles.heroImage} />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={[styles.heroImage, { justifyContent: "center", alignItems: "center", backgroundColor: Colors.bgSecondary }]}>
+              <Package size={60} color={Colors.textMuted} />
+            </View>
+          )}
+          {images.length > 1 && (
+            <View style={styles.dotsContainer}>
+              {images.map((_, idx) => (
+                <View key={idx} style={[styles.dot, idx === activeImageIndex && styles.dotActive]} />
+              ))}
+            </View>
+          )}
+        </View>
 
         <View style={styles.content}>
           <View style={styles.titleRow}>
@@ -295,12 +323,25 @@ export default function ProductDetailScreen() {
             </TouchableOpacity>
           ) : null}
 
-          {/* Order */}
-          {product.store?.whatsapp_number ? (
-            <TouchableOpacity style={styles.orderBtn} onPress={orderWhatsApp} activeOpacity={0.8}>
-              <MessageCircle size={18} color="#fff" /><Text style={styles.orderText}>Order via WhatsApp</Text>
+          {/* Order + Cart */}
+          <View style={{ flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.xl }}>
+            <TouchableOpacity
+              style={styles.cartBtn}
+              onPress={() => {
+                cart.addItem(product, product.store);
+                alert("Added to cart", `${product.name} added to your cart.`);
+              }}
+              activeOpacity={0.8}
+            >
+              <ShoppingCart size={18} color={Colors.purple} />
+              <Text style={styles.cartBtnText}>Add to Cart</Text>
             </TouchableOpacity>
-          ) : null}
+            {product.store?.whatsapp_number ? (
+              <TouchableOpacity style={[styles.orderBtn, { flex: 1 }]} onPress={orderWhatsApp} activeOpacity={0.8}>
+                <MessageCircle size={18} color="#fff" /><Text style={styles.orderText}>Order via WhatsApp</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
 
           {/* Report */}
           <TouchableOpacity style={styles.reportBtn} onPress={() => { setReportOpen(true); setReported(false); setReason(""); setDetails(""); }}>
@@ -514,6 +555,10 @@ const styles = StyleSheet.create({
   backBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
   backText: { fontSize: FontSize.md, color: Colors.purple },
   heroImage: { width: "100%", height: 280 },
+  galleryContainer: { position: "relative" },
+  dotsContainer: { flexDirection: "row", justifyContent: "center", gap: 6, position: "absolute", bottom: 12, left: 0, right: 0 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.3)" },
+  dotActive: { backgroundColor: Colors.purple, width: 20 },
   content: { padding: Spacing.lg },
   titleRow: { flexDirection: "row", alignItems: "flex-start" },
   name: { fontSize: FontSize.xl, fontWeight: "800", color: Colors.text, marginTop: Spacing.xs },
@@ -523,8 +568,14 @@ const styles = StyleSheet.create({
   catText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.purple, textTransform: "uppercase" },
   storeCard: { flexDirection: "row", alignItems: "center", gap: Spacing.md, backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.md, marginTop: Spacing.xl },
   storeAvatar: { width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: Colors.purpleDim, justifyContent: "center", alignItems: "center" },
-  orderBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#25d366", borderRadius: BorderRadius.lg, padding: Spacing.lg, marginTop: Spacing.xl },
+  orderBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#25d366", borderRadius: BorderRadius.lg, padding: Spacing.lg },
   orderText: { color: "#fff", fontSize: FontSize.lg, fontWeight: "700" },
+  cartBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: Colors.purpleDim, borderWidth: 1, borderColor: Colors.purple,
+    borderRadius: BorderRadius.lg, padding: Spacing.lg,
+  },
+  cartBtnText: { color: Colors.purple, fontSize: FontSize.lg, fontWeight: "700" },
   reportBtn: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "center", marginTop: Spacing.md, padding: Spacing.sm },
   reportText: { fontSize: FontSize.xs, color: Colors.textMuted },
   sectionTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text },

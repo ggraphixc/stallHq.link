@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
   ActivityIndicator, KeyboardAvoidingView, Platform, Image, Linking,
 } from "react-native";
+import { alert } from "../../../lib/alert";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, Product } from "../../../lib/supabase";
@@ -46,7 +47,7 @@ export default function ProductDetailScreen() {
   }, [id]);
 
   const handleSave = async () => {
-    if (!name.trim() || !price || !product) { Alert.alert("Error", "Name and price are required"); return; }
+    if (!name.trim() || !price || !product) { alert("Error", "Name and price are required"); return; }
     setSaving(true);
     const { error } = await supabase.from("products").update({
       name: name.trim(),
@@ -56,9 +57,9 @@ export default function ProductDetailScreen() {
       in_stock: inStock,
     }).eq("id", product.id);
     setSaving(false);
-    if (error) Alert.alert("Error", error.message);
+    if (error) alert("Error", error.message);
     else {
-      Alert.alert("Saved", "Product updated successfully");
+      alert("Saved", "Product updated successfully");
       setIsEditing(false);
       setProduct({ ...product, name: name.trim(), description: description.trim() || null, price: parseFloat(price), category: category.trim() || null, in_stock: inStock });
     }
@@ -66,7 +67,7 @@ export default function ProductDetailScreen() {
 
   const handleDelete = () => {
     if (!product) return;
-    Alert.alert("Delete Product", `Delete "${product.name}"? This cannot be undone.`, [
+    alert("Delete Product", `Delete "${product.name}"? This cannot be undone.`, [
       { text: "Cancel", style: "cancel" },
       { text: "Delete", style: "destructive", onPress: async () => {
         await supabase.from("products").delete().eq("id", product.id);

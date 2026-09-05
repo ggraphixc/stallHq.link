@@ -5,12 +5,12 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from "react-native";
+import { alert } from "../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAuth, SignupRole } from "../../lib/auth";
@@ -45,7 +45,7 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     const problem = validate();
-    if (problem) { Alert.alert("Almost there", problem); return; }
+    if (problem) { alert("Almost there", problem); return; }
     setLoading(true);
     const { error } = await startSignup({
       name: name.trim(),
@@ -56,7 +56,7 @@ export default function SignupScreen() {
     });
     setLoading(false);
     if (error) {
-      Alert.alert("Signup Failed", error);
+      alert("Signup Failed", error);
       return;
     }
     setTouched(true);

@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from "react-native";
+import { alert } from "../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAuth } from "../../lib/auth";
@@ -51,7 +52,7 @@ export default function VerifyScreen() {
     if (err) {
       setError(err);
       if (needsSignIn) {
-        Alert.alert("Account verified", err, [
+        alert("Account verified", err, [
           { text: "Sign In", onPress: () => router.replace("/(auth)/login") },
         ]);
         return;
@@ -60,7 +61,7 @@ export default function VerifyScreen() {
       inputRefs.current[0]?.focus();
       return;
     }
-    Alert.alert("Welcome to stallHq! 🎉", "Your account is ready.", [
+    alert("Welcome to stallHq! 🎉", "Your account is ready.", [
       { text: "Let's Go", onPress: () => router.replace(params.role === "vendor" ? "/(vendor)/(tabs)" : "/(customer)/(tabs)") },
     ]);
   };
@@ -69,7 +70,7 @@ export default function VerifyScreen() {
     setError("");
     setCooldown(60);
     const { error: err } = await resendCode();
-    if (err) Alert.alert("Resend failed", err);
+    if (err) alert("Resend failed", err);
   };
 
   return (

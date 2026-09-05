@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAlert } from "@/contexts/AlertContext";
-import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw, Sparkles, Eye, EyeOff, Palette, Upload, X, Smartphone } from "lucide-react";
+import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw, Sparkles, Eye, EyeOff, Palette, Upload, X, Smartphone, Lock } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface Setting {
@@ -386,6 +386,36 @@ function AITab({ settings, updateSetting, showAIKey, setShowAIKey }: { settings:
 
 /* ── Security Tab ────────────────────────────────── */
 function SecurityTab({ settings, updateSetting }: { settings: Record<string, any>; updateSetting: (key: string, value: any) => void }) {
+  const { error: showError, success: showSuccess } = useAlert();
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [changingPw, setChangingPw] = useState(false);
+
+  const handlePasswordChange = async () => {
+    if (!currentPw || !newPw) return showError("Fill in both fields");
+    if (newPw.length < 6) return showError("New password must be at least 6 characters");
+    if (newPw !== confirmPw) return showError("Passwords don't match");
+    setChangingPw(true);
+    try {
+      const { data: { session } } = await fetch("/api/auth/session").then(r => r.json()).catch(() => ({ data: { session: null } }));
+      const token = session?.access_token;
+      if (!token) return showError("Not authenticated");
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),
+      });
+      const data = await res.json();
+      if (!res.ok) return showError(data.error || "Failed");
+      showSuccess("Password changed");
+      setCurrentPw(""); setNewPw(""); setConfirmPw("");
+    } catch { showError("Failed to change password"); }
+    setChangingPw(false);
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       <h3 style={{ fontSize: "0.875rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -411,6 +441,39 @@ function SecurityTab({ settings, updateSetting }: { settings: Record<string, any
           <p style={{ fontSize: "0.75rem", color: "#f97316" }}>Maintenance mode is ON.</p>
         </div>
       )}
+
+      {/* Password Change */}
+      <div style={{ marginTop: "0.5rem", padding: "1rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <p style={{ fontSize: "0.8125rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.375rem" }}>
+          <Lock size={14} style={{ color: "var(--glow-purple)" }} /> Change Password
+        </p>
+        <div>
+          <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.25rem" }}>Current Password</label>
+          <div style={{ position: "relative" }}>
+            <input className="ambient-input" type={showCurrentPw ? "text" : "password"} style={{ width: "100%", padding: "0.625rem 0.875rem", paddingRight: "2.5rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
+            <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)} style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "0.25rem" }}>
+              {showCurrentPw ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+          </div>
+        </div>
+        <div>
+          <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.25rem" }}>New Password</label>
+          <div style={{ position: "relative" }}>
+            <input className="ambient-input" type={showNewPw ? "text" : "password"} style={{ width: "100%", padding: "0.625rem 0.875rem", paddingRight: "2.5rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+            <button type="button" onClick={() => setShowNewPw(!showNewPw)} style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "0.25rem" }}>
+              {showNewPw ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+          </div>
+        </div>
+        <div>
+          <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.25rem" }}>Confirm New Password</label>
+          <input className="ambient-input" type="password" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
+        </div>
+        <button onClick={handlePasswordChange} disabled={changingPw || !currentPw || !newPw} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem", padding: "0.5rem 1rem", fontSize: "0.75rem", fontWeight: 600, borderRadius: "0.5rem", border: "none", background: "var(--glow-purple)", color: "#fff", cursor: changingPw ? "wait" : "pointer", opacity: changingPw || !currentPw || !newPw ? 0.5 : 1 }}>
+          {changingPw ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Lock size={14} />}
+          {changingPw ? "Changing..." : "Change Password"}
+        </button>
+      </div>
     </div>
   );
 }
