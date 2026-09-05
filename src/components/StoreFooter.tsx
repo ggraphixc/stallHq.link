@@ -1,4 +1,5 @@
 import { Store } from "@/types";
+import { AppDownloadBadges } from "@/components/AppDownloadBadges";
 
 interface StoreFooterProps {
   store: Store;
@@ -18,11 +19,14 @@ export function StoreFooter({ store }: StoreFooterProps) {
         alignItems: "center",
         justifyContent: "space-between",
         flexWrap: "wrap",
-        gap: "0.5rem",
+        gap: "1rem",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-          <span>Powered by</span>
-          <span style={{ fontWeight: 700, background: "linear-gradient(135deg, var(--glow-purple), var(--glow-cyan))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>stallHq</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+            <span>Powered by</span>
+            <span style={{ fontWeight: 700, background: "linear-gradient(135deg, var(--glow-purple), var(--glow-cyan))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>stallHq</span>
+          </div>
+          <AppDownloadBadges variant="compact" />
         </div>
         <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
           © {new Date().getFullYear()} {store.name}

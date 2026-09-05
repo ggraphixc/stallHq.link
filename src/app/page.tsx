@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Store, ShoppingCart, BarChart3, QrCode, Zap, Shield, ArrowRight, Check, Star, Menu, X } from "lucide-react";
 import { PLANS, formatNaira } from "@/lib/subscription";
 import { useBranding } from "@/hooks/useBranding";
+import { AppDownloadBadges } from "@/components/AppDownloadBadges";
 import { HomeStructuredData } from "@/components/HomeStructuredData";
 import type { SubscriptionPlan } from "@/types";
 
@@ -345,6 +346,23 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Get the App */}
+        <section id="get-the-app" style={{ ...sectionStyle, scrollMarginTop: "4.5rem" }}>
+          <p style={labelStyle}>Get the App</p>
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem", borderRadius: 16, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.02)", padding: "2.5rem 1.5rem", maxWidth: 640, margin: "0 auto" }}>
+            <h2 style={{ fontSize: "clamp(1.25rem, 3.5vw, 1.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
+              Your store, <span className="text-gradient">in your pocket</span>
+            </h2>
+            <p style={{ fontSize: 14, color: "var(--text-secondary)", maxWidth: 400, lineHeight: 1.6 }}>
+              Manage orders, track analytics and chat with buyers on the go — the full stallHq experience as a native app for Android &amp; iOS.
+            </p>
+            <AppDownloadBadges variant="section" />
+            <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+              Free download · Same account as the web · Vendors &amp; customers
+            </p>
+          </div>
+        </section>
+
         {/* CTA */}
         <section style={{ maxWidth: 560, margin: "0 auto", padding: "5rem 1.5rem" }}>
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, borderRadius: 16, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.02)", padding: "3rem 2rem" }}>
@@ -384,6 +402,7 @@ export default function Home() {
                 <Link href="/auth/signup" style={{ color: "inherit", textDecoration: "none" }}>Create Store</Link>
                 <Link href="/upgrade" style={{ color: "inherit", textDecoration: "none" }}>Pricing</Link>
                 <Link href="/favorites" style={{ color: "inherit", textDecoration: "none" }}>My Favorites</Link>
+                <Link href="/#get-the-app" style={{ color: "inherit", textDecoration: "none" }}>Download App</Link>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
                 <p style={{ fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.25rem" }}>Account</p>

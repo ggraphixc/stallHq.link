@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAlert } from "@/contexts/AlertContext";
-import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw, Sparkles, Eye, EyeOff, Palette, Upload, X } from "lucide-react";
+import { Settings, Save, Loader2, Shield, Mail, CreditCard, Globe, AlertTriangle, CheckCircle, RefreshCw, Sparkles, Eye, EyeOff, Palette, Upload, X, Smartphone } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface Setting {
@@ -16,6 +16,9 @@ const DEFAULT_SETTINGS: Record<string, any> = {
   max_free_products: 10, trial_days: 14, support_email: "",
   ai_enabled: false, ai_provider: "openrouter", ai_model: "", ai_api_key: "", ai_base_url: "", ai_assistant_enabled: false,
   logo_url: "", favicon_url: "", platform_name: "",
+  android_version: "1.0.0", android_version_code: 1, android_min_version: "1.0.0", android_download_url: "",
+  ios_version: "1.0.0", ios_min_version: "1.0.0", ios_download_url: "",
+  app_release_notes: "",
 };
 
 export default function AdminSettings() {
@@ -71,6 +74,7 @@ export default function AdminSettings() {
     { id: "email", label: "Email", icon: Mail },
     { id: "payments", label: "Payments", icon: CreditCard },
     { id: "ai", label: "AI", icon: Sparkles },
+    { id: "app", label: "Mobile App", icon: Smartphone },
     { id: "security", label: "Security", icon: Shield },
   ];
 
@@ -115,6 +119,8 @@ export default function AdminSettings() {
           <PaymentsTab />
         ) : activeTab === "ai" ? (
           <AITab settings={settings} updateSetting={updateSetting} showAIKey={showAIKey} setShowAIKey={setShowAIKey} />
+        ) : activeTab === "app" ? (
+          <MobileAppTab settings={settings} updateSetting={updateSetting} />
         ) : (
           <SecurityTab settings={settings} updateSetting={updateSetting} />
         )}
@@ -405,6 +411,70 @@ function SecurityTab({ settings, updateSetting }: { settings: Record<string, any
           <p style={{ fontSize: "0.75rem", color: "#f97316" }}>Maintenance mode is ON.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Mobile App Tab ────────────────────────── */
+function MobileAppTab({ settings, updateSetting }: { settings: Record<string, any>; updateSetting: (key: string, value: any) => void }) {
+  const isMobile = useMediaQuery("(max-width: 640px)");
+
+  const field = (label: string, key: string, placeholder = "", hint?: string) => (
+    <div>
+      <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>{label}</label>
+      <input
+        className="ambient-input"
+        style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }}
+        value={settings[key] ?? ""}
+        placeholder={placeholder}
+        onChange={(e) => updateSetting(key, e.target.value)}
+      />
+      {hint && <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>{hint}</p>}
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      <h3 style={{ fontSize: "0.875rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <Smartphone size={16} style={{ color: "var(--glow-purple)" }} /> Mobile App Versions
+      </h3>
+      <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "-0.5rem" }}>
+        Powers the download badges on the homepage &amp; storefronts, and the in-app update check.
+        Apps running a version below the <strong>minimum version</strong> are forced to update on launch.
+      </p>
+
+      {/* Android */}
+      <div style={{ padding: "0.875rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <p style={{ fontSize: "0.8125rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.375rem" }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--glow-green)" }} /> Android (APK)
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "0.75rem" }}>
+          {field("Latest Version", "android_version", "1.0.0")}
+          <div>
+            <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Version Code</label>
+            <input className="ambient-input" type="number" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.android_version_code ?? 1} onChange={(e) => updateSetting("android_version_code", parseInt(e.target.value) || 1)} />
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "0.75rem" }}>
+          {field("Minimum Version (force update below)", "android_min_version", "1.0.0")}
+          {field("APK Download URL", "android_download_url", "https://…/stallhq.apk", "Host the APK on Supabase Storage or paste the Expo build download link.")}
+        </div>
+      </div>
+
+      {/* iOS */}
+      <div style={{ padding: "0.875rem", background: "var(--bg-primary)", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <p style={{ fontSize: "0.8125rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.375rem" }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--glow-cyan)" }} /> iOS (App Store)
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "0.75rem" }}>
+          {field("Latest Version", "ios_version", "1.0.0")}
+          {field("Minimum Version (force update below)", "ios_min_version", "1.0.0")}
+        </div>
+        {field("App Store URL", "ios_download_url", "https://apps.apple.com/…", "Leave empty to show “Coming soon” — add it once the app is published.")}
+      </div>
+
+      {/* Release notes */}
+      {field("What's New / Release Notes", "app_release_notes", "Bug fixes and performance improvements…")}
     </div>
   );
 }
