@@ -75,7 +75,8 @@ export function StoreIdentityCard({ store, editable, onEdit }: StoreIdentityCard
         ) : null}
         {store.instagram_handle ? (
           <TouchableOpacity style={styles.contactChip} onPress={() => {
-            Linking.openURL(`https://instagram.com/${store.instagram_handle.replace(/^@/, "")}`);
+            const handle = store.instagram_handle!.replace(/^@/, "");
+            Linking.openURL(`https://instagram.com/${handle}`);
           }} activeOpacity={0.7}>
             <LinkIcon size={13} color={Colors.purple} />
             <Text style={[styles.contactText, { color: Colors.purple }]}>
@@ -129,9 +130,9 @@ const makeStyles = () => {
     logo: { width: 56, height: 56, borderRadius: BorderRadius.md },
     logoPlaceholder: {
       width: 56, height: 56, borderRadius: BorderRadius.md,
-      backgroundColor: Colors.bgSecondary, alignItems: "center", justifyContent: "center",
+      backgroundColor: Colors.bgSecondary, alignItems: "center" as const, justifyContent: "center" as const,
     },
-    name: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
+    name: { fontSize: FontSize.xl, fontWeight: "700" as const, color: Colors.text },
     slug: { fontSize: FontSize.sm, color: Colors.textMuted },
     description: { fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: Spacing.xs, lineHeight: 20 },
     editBtn: {
@@ -142,34 +143,34 @@ const makeStyles = () => {
       backgroundColor: Colors.purpleDim,
       borderWidth: 1,
       borderColor: Colors.borderGlow,
-      alignItems: "center",
+      alignItems: "center" as const,
     },
-    editText: { fontSize: FontSize.xs, fontWeight: "700", color: Colors.purple },
-    contactRow: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.md },
+    editText: { fontSize: FontSize.xs, fontWeight: "700" as const, color: Colors.purple },
+    contactRow: { flexDirection: "row" as const, gap: Spacing.sm, marginTop: Spacing.md },
     contactChip: {
-      flexDirection: "row", alignItems: "center", gap: 5,
+      flexDirection: "row" as const, alignItems: "center" as const, gap: 5,
       paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
       borderRadius: BorderRadius.md, backgroundColor: Colors.bgSecondary,
       borderWidth: 1, borderColor: Colors.borderSubtle,
     },
-    contactText: { fontSize: FontSize.xs, fontWeight: "600" },
-    row: { flexDirection: "row", alignItems: "center", marginTop: Spacing.md },
-    rowLabel: { fontSize: FontSize.xs, color: Colors.textMuted, textTransform: "uppercase", letterSpacing: 0.05, marginBottom: 2 },
-    rowValue: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.text },
+    contactText: { fontSize: FontSize.xs, fontWeight: "600" as const },
+    row: { flexDirection: "row" as const, alignItems: "center" as const, marginTop: Spacing.md },
+    rowLabel: { fontSize: FontSize.xs, color: Colors.textMuted, textTransform: "uppercase" as const, letterSpacing: 0.05, marginBottom: 2 },
+    rowValue: { fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.text },
     rowMuted: { fontSize: FontSize.sm, color: Colors.textMuted },
     hoursBadge: {
-      flexDirection: "row", alignItems: "center", gap: 5,
+      flexDirection: "row" as const, alignItems: "center" as const, gap: 5,
       marginTop: Spacing.xs, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
       borderRadius: BorderRadius.md, backgroundColor: Colors.greenDim,
       borderWidth: 1, borderColor: "rgba(16,185,129,0.15)",
     },
     hoursBadgeClosed: {
-      flexDirection: "row", alignItems: "center", gap: 5,
+      flexDirection: "row" as const, alignItems: "center" as const, gap: 5,
       marginTop: Spacing.xs, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
       borderRadius: BorderRadius.md, backgroundColor: Colors.redDim,
       borderWidth: 1, borderColor: "rgba(239,68,68,0.15)",
     },
-    hoursText: { fontSize: FontSize.xs, fontWeight: "600" },
+    hoursText: { fontSize: FontSize.xs, fontWeight: "600" as const },
   }));
   return s;
 };

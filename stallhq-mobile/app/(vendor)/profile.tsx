@@ -6,12 +6,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useRouter as expoUseRouter } from "expo-router";
-import { BrandLoader } from "../components/BrandLoader";
-import { StoreIdentityCard } from "../components/StoreIdentityCard";
-import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../lib/theme";
+import { BrandLoader } from "../../components/BrandLoader";
+import { StoreIdentityCard } from "../../components/StoreIdentityCard";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../lib/theme";
 import { Store as StoreIcon, Check, X, Save } from "lucide-react-native";
-import { supabase, Store } from "../lib/supabase";
-import { useAuth } from "../lib/auth";
+import { supabase, Store } from "../../lib/supabase";
+import { useAuth } from "../../lib/auth";
 
 /** Public vendor profile page for other vendors browsing stores.
  *  Tapping "Edit" (only visible to the store owner) opens the editable
@@ -119,7 +119,7 @@ export default function VendorProfileScreen() {
                 sat: hoursSat.trim() || null,
               },
             })
-            .eq("id", s.store_hours.id)
+            .eq("id", (s.store_hours as any).id)
         : await supabase.from("store_hours").insert({
             store_id: s.id,
             enabled: hoursEnabled,
@@ -152,7 +152,7 @@ export default function VendorProfileScreen() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err: any) {
-      alert("Save failed", err.message || "Please try again.");
+      alert(err.message || "Save failed. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -233,12 +233,13 @@ export default function VendorProfileScreen() {
                 <Text style={styles.label}>Open hours (e.g. 9:00 AM-5:00 PM)</Text>
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, i) => {
                   const setters = [setHoursSun, setHoursMon, setHoursTue, setHoursWed, setHoursThu, setHoursFri, setHoursSat];
+                  const values = [hoursSun, hoursMon, hoursTue, hoursWed, hoursThu, hoursFri, hoursSat];
                   return (
                     <View key={day} style={styles.hoursRow}>
                       <Text style={styles.dayLabel}>{day}</Text>
                       <TextInput
                         style={[styles.input, { flex: 1, fontSize: FontSize.sm }]}
-                        value={setters[i] ? setters[i]() : ""}
+                        value={values[i] ?? ""}
                         onChangeText={setters[i]!}
                         placeholder="9:00 AM-5:00 PM or Closed"
                         placeholderTextColor={Colors.textMuted}
@@ -283,24 +284,24 @@ const makeStyles = () => {
     container: { flex: 1, backgroundColor: Colors.bg },
     scroll: { paddingBottom: 40 },
     header: {
-      flexDirection: "row", alignItems: "center", padding: Spacing.lg, paddingBottom: Spacing.sm,
+      flexDirection: "row" as const, alignItems: "center" as const, padding: Spacing.lg, paddingBottom: Spacing.sm,
       backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
     },
     backBtn: { padding: Spacing.xs },
-    backText: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.purple },
-    title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
+    backText: { fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.purple },
+    title: { fontSize: FontSize.xl, fontWeight: "700" as const, color: Colors.text },
     subtitle: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 2 },
     savedBadge: {
       marginLeft: Spacing.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
       borderRadius: BorderRadius.md, backgroundColor: Colors.greenDim,
-      alignItems: "center",
+      alignItems: "center" as const,
     },
-    savedText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.green },
+    savedText: { fontSize: FontSize.xs, fontWeight: "600" as const, color: Colors.green },
     editPanel: {
       backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
       borderRadius: BorderRadius.xl, padding: Spacing.lg, marginTop: Spacing.md,
     },
-    editTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text, marginBottom: 4 },
+    editTitle: { fontSize: FontSize.lg, fontWeight: "700" as const, color: Colors.text, marginBottom: 4 },
     editSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginBottom: Spacing.lg },
     label: { ...labelStyle, marginTop: Spacing.md, marginBottom: Spacing.xs, color: Colors.textSecondary },
     input: {
@@ -308,42 +309,42 @@ const makeStyles = () => {
       borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: FontSize.sm, color: Colors.text,
     },
     toggleRow: {
-      flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+      flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "space-between" as const,
       padding: Spacing.md, marginTop: Spacing.md,
       borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.md,
       backgroundColor: Colors.bgSecondary,
     },
     toggleRowActive: { borderColor: Colors.borderGlow, backgroundColor: Colors.purpleDim },
-    toggleLabel: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.textMuted },
-    toggle: { width: 44, height: 24, borderRadius: 12, backgroundColor: Colors.borderMedium, justifyContent: "center", padding: 2 },
-    toggleThumb: { width: 18, height: 18, borderRadius: 9, alignSelf: "center" },
-    hoursRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginTop: Spacing.xs },
-    dayLabel: { width: 36, fontSize: FontSize.sm, fontWeight: "600", color: Colors.textSecondary },
-    editActions: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.xl, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
+    toggleLabel: { fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.textMuted },
+    toggle: { width: 44, height: 24, borderRadius: 12, backgroundColor: Colors.borderMedium, justifyContent: "center" as const, padding: 2 },
+    toggleThumb: { width: 18, height: 18, borderRadius: 9, alignSelf: "center" as const },
+    hoursRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: Spacing.sm, marginTop: Spacing.xs },
+    dayLabel: { width: 36, fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.textSecondary },
+    editActions: { flexDirection: "row" as const, gap: Spacing.sm, marginTop: Spacing.xl, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
     cancelBtn: {
-      flex: 1, alignItems: "center", justifyContent: "center",
+      flex: 1, alignItems: "center" as const, justifyContent: "center" as const,
       padding: Spacing.md, borderRadius: BorderRadius.md,
       borderWidth: 1, borderColor: Colors.borderSubtle, backgroundColor: "transparent",
     },
-    cancelText: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.textSecondary },
+    cancelText: { fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.textSecondary },
     saveBtn: {
-      flex: 1, alignItems: "center", justifyContent: "center", gap: 4,
+      flex: 1, alignItems: "center" as const, justifyContent: "center" as const, gap: 4,
       padding: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: Colors.purple,
     },
     ownerActions: { marginTop: Spacing.md, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
     ownerActionBtn: {
-      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+      flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "center" as const, gap: 6,
       marginHorizontal: Spacing.lg, marginBottom: Spacing.sm,
       padding: Spacing.md, borderRadius: BorderRadius.md,
       backgroundColor: Colors.purpleDim, borderWidth: 1, borderColor: Colors.borderGlow,
     },
-    ownerActionText: { fontSize: FontSize.sm, fontWeight: "700", color: Colors.purple },
+    ownerActionText: { fontSize: FontSize.sm, fontWeight: "700" as const, color: Colors.purple },
     signOutBtn: {
-      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+      flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "center" as const, gap: 8,
       marginHorizontal: Spacing.lg, padding: Spacing.md,
       borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.red,
     },
-    signOutText: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.red },
+    signOutText: { fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.red },
   }));
   return s;
 };

@@ -5,11 +5,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { BrandLoader } from "../../components/BrandLoader";
-import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../lib/theme";
+import { BrandLoader } from "../../../components/BrandLoader";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
 import { Send, ArrowLeft, CheckCircle, AlertCircle, Clock, MessageSquare } from "lucide-react-native";
-import { supabase } from "../../lib/supabase";
-import { useAuth } from "../../lib/auth";
+import { supabase } from "../../../lib/supabase";
+import { useAuth } from "../../../lib/auth";
 
 interface Message {
   id: string;
@@ -181,25 +181,25 @@ export default function TicketDetailScreen() {
 const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: {
-    flexDirection: "row", alignItems: "center", padding: Spacing.lg, paddingBottom: Spacing.sm,
+    flexDirection: "row" as const, alignItems: "center" as const, padding: Spacing.lg, paddingBottom: Spacing.sm,
     backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
   },
   backBtn: { padding: Spacing.xs, marginRight: Spacing.sm },
-  title: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text, flex: 1 },
-  headerMeta: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, marginTop: 2 },
+  title: { fontSize: FontSize.lg, fontWeight: "700" as const, color: Colors.text, flex: 1 },
+  headerMeta: { flexDirection: "row" as const, alignItems: "center" as const, gap: Spacing.xs, marginTop: 2 },
   statusBadge: {
     paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: BorderRadius.sm,
   },
-  statusText: { fontSize: FontSize.xs, fontWeight: "600", textTransform: "capitalize" },
+  statusText: { fontSize: FontSize.xs, fontWeight: "600" as const, textTransform: "capitalize" as const },
   metaDot: { fontSize: FontSize.xs, color: Colors.textMuted },
   metaText: { fontSize: FontSize.xs, color: Colors.textMuted },
   messageList: { flex: 1 },
   messageListContent: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
   messageBubble: { marginBottom: Spacing.md },
-  messageMe: { alignItems: "flex-end" },
-  messageThem: { alignItems: "flex-start" },
+  messageMe: { alignItems: "flex-end" as const },
+  messageThem: { alignItems: "flex-start" as const },
   messageContent: {
-    maxWidth: "80%", paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
+    maxWidth: "80%" as any, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
     borderRadius: BorderRadius.xl,
   },
   messageContentMe: {
@@ -211,10 +211,10 @@ const makeStyles = () => StyleSheet.create({
   },
   messageText: { fontSize: FontSize.sm, color: Colors.text, lineHeight: 20 },
   messageTime: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2, marginHorizontal: Spacing.xs },
-  emptyMessages: { alignItems: "center", padding: Spacing.xxxl * 2, gap: Spacing.sm },
-  emptyText: { fontSize: FontSize.sm, color: Colors.textMuted, textAlign: "center" },
+  emptyMessages: { alignItems: "center" as const, padding: Spacing.xxxl * 2, gap: Spacing.sm },
+  emptyText: { fontSize: FontSize.sm, color: Colors.textMuted, textAlign: "center" as const },
   replyBar: {
-    flexDirection: "row", alignItems: "flex-end", gap: Spacing.sm,
+    flexDirection: "row" as const, alignItems: "flex-end" as const, gap: Spacing.sm,
     padding: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderSubtle,
     backgroundColor: Colors.bgCard,
   },
@@ -225,6 +225,6 @@ const makeStyles = () => StyleSheet.create({
   },
   sendBtn: {
     width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.purple,
-    alignItems: "center", justifyContent: "center",
+    alignItems: "center" as const, justifyContent: "center" as const,
   },
 });

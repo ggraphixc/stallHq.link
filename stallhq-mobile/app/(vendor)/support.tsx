@@ -5,10 +5,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { BrandLoader } from "../components/BrandLoader";
-import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../lib/theme";
+import { BrandLoader } from "../../components/BrandLoader";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../lib/theme";
 import { Send, X, CheckCircle, AlertCircle, Clock, MessageSquare } from "lucide-react-native";
-import { WEB_API_URL } from "../lib/auth";
+import { WEB_API_URL } from "../../lib/auth";
 
 interface Ticket {
   id: string;
@@ -225,69 +225,69 @@ const makeStyles = () => {
   const s = useThemeStyles(() => ({
     container: { flex: 1, backgroundColor: Colors.bg },
     header: {
-      flexDirection: "row", alignItems: "center", padding: Spacing.lg, paddingBottom: Spacing.sm,
+      flexDirection: "row" as const, alignItems: "center" as const, padding: Spacing.lg, paddingBottom: Spacing.sm,
       backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
     },
     backBtn: { padding: Spacing.xs },
-    backText: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.purple },
-    title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginHorizontal: Spacing.md },
+    backText: { fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.purple },
+    title: { fontSize: FontSize.xl, fontWeight: "700" as const, color: Colors.text, marginHorizontal: Spacing.md },
     createBtn: {
-      marginLeft: Spacing.sm, flexDirection: "row", alignItems: "center", gap: 4,
+      marginLeft: Spacing.sm, flexDirection: "row" as const, alignItems: "center" as const, gap: 4,
       paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
       backgroundColor: Colors.purple, borderRadius: BorderRadius.md,
     },
-    createBtnText: { fontSize: FontSize.xs, fontWeight: "700", color: "#fff" },
+    createBtnText: { fontSize: FontSize.xs, fontWeight: "700" as const, color: "#fff" },
     createPanel: {
       backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
       borderRadius: BorderRadius.xl, padding: Spacing.lg, marginBottom: Spacing.md,
     },
-    createTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text, marginBottom: 4 },
+    createTitle: { fontSize: FontSize.lg, fontWeight: "700" as const, color: Colors.text, marginBottom: 4 },
     createSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginBottom: Spacing.lg },
     label: { ...labelStyle, marginTop: Spacing.md, marginBottom: Spacing.xs, color: Colors.textSecondary },
     input: {
       backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
       borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: FontSize.sm, color: Colors.text,
     },
-    chipRow: { flexDirection: "row", gap: Spacing.sm, marginBottom: Spacing.xs, paddingVertical: Spacing.xs },
+    chipRow: { flexDirection: "row" as const, gap: Spacing.sm, marginBottom: Spacing.xs, paddingVertical: Spacing.xs },
     chip: {
-      flexDirection: "row", alignItems: "center", paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+      flexDirection: "row" as const, alignItems: "center" as const, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
       borderRadius: BorderRadius.md, backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
     },
     chipActive: { backgroundColor: Colors.purpleDim, borderColor: Colors.borderGlow },
-    chipText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textMuted },
+    chipText: { fontSize: FontSize.xs, fontWeight: "600" as const, color: Colors.textMuted },
     chipTextActive: { color: Colors.purple },
-    createActions: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.xl, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
+    createActions: { flexDirection: "row" as const, gap: Spacing.sm, marginTop: Spacing.xl, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
     cancelBtn: {
-      flex: 1, alignItems: "center", justifyContent: "center",
+      flex: 1, alignItems: "center" as const, justifyContent: "center" as const,
       padding: Spacing.md, borderRadius: BorderRadius.md,
       borderWidth: 1, borderColor: Colors.borderSubtle, backgroundColor: "transparent",
     },
-    cancelText: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.textSecondary },
+    cancelText: { fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.textSecondary },
     submitBtn: {
-      flex: 1, alignItems: "center", justifyContent: "center", gap: 4,
+      flex: 1, alignItems: "center" as const, justifyContent: "center" as const, gap: 4,
       padding: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: Colors.purple,
     },
-    empty: { alignItems: "center", padding: Spacing.xxxl * 2, gap: Spacing.sm },
-    emptyTitle: { fontSize: FontSize.lg, fontWeight: "600", color: Colors.textSecondary },
+    empty: { alignItems: "center" as const, padding: Spacing.xxxl * 2, gap: Spacing.sm },
+    emptyTitle: { fontSize: FontSize.lg, fontWeight: "600" as const, color: Colors.textSecondary },
     emptySub: { fontSize: FontSize.sm, color: Colors.textMuted },
     list: { padding: Spacing.lg, paddingTop: 0 },
     card: {
       backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
       borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
     },
-    cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.xs },
-    subject: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text, flex: 1, marginRight: Spacing.sm },
+    cardHeader: { flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "space-between" as const, marginBottom: Spacing.xs },
+    subject: { fontSize: FontSize.md, fontWeight: "600" as const, color: Colors.text, flex: 1, marginRight: Spacing.sm },
     meta: { fontSize: FontSize.xs, color: Colors.textMuted },
     statusBadge: {
       paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.md,
-      alignSelf: "flex-start", flexShrink: 1,
+      alignSelf: "flex-start" as const, flexShrink: 1,
     },
-    statusText: { fontSize: FontSize.xs, fontWeight: "600", textTransform: "capitalize" },
+    statusText: { fontSize: FontSize.xs, fontWeight: "600" as const, textTransform: "capitalize" as const },
     cardBody: { paddingTop: Spacing.sm },
-    cardMetaRow: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, flexWrap: "wrap" },
+    cardMetaRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: Spacing.xs, flexWrap: "wrap" as const },
     cardMeta: { fontSize: FontSize.xs, color: Colors.textMuted },
     cardMetaDot: { fontSize: FontSize.xs, color: Colors.textMuted },
-    replyPreviewLabel: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textMuted, marginTop: Spacing.sm },
+    replyPreviewLabel: { fontSize: FontSize.xs, fontWeight: "600" as const, color: Colors.textMuted, marginTop: Spacing.sm },
     replyPreview: { fontSize: FontSize.sm, color: Colors.textSecondary, lineHeight: 20, marginTop: 2 },
   }));
   return s;

@@ -4,11 +4,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useAuth } from "../lib/auth";
-import { ThemeToggle } from "../components/ThemeToggle";
-import { NotificationBell } from "../components/NotificationBell";
-import { BrandLoader } from "../components/BrandLoader";
-import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../lib/theme";
+import { useAuth } from "../../lib/auth";
+import { ThemeToggle } from "../../components/ThemeToggle";
+import { NotificationBell } from "../../components/NotificationBell";
+import { BrandLoader } from "../../components/BrandLoader";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../lib/theme";
 import {
   User, Mail, Shield, Globe, FileText, LogOut, ChevronRight,
   Package, Clock, Sparkles, LogIn, Store,
@@ -151,51 +151,51 @@ const makeStyles = () => {
       padding: Spacing.lg, paddingBottom: Spacing.sm,
       backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
     },
-    headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
+    headerRow: { flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "space-between" as const },
+    title: { fontSize: FontSize.xl, fontWeight: "700" as const, color: Colors.text },
     scroll: { paddingBottom: 40 },
     accountCard: {
-      flexDirection: "row", alignItems: "center",
+      flexDirection: "row" as const, alignItems: "center" as const,
       backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
       borderRadius: BorderRadius.lg, padding: Spacing.lg, marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
     },
     guestCard: {
-      flexDirection: "row", alignItems: "center",
+      flexDirection: "row" as const, alignItems: "center" as const,
       backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
       borderRadius: BorderRadius.lg, padding: Spacing.lg, marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
     },
-    avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.purple, justifyContent: "center", alignItems: "center", marginRight: Spacing.lg },
-    email: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },
+    avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.purple, justifyContent: "center" as const, alignItems: "center" as const, marginRight: Spacing.lg },
+    email: { fontSize: FontSize.md, fontWeight: "600" as const, color: Colors.text },
     accountLabel: { fontSize: FontSize.sm, color: Colors.textMuted },
-    accountActions: { flexDirection: "row", gap: Spacing.sm, paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg },
+    accountActions: { flexDirection: "row" as const, gap: Spacing.sm, paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg },
     accountBtnPrimary: {
-      flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+      flex: 1, flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "center" as const, gap: 6,
       backgroundColor: Colors.purple, borderRadius: BorderRadius.lg, paddingVertical: Spacing.md,
     },
-    accountBtnTextLight: { color: "#fff", fontSize: FontSize.sm, fontWeight: "700" },
+    accountBtnTextLight: { color: "#fff", fontSize: FontSize.sm, fontWeight: "700" as const },
     accountBtnSecondary: {
-      flex: 1, alignItems: "center", justifyContent: "center",
+      flex: 1, alignItems: "center" as const, justifyContent: "center" as const,
       backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
       borderRadius: BorderRadius.lg, paddingVertical: Spacing.md,
     },
-    accountBtnText: { color: Colors.text, fontSize: FontSize.sm, fontWeight: "600" },
+    accountBtnText: { color: Colors.text, fontSize: FontSize.sm, fontWeight: "600" as const },
     menu: { paddingHorizontal: Spacing.lg },
     menuItem: {
-      flexDirection: "row", alignItems: "center",
+      flexDirection: "row" as const, alignItems: "center" as const,
       backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
       borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
     },
-    menuIcon: { width: 36, height: 36, borderRadius: BorderRadius.md, backgroundColor: Colors.bgSecondary, justifyContent: "center", alignItems: "center", marginRight: Spacing.lg },
+    menuIcon: { width: 36, height: 36, borderRadius: BorderRadius.md, backgroundColor: Colors.bgSecondary, justifyContent: "center" as const, alignItems: "center" as const, marginRight: Spacing.lg },
     menuInfo: { flex: 1 },
-    menuTitle: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },
+    menuTitle: { fontSize: FontSize.md, fontWeight: "600" as const, color: Colors.text },
     menuSubtitle: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 2 },
     signOutBtn: {
-      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+      flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "center" as const, gap: 8,
       marginHorizontal: Spacing.lg, marginTop: Spacing.lg, padding: Spacing.lg,
       borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.red,
     },
-    signOutText: { color: Colors.red, fontSize: FontSize.md, fontWeight: "600" },
-    version: { fontSize: FontSize.xs, color: Colors.textMuted, textAlign: "center", marginTop: Spacing.lg },
+    signOutText: { color: Colors.red, fontSize: FontSize.md, fontWeight: "600" as const },
+    version: { fontSize: FontSize.xs, color: Colors.textMuted, textAlign: "center" as const, marginTop: Spacing.lg },
   }));
   return s;
 };
