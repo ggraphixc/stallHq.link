@@ -167,7 +167,7 @@ const makeStyles = () => StyleSheet.create({
     height: 380,
     top: -160,
     left: -120,
-    backgroundColor: "Colors.purpleTint",
+    backgroundColor: Colors.purpleTint,
   },
   glowBottom: {
     width: 340,

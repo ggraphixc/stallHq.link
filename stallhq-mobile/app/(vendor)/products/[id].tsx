@@ -220,7 +220,7 @@ const makeStyles = () => StyleSheet.create({
     width: "100%", height: 220, borderRadius: BorderRadius.lg, marginBottom: Spacing.lg,
     backgroundColor: Colors.bgCard, justifyContent: "center", alignItems: "center",
   },
-  card: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  card: { backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   productName: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, flex: 1, marginRight: Spacing.sm },
   stockBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: BorderRadius.sm },
@@ -236,7 +236,7 @@ const makeStyles = () => StyleSheet.create({
   actionRow: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.sm },
   actionBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    backgroundColor: "Colors.glass", borderWidth: 1, borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.glass, borderWidth: 1, borderRadius: BorderRadius.lg,
     paddingVertical: 14,
   },
   actionText: { color: Colors.text, fontSize: FontSize.sm, fontWeight: "600" },

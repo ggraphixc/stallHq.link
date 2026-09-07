@@ -13,6 +13,8 @@ create table if not exists push_content (
   sent_at timestamptz,
   recipients_count int default 0,
   created_by uuid references auth.users(id),
+  repeat_cadence text,
+  seasonal_pack text,
   created_at timestamptz default now()
 );
 

@@ -1,230 +1,294 @@
-import React, { useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, RefreshControl,
+  View, Text, TextInput, TouchableOpacity, ScrollView,
+  StyleSheet, RefreshControl, Alert,
 } from "react-native";
-import { alert } from "../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useFocusEffect } from "expo-router";
-import { supabase } from "../../lib/supabase";
-import { useAuth } from "../../lib/auth";
-import { BrandLoader } from "../../components/BrandLoader";
-import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle, ambientInput } from "../../lib/theme";
-import { Ionicons } from "@expo/vector-icons";
-import { WEB_API_URL } from "../../lib/auth";
+import { useRouter } from "expo-router";
+import { BrandLoader } from "../components/BrandLoader";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../lib/theme";
+import { Send, X, CheckCircle, AlertCircle, Clock, MessageSquare } from "lucide-react-native";
+import { WEB_API_URL } from "../lib/auth";
 
-const CATEGORIES = [
-  { value: "general", label: "General question" },
-  { value: "billing", label: "Billing issue" },
-  { value: "technical", label: "Technical problem" },
-  { value: "feature", label: "Feature request" },
-  { value: "bug", label: "Bug report" },
-];
+interface Ticket {
+  id: string;
+  subject: string;
+  category: string;
+  priority: string;
+  status: string;
+  created_at: string;
+  store_id?: string | null;
+  store?: { name?: string; slug?: string } | null;
+  messages?: { id: string; sender_id: string; sender_role: string; message: string; created_at: string }[];
+}
 
-const PRIORITY_COLORS: Record<string, string> = {
-  low: Colors.textMuted,
-  normal: Colors.blue,
-  high: Colors.amber,
-  urgent: Colors.red,
-};
+const CATEGORIES = ["general", "technical", "billing", "bug_report", "feature_request"];
+const PRIORITIES = ["low", "normal", "high", "urgent"];
+const STATUS_LABEL: Record<string, string> = { open: "Open", in_progress: "In progress", resolved: "Resolved", closed: "Closed" };
+const STATUS_COLOR: Record<string, string> = { open: Colors.amber, in_progress: Colors.blue, resolved: Colors.green, closed: Colors.textMuted };
 
 export default function SupportScreen() {
   const styles = useThemeStyles(makeStyles);
   const router = useRouter();
-  const { store } = useAuth();
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [creating, setCreating] = useState(false);
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState("general");
+  const [priority, setPriority] = useState("normal");
   const [message, setMessage] = useState("");
-  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
-  const loadTickets = async () => {
+  const load = useCallback(async () => {
     try {
-      const res = await fetch(`${WEB_API_URL}/api/support/tickets`, {
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch(`${WEB_API_URL}/api/support/tickets?admin=true`, {
+        headers: { Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ""}` },
       });
-      if (res.ok) {
-        const data = await res.json();
-        setTickets(data.tickets || []);
-      }
-    } catch {} finally {
-      setLoading(false);
-    }
-  };
+      if (res.ok) setTickets(await res.json());
+    } catch {}
+  }, []);
 
-  useFocusEffect(
-    useCallback(() => {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
       setLoading(true);
-      loadTickets();
-    }, [])
-  );
+      try {
+        const res = await fetch(`${WEB_API_URL}/api/support/tickets`, {
+          headers: { Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ""}` },
+        });
+        if (!cancelled && res.ok) setTickets(await res.json());
+      } catch {} finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadTickets();
+    try {
+      const res = await fetch(`${WEB_API_URL}/api/support/tickets`, {
+        headers: { Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ""}` },
+      });
+      if (res.ok) setTickets(await res.json());
+    } catch {}
     setRefreshing(false);
   };
 
-  const createTicket = async () => {
-    if (!subject.trim()) { alert("Error", "Please enter a subject"); return; }
-    if (!message.trim()) { alert("Error", "Please enter a message"); return; }
+  const openCreate = () => {
     setCreating(true);
+    setSubject(""); setCategory("general"); setPriority("normal"); setMessage("");
+  };
+
+  const submitTicket = async () => {
+    if (!subject.trim() || !message.trim()) {
+      Alert.alert("Missing fields", "Please add a subject and a message.");
+      return;
+    }
     try {
       const res = await fetch(`${WEB_API_URL}/api/support/tickets`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: subject.trim(),
-          category,
-          message: message.trim(),
-          store_id: store?.id,
-        }),
+        body: JSON.stringify({ subject: subject.trim(), category, priority, message: message.trim() }),
       });
-      if (res.ok) {
-        alert("Submitted", "Your support ticket has been created. We'll get back to you soon.");
-        setSubject(""); setCategory("general"); setMessage("");
-        await loadTickets();
-      } else {
+      if (!res.ok) {
         const d = await res.json();
-        alert("Error", d.error || "Failed to create ticket.");
+        throw new Error(d.error || "Failed to create ticket");
       }
-    } catch {
-      alert("Error", "Network error. Please try again.");
-    } finally {
       setCreating(false);
+      setSubject(""); setMessage("");
+      await load();
+      Alert.alert("Ticket created", "Your support ticket has been submitted.", [{ text: "OK" }]);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Please try again.");
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "open": return <Ionicons name="time-outline" size={14} color={Colors.amber} />;
-      case "in_progress": return <Ionicons name="chatbubble-outline" size={14} color={Colors.blue} />;
-      case "replied": return <Ionicons name="chatbubble-outline" size={14} color={Colors.cyan} />;
-      case "resolved": return <Ionicons name="checkmark-circle" size={14} color={Colors.green} />;
-      case "closed": return <Ionicons name="checkmark-circle" size={14} color={Colors.textMuted} />;
-      default: return <Ionicons name="time-outline" size={14} color={Colors.textMuted} />;
-    }
-  };
+  const closeCreate = () => { setCreating(false); setSubject(""); setMessage(""); };
 
   if (loading) return <BrandLoader label="Loading support" />;
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.purple} />}
-      >
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={18} color={Colors.purple} /><Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-
         <Text style={styles.title}>Support</Text>
+        <TouchableOpacity style={styles.createBtn} onPress={openCreate}>
+          <Send size={13} color="#fff" />
+          <Text style={styles.createBtnText}>New</Text>
+        </TouchableOpacity>
+      </View>
 
-        {/* New ticket form */}
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>NEW TICKET</Text>
+      {creating ? (
+        <View style={styles.createPanel}>
+          <Text style={styles.createTitle}>New support ticket</Text>
+          <Text style={styles.createSub}>Describe your issue and we'll get back to you.</Text>
 
-          <Text style={styles.label}>Subject</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Brief description of your issue"
-            placeholderTextColor={Colors.textMuted}
-            value={subject}
-            onChangeText={setSubject}
-            maxLength={200}
-          />
+          <Text style={styles.label}>Subject *</Text>
+          <TextInput style={styles.input} value={subject} onChangeText={setSubject} placeholder="What's this about?" placeholderTextColor={Colors.textMuted} maxLength={120} />
 
           <Text style={styles.label}>Category</Text>
-          <TouchableOpacity style={styles.picker} onPress={() => setShowCategoryPicker(!showCategoryPicker)}>
-            <Text style={styles.pickerText}>{CATEGORIES.find((c) => c.value === category)?.label}</Text>
-            <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
-          </TouchableOpacity>
-          {showCategoryPicker && (
-            <View style={styles.pickerOptions}>
-              {CATEGORIES.map((c) => (
-                <TouchableOpacity
-                  key={c.value}
-                  style={[styles.pickerOption, category === c.value && styles.pickerOptionActive]}
-                  onPress={() => { setCategory(c.value); setShowCategoryPicker(false); }}
-                >
-                  <Text style={[styles.pickerOptionText, category === c.value && { color: Colors.purple }]}>{c.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
+            {CATEGORIES.map((c) => (
+              <TouchableOpacity key={c} style={[styles.chip, category === c && styles.chipActive]} onPress={() => setCategory(c)}>
+                <Text style={[styles.chipText, category === c && styles.chipTextActive]}>{c.replace("_", " ")}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-          <Text style={styles.label}>Message</Text>
+          <Text style={styles.label}>Priority</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
+            {PRIORITIES.map((p) => (
+              <TouchableOpacity key={p} style={[styles.chip, priority === p && styles.chipActive]} onPress={() => setPriority(p)}>
+                <Text style={[styles.chipText, priority === p && styles.chipTextActive]}>{p}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <Text style={styles.label}>Message *</Text>
           <TextInput
-            style={[styles.input, { minHeight: 100, textAlignVertical: "top" }]}
-            placeholder="Describe your issue in detail…"
-            placeholderTextColor={Colors.textMuted}
+            style={[styles.input, { minHeight: 120, textAlignVertical: "top" }]}
             value={message}
             onChangeText={setMessage}
+            placeholder="Describe your issue in detail…"
+            placeholderTextColor={Colors.textMuted}
             multiline
             maxLength={2000}
           />
 
-          <TouchableOpacity
-            style={[styles.submitBtn, creating && { opacity: 0.6 }]}
-            onPress={createTicket}
-            disabled={creating}
-          >
-            <Ionicons name="send" size={14} color="#fff" />
-            <Text style={styles.submitBtnText}>{creating ? "Submitting…" : "Submit Ticket"}</Text>
-          </TouchableOpacity>
+          <View style={styles.createActions}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={closeCreate}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.submitBtn} onPress={submitTicket}>
+              <Send size={14} color="#fff" />
+              <Text style={{ color: "#fff", fontSize: FontSize.sm, fontWeight: "700" }}>Submit ticket</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Existing tickets */}
-        {tickets.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Your Tickets</Text>
-            {tickets.map((t) => (
-              <View key={t.id} style={styles.ticketCard}>
-                <View style={styles.ticketHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.ticketSubject} numberOfLines={1}>{t.subject}</Text>
-                    <Text style={styles.ticketMeta}>{t.category} · {new Date(t.created_at).toLocaleDateString()}</Text>
-                  </View>
-                  <View style={styles.ticketStatus}>
-                    {getStatusIcon(t.status)}
-                    <Text style={styles.ticketStatusText}>{t.status}</Text>
-                  </View>
+      ) : tickets.length === 0 ? (
+        <View style={styles.empty}>
+          <MessageSquare size={32} color={Colors.textMuted} />
+          <Text style={styles.emptyTitle}>No support tickets yet</Text>
+          <Text style={styles.emptySub}>Tap "New" to open a support ticket.</Text>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.list} refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.purple} />
+        }>
+          {tickets.map((t) => (
+            <TouchableOpacity key={t.id} style={styles.card} onPress={() => router.push(`/(vendor)/support/${t.id}`)} activeOpacity={0.7}>
+              <View style={styles.cardHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.subject} numberOfLines={1}>{t.subject}</Text>
+                  <Text style={styles.meta}>#{t.id.slice(0, 8).toUpperCase()}</Text>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: STATUS_COLOR[t.status] + "18", borderColor: STATUS_COLOR[t.status] + "44" }]}>
+                  <Text style={[styles.statusText, { color: STATUS_COLOR[t.status] }]}>{STATUS_LABEL[t.status] || t.status}</Text>
                 </View>
               </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
+              <View style={styles.cardBody}>
+                <View style={styles.cardMetaRow}>
+                  <Text style={styles.cardMeta}>{new Date(t.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</Text>
+                  <Text style={styles.cardMetaDot}>·</Text>
+                  <Text style={styles.cardMeta}>
+                    {["general", "technical", "billing", "bug_report", "feature_request"].includes(t.category) ? t.category.replace("_", " ") : t.category}
+                  </Text>
+                  <Text style={styles.cardMetaDot}>·</Text>
+                  <Text style={[styles.cardMeta, { color: t.priority === "urgent" ? Colors.red : t.priority === "high" ? Colors.amber : Colors.textMuted }]}>
+                    {t.priority}
+                  </Text>
+                </View>
+                {t.messages && t.messages.length > 0 && (
+                  <View style={{ marginTop: Spacing.sm }}>
+                    <Text style={styles.replyPreviewLabel}>
+                      {t.messages.length} {t.messages.length === 1 ? "message" : "messages"}
+                    </Text>
+                    <Text style={styles.replyPreview} numberOfLines={2}>
+                      {t.messages[t.messages.length - 1].message}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
-const makeStyles = () => StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { padding: Spacing.lg, paddingBottom: 100 },
-  backBtn: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: Spacing.lg },
-  backText: { fontSize: FontSize.md, color: Colors.purple },
-  title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginBottom: Spacing.xl },
-  card: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
-  cardLabel: { ...labelStyle, marginBottom: Spacing.md },
-  label: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.textSecondary, marginTop: Spacing.md, marginBottom: Spacing.xs },
-  input: { ...ambientInput, padding: Spacing.md, fontSize: FontSize.md, color: Colors.text },
-  picker: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", ...ambientInput, paddingHorizontal: Spacing.md },
-  pickerText: { fontSize: FontSize.md, color: Colors.text },
-  pickerOptions: { backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.md, marginTop: Spacing.xs },
-  pickerOption: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
-  pickerOptionActive: { backgroundColor: Colors.purpleDim },
-  pickerOptionText: { fontSize: FontSize.md, color: Colors.textSecondary },
-  submitBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: Colors.purple, borderRadius: BorderRadius.lg, padding: Spacing.md, marginTop: Spacing.lg },
-  submitBtnText: { color: "#fff", fontSize: FontSize.md, fontWeight: "700" },
-  section: { marginBottom: Spacing.xl },
-  sectionTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text, marginBottom: Spacing.md },
-  ticketCard: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
-  ticketHeader: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
-  ticketSubject: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },
-  ticketMeta: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
-  ticketStatus: { flexDirection: "row", alignItems: "center", gap: 4 },
-  ticketStatusText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textSecondary, textTransform: "capitalize" },
-});
+const makeStyles = () => {
+  const s = useThemeStyles(() => ({
+    container: { flex: 1, backgroundColor: Colors.bg },
+    header: {
+      flexDirection: "row", alignItems: "center", padding: Spacing.lg, paddingBottom: Spacing.sm,
+      backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
+    },
+    backBtn: { padding: Spacing.xs },
+    backText: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.purple },
+    title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginHorizontal: Spacing.md },
+    createBtn: {
+      marginLeft: Spacing.sm, flexDirection: "row", alignItems: "center", gap: 4,
+      paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+      backgroundColor: Colors.purple, borderRadius: BorderRadius.md,
+    },
+    createBtnText: { fontSize: FontSize.xs, fontWeight: "700", color: "#fff" },
+    createPanel: {
+      backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
+      borderRadius: BorderRadius.xl, padding: Spacing.lg, marginBottom: Spacing.md,
+    },
+    createTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text, marginBottom: 4 },
+    createSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginBottom: Spacing.lg },
+    label: { ...labelStyle, marginTop: Spacing.md, marginBottom: Spacing.xs, color: Colors.textSecondary },
+    input: {
+      backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
+      borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: FontSize.sm, color: Colors.text,
+    },
+    chipRow: { flexDirection: "row", gap: Spacing.sm, marginBottom: Spacing.xs, paddingVertical: Spacing.xs },
+    chip: {
+      flexDirection: "row", alignItems: "center", paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+      borderRadius: BorderRadius.md, backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
+    },
+    chipActive: { backgroundColor: Colors.purpleDim, borderColor: Colors.borderGlow },
+    chipText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textMuted },
+    chipTextActive: { color: Colors.purple },
+    createActions: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.xl, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
+    cancelBtn: {
+      flex: 1, alignItems: "center", justifyContent: "center",
+      padding: Spacing.md, borderRadius: BorderRadius.md,
+      borderWidth: 1, borderColor: Colors.borderSubtle, backgroundColor: "transparent",
+    },
+    cancelText: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.textSecondary },
+    submitBtn: {
+      flex: 1, alignItems: "center", justifyContent: "center", gap: 4,
+      padding: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: Colors.purple,
+    },
+    empty: { alignItems: "center", padding: Spacing.xxxl * 2, gap: Spacing.sm },
+    emptyTitle: { fontSize: FontSize.lg, fontWeight: "600", color: Colors.textSecondary },
+    emptySub: { fontSize: FontSize.sm, color: Colors.textMuted },
+    list: { padding: Spacing.lg, paddingTop: 0 },
+    card: {
+      backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
+      borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
+    },
+    cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.xs },
+    subject: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text, flex: 1, marginRight: Spacing.sm },
+    meta: { fontSize: FontSize.xs, color: Colors.textMuted },
+    statusBadge: {
+      paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.md,
+      alignSelf: "flex-start", flexShrink: 1,
+    },
+    statusText: { fontSize: FontSize.xs, fontWeight: "600", textTransform: "capitalize" },
+    cardBody: { paddingTop: Spacing.sm },
+    cardMetaRow: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, flexWrap: "wrap" },
+    cardMeta: { fontSize: FontSize.xs, color: Colors.textMuted },
+    cardMetaDot: { fontSize: FontSize.xs, color: Colors.textMuted },
+    replyPreviewLabel: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textMuted, marginTop: Spacing.sm },
+    replyPreview: { fontSize: FontSize.sm, color: Colors.textSecondary, lineHeight: 20, marginTop: 2 },
+  }));
+  return s;
+};

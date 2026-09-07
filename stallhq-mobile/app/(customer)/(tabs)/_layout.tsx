@@ -1,14 +1,15 @@
 import { Tabs } from "expo-router";
 import { Compass, Heart, User, Package } from "lucide-react-native";
-import { Colors, FontSize } from "../../../lib/theme";
+import { Colors, FontSize, useThemeVersion } from "../../../lib/theme";
 
 export default function CustomerTabsLayout() {
+  useThemeVersion();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.bgSecondary,
+          backgroundColor: Colors.bgCard,
           borderTopColor: Colors.borderSubtle,
           borderTopWidth: 1,
           height: 85,

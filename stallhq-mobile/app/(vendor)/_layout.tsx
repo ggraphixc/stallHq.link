@@ -1,9 +1,10 @@
 import { Stack, Redirect } from "expo-router";
-import { Colors } from "../../lib/theme";
+import { Colors, useThemeVersion } from "../../lib/theme";
 import { useAuth } from "../../lib/auth";
 import { BrandLoader } from "../../components/BrandLoader";
 
 export default function VendorLayout() {
+  useThemeVersion();
   const { session, loading } = useAuth();
 
   // Session guard — vendors must be signed in. Prevents screens from sitting
@@ -57,6 +58,10 @@ export default function VendorLayout() {
       />
       <Stack.Screen
         name="support"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="support/[id]"
         options={{ animation: "slide_from_right" }}
       />
     </Stack>

@@ -1,355 +1,212 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet, Image,
-  ActivityIndicator, Share, Platform,
+  View, Text, TouchableOpacity, ScrollView, StyleSheet, RefreshControl,
 } from "react-native";
-import { alert } from "../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import { captureRef } from "react-native-view-shot";
-import * as Sharing from "expo-sharing";
-import { useAuth } from "../../lib/auth";
-import { supabase, Product } from "../../lib/supabase";
-import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
-import {
-  ArrowLeft, Sparkles, Download, Share2, Package, Check, Layout, Palette, Store,
-} from "lucide-react-native";
+import { BrandLoader } from "../components/BrandLoader";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../lib/theme";
+import { Image, Clock, CheckCircle, XCircle, Calendar } from "lucide-react-native";
+import { WEB_API_URL } from "../lib/auth";
 
-// ── Card design tokens (mirrors the web PromoCardGenerator) ──
-type CardStyleKey = "aurora" | "neon" | "sunset" | "ocean" | "royal";
-type FormatKey = "status" | "story" | "post";
-
-const CARD_STYLES: Record<CardStyleKey, {
-  label: string; bgTop: string; bgBot: string; accent: string; accentEnd: string;
-  orb1: string; orb2: string; orb3: string; text: string; subtext: string;
-}> = {
-  aurora: { label: "Aurora", bgTop: "#0b0820", bgBot: "#050410", accent: "#a855f7", accentEnd: "#06b6d4", orb1: "#7c3aed", orb2: "#0ea5e9", orb3: "#d946ef", text: "#f8fafc", subtext: "#cbd5e1" },
-  neon:   { label: "Neon",   bgTop: "#1a0612", bgBot: "#080406", accent: "#f43f5e", accentEnd: "#f59e0b", orb1: "#ef4444", orb2: "#f59e0b", orb3: "#ec4899", text: "#fafafa", subtext: "#d4d4d8" },
-  sunset: { label: "Sunset", bgTop: "#1f0814", bgBot: "#0a0306", accent: "#f97316", accentEnd: "#ec4899", orb1: "#f97316", orb2: "#ec4899", orb3: "#8b5cf6", text: "#fff7ed", subtext: "#fed7aa" },
-  ocean:  { label: "Ocean",  bgTop: "#04101f", bgBot: "#020812", accent: "#06b6d4", accentEnd: "#3b82f6", orb1: "#06b6d4", orb2: "#3b82f6", orb3: "#8b5cf6", text: "#ecfeff", subtext: "#a5f3fc" },
-  royal:  { label: "Royal",  bgTop: "#160624", bgBot: "#08030f", accent: "#c084fc", accentEnd: "#f472b6", orb1: "#a855f7", orb2: "#f472b6", orb3: "#818cf8", text: "#faf5ff", subtext: "#ddd6fe" },
-};
-
-const FORMATS: Record<FormatKey, { label: string; ratio: number; icon: string }> = {
-  status: { label: "Status 9:16", ratio: 9 / 16, icon: "📱" },
-  story:  { label: "Story 9:16",  ratio: 9 / 16, icon: "📸" },
-  post:   { label: "Post 1:1",    ratio: 1,      icon: "🖼️" },
-};
+interface PromoPost {
+  id: string;
+  store_id: string;
+  store_name?: string;
+  product_id: string;
+  product_name?: string;
+  product_image?: string | null;
+  platform: string;
+  status: string;
+  caption?: string | null;
+  posted_at?: string | null;
+  scheduled_at?: string | null;
+  created_at: string;
+  source?: string;
+}
 
 export default function PromoCardsScreen() {
   const styles = useThemeStyles(makeStyles);
   const router = useRouter();
-  const { store } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [selectedId, setSelectedId] = useState("");
-  const [styleKey, setStyleKey] = useState<CardStyleKey>("aurora");
-  const [formatKey, setFormatKey] = useState<FormatKey>("status");
+  const [posts, setPosts] = useState<PromoPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sharing, setSharing] = useState(false);
-  const cardRef = useRef<View>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`${WEB_API_URL}/api/admin/promo/posts`);
+      if (res.ok) {
+        const data = await res.json();
+        setPosts((data.posts || []).filter((p: any) =>
+          p.source === "promo_posts" ||
+          p.store_name === "Unknown" || p.store_name
+        ));
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
-    if (!store) return;
+    let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("products").select("*").eq("store_id", store!.id).order("created_at", { ascending: false });
-      const items = (data ?? []) as Product[];
-      setProducts(items);
-      if (items.length > 0) setSelectedId(items[0].id);
-      setLoading(false);
+      try {
+        const res = await fetch(`${WEB_API_URL}/api/admin/promo/posts`);
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setPosts((data.posts || []).filter((p: any) =>
+            p.source === "promo_posts" ||
+            p.source === "scheduled_promo_posts"
+          ));
+        }
+      } catch {}
     })();
-  }, [store?.id]);
+    return () => { cancelled = true; };
+  }, []);
 
-  const product = products.find((p) => p.id === selectedId);
-  const style = CARD_STYLES[styleKey];
-  const format = FORMATS[formatKey];
-
-  const shareCard = async () => {
-    if (!cardRef.current || sharing) return;
-    setSharing(true);
+  const onRefresh = async () => {
+    setRefreshing(true);
     try {
-      const uri = await captureRef(cardRef, { format: "png", quality: 1 });
-      const caption = [
-        `🔥 *${product?.name}*`,
-        ``,
-        `💰 Price: *₦${product?.price.toLocaleString()}*`,
-        `🏪 Store: *${store?.name}*`,
-        ``,
-        `✅ Available now — order via WhatsApp!`,
-      ].join("\n");
-
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: "Share promo card" });
-      } else if (Platform.OS === "ios") {
-        await Share.share({ url: uri, message: caption });
-      } else {
-        alert("Sharing unavailable", "Sharing isn't supported on this device.");
+      const res = await fetch(`${WEB_API_URL}/api/admin/promo/posts`);
+      if (res.ok) {
+        const data = await res.json();
+        setPosts((data.posts || []).filter((p: any) =>
+          p.source === "promo_posts" || p.source === "scheduled_promo_posts"
+        ));
       }
-    } catch (e) {
-      alert("Share failed", "Could not generate the card image. Try again.");
-    } finally {
-      setSharing(false);
-    }
+    } catch {}
+    setRefreshing(false);
   };
 
-  const cardWidth = "100%";
+  if (loading) return <BrandLoader label="Loading promos" />;
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <ArrowLeft size={18} color={Colors.purple} />
+          <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Promo Cards</Text>
-          <Text style={styles.subtitle}>Create & share product cards</Text>
-        </View>
+        <Text style={styles.title}>Promo Cards</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Product selector */}
-        <Text style={styles.label}>Select product</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.productRow}>
-          {products.map((p) => (
-            <TouchableOpacity
-              key={p.id}
-              style={[styles.productChip, selectedId === p.id && { borderColor: Colors.purple, backgroundColor: Colors.purpleDim }]}
-              onPress={() => setSelectedId(p.id)}
-            >
-              {p.image_url ? (
-                <Image source={{ uri: p.image_url }} style={styles.chipImage} />
-              ) : (
-                <View style={[styles.chipImage, { justifyContent: "center", alignItems: "center" }]}>
-                  <Package size={14} color={Colors.textMuted} />
-                </View>
-              )}
-              <View style={{ flexShrink: 1 }}>
-                <Text style={styles.chipName} numberOfLines={1}>{p.name}</Text>
-                <Text style={styles.chipPrice}>₦{p.price.toLocaleString()}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-          {products.length === 0 && !loading && (
-            <View style={styles.noProducts}>
-              <Text style={{ color: Colors.textMuted, fontSize: FontSize.sm }}>Add a product first to make a promo card.</Text>
-            </View>
-          )}
-        </ScrollView>
-
-        {/* Controls: format + style */}
-        <View style={styles.controlsRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}><Layout size={10} color={Colors.purple} /> Format</Text>
-            <View style={styles.chipRow}>
-              {(Object.entries(FORMATS) as [FormatKey, (typeof FORMATS)[FormatKey]][]).map(([key, f]) => (
-                <TouchableOpacity
-                  key={key}
-                  style={[styles.optionChip, formatKey === key && { borderColor: style.accent, backgroundColor: style.accent + "18" }]}
-                  onPress={() => setFormatKey(key)}
-                >
-                  <Text style={[styles.optionChipText, formatKey === key && { color: style.accent }]}>
-                    {f.icon} {f.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
-
-        <Text style={styles.label}><Palette size={10} color={Colors.purple} /> Style</Text>
-        <View style={styles.chipRow}>
-          {(Object.entries(CARD_STYLES) as [CardStyleKey, (typeof CARD_STYLES)[CardStyleKey]][]).map(([key, s]) => (
-            <TouchableOpacity
-              key={key}
-              style={[styles.styleChip, styleKey === key && { borderColor: s.accent }]}
-              onPress={() => setStyleKey(key)}
-            >
-              <View style={[styles.dot, { backgroundColor: s.accent }]} />
-              <Text style={[styles.styleChipText, styleKey === key && { color: s.accent }]}>{s.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* ── Card preview (captured for sharing) ── */}
-        {product ? (
-          <View style={styles.cardWrap}>
-            <View collapsable={false} ref={cardRef} style={{ width: cardWidth, aspectRatio: format.ratio, alignSelf: "center" }}>
-              <LinearGradient colors={[style.bgTop, style.bgBot]} style={StyleSheet.absoluteFill} />
-              {/* glass panel */}
-              <View style={styles.panel}>
-                {/* top: avatar + store + exclusive pill */}
-                <View style={styles.cardTop}>
-                  <LinearGradient colors={[style.accent, style.accentEnd]} style={styles.avatar}>
-                    <Text style={styles.avatarText}>{(store?.name || "S").charAt(0).toUpperCase()}</Text>
-                  </LinearGradient>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.storeName, { color: style.text }]} numberOfLines={1}>{store?.name}</Text>
-                    <Text style={[styles.storeSub, { color: style.subtext }]}>StallHq Store</Text>
-                  </View>
-                  <View style={[styles.exclusivePill, { backgroundColor: hexA(style.accent, 0.3) }]}>
-                    <Text style={styles.exclusiveText}>EXCLUSIVE</Text>
-                  </View>
-                </View>
-
-                {/* product image */}
-                <View style={{ alignItems: "center", marginTop: "2%" }}>
-                  {product.image_url ? (
-                    <Image source={{ uri: product.image_url }} style={[styles.productImg, { borderRadius: 16, borderColor: hexA(style.accent, 0.5) }]} />
-                  ) : (
-                    <View style={[styles.productImg, styles.productImgPlaceholder, { borderColor: hexA(style.accent, 0.4) }]}>
-                      <Package size={40} color={style.accent} />
-                    </View>
-                  )}
-                </View>
-
-                {/* name + price */}
-                <View style={styles.cardBody}>
-                  <Text style={[styles.cardName, { color: style.text, textShadowColor: style.accent }]} numberOfLines={2}>
-                    {product.name.toUpperCase()}
-                  </Text>
-                  <Text style={[styles.cardPriceEyebrow, { color: style.subtext }]}>OFFER PRICE</Text>
-                  <Text style={[styles.cardPrice, { color: style.accentEnd }]}>
-                    ₦{product.price.toLocaleString()}
-                  </Text>
-                  {!!product.description && (
-                    <Text style={[styles.cardDesc, { color: style.subtext }]} numberOfLines={2}>{product.description}</Text>
-                  )}
-                  {!!product.category && (
-                    <View style={[styles.categoryChip, { backgroundColor: hexA(style.accent, 0.16) }]}>
-                      <Text style={[styles.categoryText, { color: style.accent }]}>{product.category.toUpperCase()}</Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* bottom CTA */}
-                <View style={styles.cardBottom}>
-                  <Text style={[styles.orderEyebrow, { color: hexA(style.text, 0.7) }]}>ORDER NOW ON</Text>
-                  <LinearGradient colors={[style.accent, style.accentEnd, style.orb3]} style={styles.ctaBtn}>
-                    <Text style={styles.ctaText}>Shop Now</Text>
-                  </LinearGradient>
-                  <Text style={[styles.cardUrl, { color: hexA(style.subtext, 0.65) }]}>
-                    stallhq.com/{store?.slug}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Share */}
-            <TouchableOpacity style={styles.shareBtn} onPress={shareCard} disabled={sharing} activeOpacity={0.8}>
-              {sharing ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <Share2 size={16} color="#fff" />
-                  <Text style={styles.shareBtnText}>Share card</Text>
-                </>
-              )}
-            </TouchableOpacity>
-            <Text style={styles.shareHint}>Share to WhatsApp, Instagram or save to your gallery</Text>
+      <ScrollView contentContainerStyle={styles.scroll} refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.purple} />
+      }>
+        {posts.length === 0 ? (
+          <View style={styles.empty}>
+            <Calendar size={32} color={Colors.textMuted} />
+            <Text style={styles.emptyTitle}>No promo cards yet</Text>
+            <Text style={styles.emptySub}>Post or schedule promo cards for your products from the web dashboard.</Text>
           </View>
         ) : (
-          !loading && (
-            <View style={styles.noProductCard}>
-              <Sparkles size={32} color={Colors.textMuted} />
-              <Text style={{ color: Colors.textSecondary, textAlign: "center", marginTop: Spacing.md }}>
-                Select a product to preview its promo card
-              </Text>
-            </View>
-          )
+          posts.map((p) => {
+            const posted = p.source === "promo_posts" || p.posted_at;
+            const statusColor = p.status === "posted"
+              ? Colors.green
+              : p.status === "failed"
+              ? Colors.red
+              : Colors.amber;
+            const statusLabel = posted ? (p.status === "posted" ? "Posted" : "Failed") : "Scheduled";
+
+            return (
+              <View key={p.id} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.productName} numberOfLines={1}>{p.product_name || "Unknown product"}</Text>
+                    <Text style={styles.storeName}>{p.store_name || "Unknown store"}</Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: statusColor + "18", borderColor: statusColor + "44" }]}>
+                    <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
+                  </View>
+                </View>
+
+                {p.product_image ? (
+                  <Image source={{ uri: p.product_image }} style={styles.productThumb} />
+                ) : (
+                  <View style={[styles.productThumb, { backgroundColor: Colors.bgSecondary }]}>
+                    <Text style={{ color: Colors.textMuted }}>{p.product_name?.[0]?.toUpperCase() || "?"}</Text>
+                  </View>
+                )}
+
+                <View style={styles.cardMeta}>
+                  <View style={styles.metaRow}>
+                    <View style={styles.metaItem}>
+                      <Text style={styles.metaLabel}>Platform</Text>
+                      <Text style={styles.metaValue}>{p.platform}</Text>
+                    </View>
+                    <View style={styles.metaItem}>
+                      <Text style={styles.metaLabel}>Source</Text>
+                      <Text style={[styles.metaValue, { color: Colors.textMuted }]}>
+                        {p.source === "scheduled_promo_posts" ? "scheduled" : "posted"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {posted ? (
+                    (p.posted_at || p.created_at) && (
+                      <View style={styles.metaRow}>
+                        <Text style={styles.metaValue}>
+                          {new Date(p.posted_at || p.created_at).toLocaleString(undefined, {
+                            month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+                          })}
+                        </Text>
+                      </View>
+                    )
+                  ) : (
+                    <View style={styles.metaRow}>
+                      <Text style={[styles.metaValue, { color: Colors.textMuted }]}>
+                        {p.scheduled_at
+                          ? new Date(p.scheduled_at).toLocaleString(undefined, {
+                              month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+                            })
+                          : "pending"}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-/** rgba() string helper from a hex color */
-function hexA(hex: string, alpha: number): string {
-  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!m) return hex;
-  return `rgba(${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)},${alpha})`;
-}
-
-const makeStyles = () => StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
-  header: {
-    flexDirection: "row", alignItems: "center", gap: Spacing.md,
-    padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
-  },
-  backBtn: { width: 36, height: 36, borderRadius: BorderRadius.md, backgroundColor: Colors.bgCard, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: Colors.borderSubtle },
-  title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
-  subtitle: { fontSize: FontSize.xs, color: Colors.textMuted },
-  scroll: { padding: Spacing.lg, paddingBottom: 60 },
-  label: {
-    fontSize: FontSize.xs, fontWeight: "600", color: Colors.textSecondary,
-    textTransform: "uppercase", letterSpacing: 0.04, marginBottom: Spacing.sm, marginTop: Spacing.md,
-    flexDirection: "row", alignItems: "center", gap: 4,
-  },
-  productRow: { gap: Spacing.sm, paddingBottom: 4 },
-  productChip: {
-    flexDirection: "row", alignItems: "center", gap: Spacing.sm,
-    backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
-    borderRadius: BorderRadius.lg, padding: Spacing.sm, maxWidth: 220,
-  },
-  chipImage: { width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: Colors.bgSecondary },
-  chipName: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.text, maxWidth: 130 },
-  chipPrice: { fontSize: FontSize.xs, color: Colors.green, fontWeight: "700" },
-  noProducts: { padding: Spacing.lg },
-  chipRow: { flexDirection: "row", gap: Spacing.sm, flexWrap: "wrap" },
-  optionChip: {
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: BorderRadius.md,
-    backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
-  },
-  optionChipText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textSecondary },
-  styleChip: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: BorderRadius.md,
-    backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
-  },
-  dot: { width: 10, height: 10, borderRadius: 5 },
-  styleChipText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textSecondary },
-  controlsRow: { flexDirection: "row", gap: Spacing.lg },
-  cardWrap: { marginTop: Spacing.lg },
-  panel: {
-    flex: 1, margin: 6, borderRadius: 18, overflow: "hidden",
-    backgroundColor: "Colors.borderSubtle", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",
-    padding: 14, justifyContent: "space-between",
-  },
-  cardTop: { flexDirection: "row", alignItems: "center", gap: 8 },
-  avatar: { width: 30, height: 30, borderRadius: 15, justifyContent: "center", alignItems: "center" },
-  avatarText: { color: "#fff", fontWeight: "800", fontSize: 13 },
-  storeName: { fontSize: 13, fontWeight: "700" },
-  storeSub: { fontSize: 9, fontWeight: "500" },
-  exclusivePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 },
-  exclusiveText: { color: "#fff", fontWeight: "800", fontSize: 8 },
-  productImg: { width: "86%", aspectRatio: 1.1, borderWidth: 1.5 },
-  productImgPlaceholder: {
-    backgroundColor: "Colors.borderSubtle", justifyContent: "center", alignItems: "center",
-  },
-  cardBody: { alignItems: "center", marginTop: 6 },
-  cardName: {
-    fontSize: 18, fontWeight: "900", textAlign: "center",
-    textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12,
-  },
-  cardPriceEyebrow: { fontSize: 7, fontWeight: "700", letterSpacing: 1, marginTop: 8 },
-  cardPrice: { fontSize: 17, fontWeight: "900", marginTop: 2 },
-  cardDesc: { fontSize: 8.5, textAlign: "center", marginTop: 4, paddingHorizontal: 8 },
-  categoryChip: { paddingHorizontal: 10, paddingVertical: 2, borderRadius: 99, marginTop: 6 },
-  categoryText: { fontSize: 7, fontWeight: "700", letterSpacing: 0.5 },
-  cardBottom: { alignItems: "center" },
-  orderEyebrow: { fontSize: 7, fontWeight: "700", letterSpacing: 1.5, marginBottom: 4 },
-  ctaBtn: { borderRadius: 999, paddingVertical: 8, paddingHorizontal: 40, alignItems: "center" },
-  ctaText: { color: "#fff", fontWeight: "800", fontSize: 13 },
-  cardUrl: { fontSize: 8.5, fontWeight: "500", marginTop: 6 },
-  shareBtn: {
-    marginTop: Spacing.xl, backgroundColor: Colors.purple, borderRadius: BorderRadius.lg,
-    paddingVertical: 14, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: Spacing.sm,
-  },
-  shareBtnText: { color: "#fff", fontSize: FontSize.md, fontWeight: "700" },
-  shareHint: { textAlign: "center", color: Colors.textMuted, fontSize: FontSize.xs, marginTop: Spacing.sm },
-  noProductCard: {
-    backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
-    borderRadius: BorderRadius.lg, padding: Spacing.xxxl, alignItems: "center", marginTop: Spacing.xl,
-  },
-});
+const makeStyles = () => {
+  const s = useThemeStyles(() => ({
+    container: { flex: 1, backgroundColor: Colors.bg },
+    header: {
+      flexDirection: "row", alignItems: "center", padding: Spacing.lg, paddingBottom: Spacing.sm,
+      backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
+    },
+    backBtn: { padding: Spacing.xs },
+    backText: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.purple },
+    title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginHorizontal: Spacing.md },
+    scroll: { padding: Spacing.lg, paddingTop: 0 },
+    empty: { alignItems: "center", padding: Spacing.xxxl * 2, gap: Spacing.sm },
+    emptyTitle: { fontSize: FontSize.lg, fontWeight: "600", color: Colors.textSecondary },
+    emptySub: { fontSize: FontSize.sm, color: Colors.textMuted, textAlign: "center" },
+    card: {
+      backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
+      borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
+    },
+    cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.sm },
+    productName: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text, flex: 1, marginRight: Spacing.sm },
+    storeName: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+    statusBadge: {
+      paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.md,
+      alignSelf: "flex-start", flexShrink: 1,
+    },
+    statusText: { fontSize: FontSize.xs, fontWeight: "600", textTransform: "capitalize" },
+    productThumb: {
+      width: "100%", height: 100, borderRadius: BorderRadius.md,
+      backgroundColor: Colors.bgSecondary, alignItems: "center", justifyContent: "center",
+      marginBottom: Spacing.md,
+    },
+    cardMeta: { paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
+    metaRow: { flexDirection: "row", alignItems: "center", gap: Spacing.md, marginBottom: Spacing.xs },
+    metaItem: { flex: 1 },
+    metaLabel: { fontSize: FontSize.xs, color: Colors.textMuted, textTransform: "uppercase", letterSpacing: 0.05, marginBottom: 2 },
+    metaValue: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.text },
+  }));
+  return s;
+};

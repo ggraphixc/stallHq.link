@@ -5,6 +5,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   BellRing, Send, Trash2, RefreshCw, CalendarClock, Zap, Users,
+  Sparkles, Wand2, Repeat,
 } from "lucide-react";
 
 interface PushContent {
@@ -35,6 +36,58 @@ const TYPES = [
   { value: "business", label: "Business idea / news" },
 ];
 
+// ─── Seasonal content packs (curated starting corpus) ──────────────────────
+const SEASONAL_PACKS: Record<string, { title: string; items: { title: string; body: string; type: string }[] }> = {
+  easter: {
+    title: "Easter promotion",
+    items: [
+      { title: "🐣 New arrivals for the season", body: "Fresh picks just landed — tap to browse the new collection on your store.", type: "promo" },
+      { title: "Spring cleaning sale", body: "Up to 20% off selected items this week only. Promote your bestsellers.", type: "promo" },
+      { title: "Tip: Stock your bestsellers", body: "Vendors who keep 3-5 bestsellers visible get more orders. Feature them in your store header.", type: "motivation" },
+    ],
+  },
+  mothersday: {
+    title: "Mother's Day",
+    items: [
+      { title: "🌸 Mother's Day gift ideas", body: "Curated picks perfect for Mother's Day — share them with your customers now.", type: "promo" },
+      { title: "Last call for shipping", body: "Order by Thursday to reach customers before the weekend. Remind your buyers.", type: "content" },
+      { title: "Tip: Bundle products", body: "Bundle 2-3 related items at a discount — higher order value, happier buyers.", type: "motivation" },
+    ],
+  },
+  ramadan: {
+    title: "Ramadan",
+    items: [
+      { title: "🕌 Ramadan bundle deals", body: "Bundle your best-selling items for Iftar or Suhoor — great way to lift order value.", type: "promo" },
+      { title: "Night market hours", body: "Update your store hours for Ramadan nights if you're open later — customers appreciate the heads-up.", type: "content" },
+      { title: "Tip: Send before Iftar", body: "Send promotional messages 1-2 hours before Iftar when people are planning their evening.", type: "motivation" },
+    ],
+  },
+  blackfriday: {
+    title: "Black Friday",
+    items: [
+      { title: "🎉 Black Friday deals", body: "Announce your biggest sale of the year. Limited-time offers create urgency.", type: "promo" },
+      { title: "Countdown to the sale", body: "Post a countdown a few days before — builds anticipation and early interest.", type: "content" },
+      { title: "Tip: Inventory check", body: "Before a big sale, make sure your top deals are in stock and priced correctly.", type: "motivation" },
+    ],
+  },
+  newyear: {
+    title: "New Year",
+    items: [
+      { title: "✨ New Year, new you", body: "January is the biggest shopping reset of the year. Refresh your store with new products.", type: "content" },
+      { title: "Resolution-themed bundles", body: "Group products around popular resolutions — fitness, self-care, productivity.", type: "promo" },
+      { title: "Tip: Loyalty over discounts", body: "A thank-you note to repeat buyers beats a deep discount every time.", type: "motivation" },
+    ],
+  },
+  independence: {
+    title: "Independence Day",
+    items: [
+      { title: "🇳🇬 Independence Day sales", body: "Celebrate with a special offer — patriotic themes perform well this week.", type: "promo" },
+      { title: "Long weekend hours", body: "Let customers know your operating hours for the long weekend.", type: "content" },
+      { title: "Tip: Post early", body: "Post your holiday promo at least 3 days ahead — people plan their weekend purchases early.", type: "motivation" },
+    ],
+  },
+};
+
 const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   scheduled: { bg: "rgba(245,158,11,0.1)", color: "var(--glow-amber)" },
   sent: { bg: "rgba(34,197,94,0.1)", color: "var(--glow-green)" },
@@ -54,21 +107,71 @@ export default function AdminPush() {
   const [sending, setSending] = useState(false);
   const [items, setItems] = useState<PushContent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [seasonalPack, setSeasonalPack] = useState("");
+  const [selectedSeasonalItems, setSelectedSeasonalItems] = useState<number[]>([]);
+  const [repeatCadence, setRepeatCadence] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/push");
-      if (res.ok) setItems(await res.json());
-    } catch { showError("Failed to load pushes"); }
+      if (res.ok) {
+        const data = await res.json();
+        setItems(data.items || []);
+      }
+    } catch {}
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
 
-  const sendPush = async (e: React.FormEvent) => {
+  const generateAiTitle = async () => {
+    setAiGenerating(true);
+    try {
+      const { title: aiTitle } = await fetchAiContent();
+      if (!title) setTitle(aiTitle || "");
+    } finally { setAiGenerating(false); }
+  };
+
+  const generateAiBody = async () => {
+    setAiGenerating(true);
+    try {
+      const { body: aiBody } = await fetchAiContent();
+      if (!message) setMessage(aiBody || "");
+    } finally { setAiGenerating(false); }
+  };
+
+  const fetchAiContent = async (): Promise<{ title: string; body: string }> => {
+    setAiGenerating(true);
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: `Write a short push notification for a small business marketplace called stallHq. Type: ${type}. Audience: ${audience}. Message should be under 120 characters and feel friendly and helpful. Title should be under 50 characters and catchy. Output JSON: { title, body }.`,
+          temperature: 0.7,
+          max_tokens: 200,
+        }),
+      });
+      if (!res.ok) throw new Error("AI generation failed");
+      const data = await res.json();
+      return {
+        title: typeof data.title === "string" ? data.title : title,
+        body: typeof data.body === "string" ? data.body : message,
+      };
+    } catch {
+      return { title, body: message };
+    }
+    finally { setAiGenerating(false); }
+  };
+
+  const submitPush = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !message.trim()) return;
+    if (!title.trim() || !message.trim()) {
+      showError("Title and message are required.");
+      return;
+    }
     setSending(true);
     try {
       const res = await fetch("/api/push", {
@@ -81,6 +184,8 @@ export default function AdminPush() {
           audience,
           sendNow,
           sendAt: sendNow ? undefined : scheduleAt,
+          repeatCadence: repeatCadence || undefined,
+          seasonalPack: seasonalPack || undefined,
         }),
       });
       if (!res.ok) {
@@ -89,7 +194,7 @@ export default function AdminPush() {
       }
       const created = await res.json();
       showSuccess(sendNow ? `Push sent to ${created.recipients_count || 0} device(s)` : "Scheduled — cron sends it when due");
-      setTitle(""); setMessage(""); setScheduleAt("");
+      setTitle(""); setMessage(""); setScheduleAt(""); setType("content"); setAudience("all"); setSeasonalPack(""); setSelectedSeasonalItems([]); setRepeatCadence("");
       await load();
     } catch (err: any) {
       showError(err.message || "Failed to send push");
@@ -137,7 +242,7 @@ export default function AdminPush() {
       </div>
 
       {/* Composer */}
-      <form onSubmit={sendPush} style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", padding: "1.25rem", marginBottom: "1.5rem" }}>
+      <form onSubmit={submitPush} style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.75rem", padding: "1.25rem", marginBottom: "1.5rem" }}>
         <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.375rem" }}>
           <Send size={14} style={{ color: "var(--glow-purple)" }} /> New push
         </div>
@@ -155,9 +260,124 @@ export default function AdminPush() {
           </div>
         </div>
 
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+          <button type="button" onClick={generateAiTitle} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.625rem 0.875rem", fontSize: "0.75rem", borderRadius: "0.5rem", border: "1px solid rgba(168,133,247,0.25)", background: "rgba(168,133,247,0.08)", color: "var(--glow-purple)", cursor: "pointer" }} disabled={sending}>
+            <Sparkles size={12} /> Generate title
+          </button>
+          <button type="button" onClick={generateAiBody} style={{ flex: 2, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.625rem 0.875rem", fontSize: "0.75rem", borderRadius: "0.5rem", border: "1px solid rgba(168,133,247,0.25)", background: "rgba(168,133,247,0.08)", color: "var(--glow-purple)", cursor: "pointer" }} disabled={sending}>
+            <Wand2 size={12} /> Write message for me
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem", alignItems: "center" }}>
+          <Sparkles size={12} style={{ color: "var(--glow-purple)", flexShrink: 0 }} />
+          <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", flex: 1 }}>
+            Picks a title + writes a short message for the selected type. You can edit both before sending.
+          </span>
+        </div>
+
         <div style={{ marginBottom: "0.75rem" }}>
           <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Message *</label>
           <textarea className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box", minHeight: "5rem", resize: "vertical" }} placeholder="Short, punchy message (shows on the lock screen)" value={message} onChange={(e) => setMessage(e.target.value)} required />
+        </div>
+
+        {/* ─── Advanced composer: seasonal packs + repeat ──────────────────── */}
+        <div style={{ marginBottom: "0.75rem", padding: "0.75rem", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "0.5rem" }}>
+          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--glow-purple)", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.375rem" }}>
+            <Sparkles size={12} /> Advanced options
+          </div>
+
+          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "0.6875rem", color: "var(--text-secondary)", marginRight: "0.25rem" }}>Seasonal pack:</span>
+            <select
+              className="ambient-input"
+              style={{ padding: "0.375rem 0.625rem", fontSize: "0.75rem", borderRadius: "0.375rem", background: "var(--bg-primary)", boxSizing: "border-box" }}
+              value={seasonalPack}
+              onChange={(e) => setSeasonalPack(e.target.value)}
+            >
+              <option value="">— pick a pack —</option>
+              {Object.entries(SEASONAL_PACKS).map(([key, pack]) => (
+                <option key={key} value={key}>{pack.title}</option>
+              ))}
+            </select>
+          </div>
+
+          {Object.entries(SEASONAL_PACKS).map(([key, pack]) => (
+            <div key={key} style={{ display: "flex", flexDirection: "column", gap: "0.5rem", padding: "0.625rem 0.75rem", background: "var(--bg-primary)", borderRadius: "0.375rem", marginBottom: "0.5rem", borderLeft: seasonalPack === key ? "2px solid var(--glow-purple)" : "1px solid var(--border-subtle)" }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--glow-purple)", marginBottom: "0.25rem" }}>{pack.title}</span>
+              {pack.items.map((item, i) => (
+                <label key={i} style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start", cursor: "pointer", padding: "0.25rem 0" }}>
+              <input
+                type="checkbox"
+                checked={selectedSeasonalItems.includes(i)}
+                onChange={(e) => {
+                  if (e.target.checked) setSelectedSeasonalItems((prev) => [...prev, i]);
+                  else setSelectedSeasonalItems((prev) => prev.filter((x) => x !== i));
+                }}
+                    style={{ marginTop: 2, accentColor: "var(--glow-purple)", flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1, fontSize: "0.75rem" }}>
+                    <span style={{ fontWeight: 600, color: "var(--text-primary)", display: "block", marginBottom: "0.125rem" }}>{item.title}</span>
+                    <span style={{ color: "var(--text-muted)", display: "block", lineHeight: 1.4 }}>{item.body}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          ))}
+
+          {selectedSeasonalItems.length > 0 && (
+            <div style={{ display: "flex", gap: "0.5rem", borderTopWidth: 1, borderTopColor: "var(--border-subtle)", paddingTop: "0.5rem", marginTop: "0.25rem" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const pack = SEASONAL_PACKS[seasonalPack];
+                  if (!pack) return;
+                  for (const i of selectedSeasonalItems) {
+                    const item = pack.items[i];
+                    if (item) {
+                      if (!title) setTitle(item.title);
+                      if (!message) setMessage(item.body);
+                    }
+                  }
+                  setSending(true);
+                  fetchAiContent()
+                    .then(({ title: aiTitle, body: aiBody }) => {
+                      if (!title && aiTitle) setTitle(aiTitle);
+                      if (!message && aiBody) setMessage(aiBody);
+                    })
+                    .finally(() => setSending(false));
+                }}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.5rem 0.75rem", fontSize: "0.75rem", borderRadius: "0.5rem", background: "var(--glow-purple)", color: "#fff", cursor: "pointer" }}
+              >
+                <Sparkles size={12} /> Insert seasonal titles + AI polish
+              </button>
+            </div>
+          )}
+
+          {/* Repeat cadence */}
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem" }}>
+            <Repeat size={12} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+            <span style={{ fontSize: "0.6875rem", color: "var(--text-secondary)" }}>Repeat this push</span>
+            <select
+              className="ambient-input"
+              style={{ padding: "0.375rem 0.625rem", fontSize: "0.75rem", borderRadius: "0.375rem", background: "var(--bg-primary)", boxSizing: "border-box", flex: 1, minWidth: "8rem" }}
+              value={repeatCadence}
+              onChange={(e) => setRepeatCadence(e.target.value)}
+            >
+              <option value="">One-time</option>
+              <option value="daily-0800">Daily at 08:00</option>
+              <option value="daily-1200">Daily at 12:00</option>
+              <option value="daily-1800">Daily at 18:00</option>
+              <option value="weekly-mon">Weekly on Monday</option>
+              <option value="weekly-fri">Weekly on Friday</option>
+            </select>
+          </div>
+
+          {repeatCadence && (
+            <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
+              When the cadence is set, the system will send this same push on schedule until you cancel it.
+            </div>
+          )}
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
@@ -187,7 +407,7 @@ export default function AdminPush() {
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button type="submit" disabled={sending || (!sendNow && !scheduleAt)} className="glow-button" style={{ padding: "0.5rem 1.25rem", fontSize: "0.75rem", opacity: sending ? 0.5 : 1 }}>
+          <button type="submit" disabled={sending || (!sendNow && !scheduleAt && !repeatCadence)} className="glow-button" style={{ padding: "0.5rem 1.25rem", fontSize: "0.75rem", opacity: sending ? 0.5 : 1 }}>
             {sending ? "Sending..." : sendNow ? "Send Push Now" : "Schedule Push"}
           </button>
         </div>

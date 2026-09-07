@@ -143,7 +143,7 @@ const makeStyles = () => StyleSheet.create({
   filterTextActive: { color: Colors.purple },
   list: { padding: Spacing.lg, paddingTop: 0 },
   orderCard: {
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
   },
   orderHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: Spacing.sm },
@@ -158,6 +158,6 @@ const makeStyles = () => StyleSheet.create({
   statusText: { fontSize: FontSize.xs, fontWeight: "600", textTransform: "capitalize" },
   phoneRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   phone: { fontSize: FontSize.xs, color: Colors.textMuted },
-  emptyState: { alignItems: "center", backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xxxl * 2 },
+  emptyState: { alignItems: "center", backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xxxl * 2 },
   emptyText: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.textSecondary },
 });

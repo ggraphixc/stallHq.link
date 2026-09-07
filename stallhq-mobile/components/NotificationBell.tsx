@@ -241,7 +241,7 @@ const makeStyles = () => StyleSheet.create({
     backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.md,
   },
-  cardUnread: { backgroundColor: "Colors.purpleTint", borderColor: "rgba(168,85,247,0.15)" },
+  cardUnread: { backgroundColor: Colors.purpleTint, borderColor: "rgba(168,85,247,0.15)" },
   dot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
   cardBody: { flex: 1 },
   cardTitle: { fontSize: FontSize.sm, fontWeight: "700", color: Colors.text },

@@ -323,7 +323,7 @@ const makeStyles = () => StyleSheet.create({
   },
   browseBtnText: { color: Colors.purple, fontWeight: "700", fontSize: FontSize.sm },
   storeGroup: {
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.xl, padding: Spacing.lg, marginBottom: Spacing.lg,
   },
   storeGroupHeader: {
@@ -359,7 +359,7 @@ const makeStyles = () => StyleSheet.create({
   orderBtnText: { color: "#fff", fontSize: FontSize.sm, fontWeight: "700" },
   totalBar: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.xl, padding: Spacing.lg, marginBottom: 40,
   },
   totalLabel: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text },

@@ -560,7 +560,7 @@ const makeStyles = () => StyleSheet.create({
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm, marginBottom: Spacing.lg },
   statCard: {
     width: "48%", flexGrow: 1,
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg,
   },
   statRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.sm },
@@ -571,7 +571,7 @@ const makeStyles = () => StyleSheet.create({
 
   // Plan
   planCard: {
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.lg,
   },
   planRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.md },
@@ -613,7 +613,7 @@ const makeStyles = () => StyleSheet.create({
   },
   actionBtn: {
     width: "48%", flexGrow: 1,
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, paddingVertical: Spacing.lg, paddingHorizontal: Spacing.sm,
     alignItems: "center", gap: 8,
   },
@@ -622,7 +622,7 @@ const makeStyles = () => StyleSheet.create({
   // Discover stores card
   discoverCard: {
     flexDirection: "row", alignItems: "center", gap: Spacing.md,
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.xl,
   },
   discoverIcon: {
@@ -656,7 +656,7 @@ const makeStyles = () => StyleSheet.create({
 
   // Empty
   emptyCard: {
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.xxxl, alignItems: "center",
   },
   emptyIcon: {
@@ -670,7 +670,7 @@ const makeStyles = () => StyleSheet.create({
   // Orders
   orderCard: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
   },
   orderLeft: {},

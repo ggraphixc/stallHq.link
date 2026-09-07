@@ -133,7 +133,7 @@ const makeStyles = () => StyleSheet.create({
     overflow: "hidden",
   },
   glow: { position: "absolute", borderRadius: 999, opacity: 0.5 },
-  glowTop: { width: 380, height: 380, top: -160, left: -120, backgroundColor: "Colors.purpleTint" },
+  glowTop: { width: 380, height: 380, top: -160, left: -120, backgroundColor: Colors.purpleTint },
   glowBottom: { width: 340, height: 340, bottom: -150, right: -110, backgroundColor: "rgba(6,182,212,0.05)" },
   markWrap: {
     width: 58,
@@ -187,7 +187,7 @@ const makeStyles = () => StyleSheet.create({
     borderRadius: BorderRadius.full,
     backgroundColor: "rgba(168,85,247,0.12)",
     borderWidth: 1,
-    borderColor: "Colors.borderGlow",
+    borderColor: Colors.borderGlow,
   },
   badgeText: { fontSize: 11, fontWeight: "700", color: Colors.purple, letterSpacing: 0.3 },
   title: { fontSize: 19, fontWeight: "800", color: Colors.text, letterSpacing: -0.3 },

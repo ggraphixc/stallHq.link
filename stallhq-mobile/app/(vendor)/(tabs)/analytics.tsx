@@ -280,13 +280,13 @@ const makeStyles = () => StyleSheet.create({
   periodTextActive: { color: Colors.purple },
   heroRow: { flexDirection: "row", gap: Spacing.sm, marginBottom: Spacing.sm },
   heroCard: {
-    flex: 1, backgroundColor: "Colors.glass", borderWidth: 1,
+    flex: 1, backgroundColor: Colors.glass, borderWidth: 1,
     borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg,
   },
   heroLabel: { ...labelStyle, marginBottom: 4 },
   heroValue: { fontSize: 22, fontWeight: "700", color: Colors.text, lineHeight: 28 },
   card: {
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
   },
   cardTitleRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.md },

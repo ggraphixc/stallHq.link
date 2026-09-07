@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { BorderRadius } from "../../lib/theme";
+import { BorderRadius, Colors } from "../../lib/theme";
 
 interface IconBoxProps {
   children: React.ReactNode;
@@ -10,15 +10,6 @@ interface IconBoxProps {
   style?: ViewStyle;
 }
 
-const gradients = {
-  purple: ["Colors.borderGlow", "rgba(6,182,212,0.12)"] as const,
-  green: ["rgba(16,185,129,0.2)", "rgba(6,182,212,0.12)"] as const,
-  cyan: ["rgba(6,182,212,0.2)", "rgba(16,185,129,0.12)"] as const,
-  amber: ["rgba(245,158,11,0.2)", "rgba(239,68,68,0.12)"] as const,
-  red: ["rgba(239,68,68,0.2)", "rgba(245,158,11,0.12)"] as const,
-  blue: ["rgba(59,130,246,0.2)", "rgba(6,182,212,0.12)"] as const,
-};
-
 const sizes = {
   sm: { width: 28, height: 28, borderRadius: BorderRadius.sm },
   md: { width: 36, height: 36, borderRadius: BorderRadius.md },
@@ -26,9 +17,21 @@ const sizes = {
   xl: { width: 64, height: 64, borderRadius: BorderRadius.xl },
 };
 
+function getGradientColors(accent: string): [string, string] {
+  switch (accent) {
+    case "purple": return [Colors.borderGlow, "rgba(6,182,212,0.12)"];
+    case "green": return ["rgba(16,185,129,0.2)", "rgba(6,182,212,0.12)"];
+    case "cyan": return ["rgba(6,182,212,0.2)", "rgba(16,185,129,0.12)"];
+    case "amber": return ["rgba(245,158,11,0.2)", "rgba(239,68,68,0.12)"];
+    case "red": return ["rgba(239,68,68,0.2)", "rgba(245,158,11,0.12)"];
+    case "blue": return ["rgba(59,130,246,0.2)", "rgba(6,182,212,0.12)"];
+    default: return [Colors.borderGlow, "rgba(6,182,212,0.12)"];
+  }
+}
+
 export function IconBox({ children, size = "md", accent, style }: IconBoxProps) {
   const s = sizes[size];
-  const colors = gradients[accent];
+  const colors = getGradientColors(accent);
 
   return (
     <LinearGradient

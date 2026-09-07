@@ -231,7 +231,7 @@ const makeStyles = () => StyleSheet.create({
   aiBanner: {
     flexDirection: "row", alignItems: "center", gap: Spacing.md,
     marginHorizontal: Spacing.lg, marginBottom: Spacing.sm,
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: "Colors.borderGlow",
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderGlow,
     borderRadius: BorderRadius.lg, padding: Spacing.md,
   },
   aiBannerIcon: {
@@ -243,14 +243,14 @@ const makeStyles = () => StyleSheet.create({
   aiProgress: {
     flexDirection: "row", alignItems: "center", gap: Spacing.sm,
     marginHorizontal: Spacing.lg, marginBottom: Spacing.sm,
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.md,
   },
   aiProgressText: { fontSize: FontSize.sm, color: Colors.textSecondary },
 
   productCard: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.md, marginBottom: Spacing.sm,
   },
   productImage: { width: 52, height: 52, borderRadius: BorderRadius.md, marginRight: Spacing.md },
@@ -266,7 +266,7 @@ const makeStyles = () => StyleSheet.create({
   availDot: { width: 8, height: 8, borderRadius: 4, marginBottom: 4 },
   availText: { fontSize: FontSize.xs, color: Colors.textMuted },
   emptyState: {
-    alignItems: "center", backgroundColor: "Colors.glass", borderWidth: 1,
+    alignItems: "center", backgroundColor: Colors.glass, borderWidth: 1,
     borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xxxl * 2,
   },
   emptyIcon: {

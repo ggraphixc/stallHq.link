@@ -193,7 +193,7 @@ const makeStyles = () => StyleSheet.create({
   suggestChip: {
     padding: Spacing.md, borderRadius: BorderRadius.lg,
     backgroundColor: "rgba(168,85,247,0.08)",
-    borderWidth: 1, borderColor: "Colors.borderGlow",
+    borderWidth: 1, borderColor: Colors.borderGlow,
   },
   suggestChipText: { fontSize: FontSize.sm, color: Colors.purple },
   bubble: { maxWidth: "85%", padding: Spacing.md, borderRadius: BorderRadius.lg },
@@ -202,7 +202,7 @@ const makeStyles = () => StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   bubbleBot: {
-    alignSelf: "flex-start", backgroundColor: "Colors.borderSubtle",
+    alignSelf: "flex-start", backgroundColor: Colors.borderSubtle,
     borderBottomLeftRadius: 4,
   },
   bubbleText: { fontSize: FontSize.md, color: Colors.text, lineHeight: 21 },

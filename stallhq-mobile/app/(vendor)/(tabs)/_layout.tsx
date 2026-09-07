@@ -1,14 +1,16 @@
+import React from "react";
 import { Tabs } from "expo-router";
 import { Home, Package, ShoppingCart, BarChart3 } from "lucide-react-native";
-import { Colors, FontSize } from "../../../lib/theme";
+import { Colors, FontSize, useThemeVersion } from "../../../lib/theme";
 
 export default function VendorTabsLayout() {
+  useThemeVersion();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.bgSecondary,
+          backgroundColor: Colors.bgCard,
           borderTopColor: Colors.borderSubtle,
           borderTopWidth: 1,
           height: 85,

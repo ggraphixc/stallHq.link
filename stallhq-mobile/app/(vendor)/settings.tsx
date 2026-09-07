@@ -261,7 +261,7 @@ const makeStyles = () => StyleSheet.create({
   backText: { fontSize: FontSize.md, color: Colors.purple },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
   identityCard: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "Colors.glass",
+    flexDirection: "row", alignItems: "center", backgroundColor: Colors.glass,
     borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg,
     padding: Spacing.lg, marginBottom: Spacing.xxl,
   },
@@ -285,7 +285,7 @@ const makeStyles = () => StyleSheet.create({
   prefixText: { fontSize: FontSize.sm, color: Colors.textMuted },
   prefixInput: { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 },
   textArea: { minHeight: 90, paddingTop: Spacing.md },
-  card: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  card: { backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.md },
   cardTitle: { fontSize: FontSize.md, fontWeight: "700", color: Colors.text },
   toggleRow: { flexDirection: "row", alignItems: "center" },

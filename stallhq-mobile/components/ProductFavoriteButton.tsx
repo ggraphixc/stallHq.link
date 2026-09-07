@@ -38,7 +38,7 @@ export function ProductFavoriteButton({ productId, storeId, size = 18 }: Props) 
 const makeStyles = () => StyleSheet.create({
   btn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: "rgba(19,19,29,0.8)", borderWidth: 1, borderColor: "Colors.borderSubtle",
+    backgroundColor: "rgba(19,19,29,0.8)", borderWidth: 1, borderColor: Colors.borderSubtle,
     alignItems: "center", justifyContent: "center",
   },
 });

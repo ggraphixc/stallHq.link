@@ -171,7 +171,7 @@ const makeStyles = () => StyleSheet.create({
   searchInput: { flex: 1, fontSize: FontSize.md, color: Colors.text, padding: 0 },
   list: { padding: Spacing.lg, paddingTop: 0 },
   storeCard: {
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.xl, marginBottom: Spacing.lg, overflow: "hidden",
   },
   banner: { width: "100%", height: 110 },
@@ -195,7 +195,7 @@ const makeStyles = () => StyleSheet.create({
   },
   chipText: { fontSize: FontSize.xs, color: Colors.textMuted },
   emptyState: {
-    alignItems: "center", backgroundColor: "Colors.glass", borderWidth: 1,
+    alignItems: "center", backgroundColor: Colors.glass, borderWidth: 1,
     borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg,
     padding: Spacing.xxxl * 2, gap: 8,
   },

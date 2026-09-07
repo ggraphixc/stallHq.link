@@ -60,7 +60,7 @@ const makeStyles = () => StyleSheet.create({
   heading: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, textAlign: "center", marginBottom: Spacing.xs },
   subheading: { fontSize: FontSize.md, color: Colors.textSecondary, textAlign: "center", marginBottom: Spacing.xxxl },
   roleCard: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "Colors.glass",
+    flexDirection: "row", alignItems: "center", backgroundColor: Colors.glass,
     borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.xl, padding: Spacing.xl, marginBottom: Spacing.lg,
   },
   roleIcon: { width: 48, height: 48, borderRadius: BorderRadius.lg, justifyContent: "center", alignItems: "center", marginRight: Spacing.lg },

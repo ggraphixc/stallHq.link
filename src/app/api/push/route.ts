@@ -49,7 +49,16 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const body = await request.json();
-    const { title, body: contentBody, type = "content", audience = "all", sendAt, sendNow = false } = body;
+    const {
+      title,
+      body: contentBody,
+      type = "content",
+      audience = "all",
+      sendAt,
+      sendNow = false,
+      repeatCadence,
+      seasonalPack,
+    } = body;
 
     if (!title?.trim() || !contentBody?.trim()) {
       return NextResponse.json({ error: "Title and message are required" }, { status: 400 });
@@ -71,6 +80,8 @@ export async function POST(request: NextRequest) {
         status: sendNow ? "sent" : "scheduled",
         sent_at: sendNow ? new Date().toISOString() : null,
         created_by: user.id,
+        repeat_cadence: repeatCadence || null,
+        seasonal_pack: seasonalPack || null,
       })
       .select()
       .single();

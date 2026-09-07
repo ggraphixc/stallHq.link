@@ -136,7 +136,7 @@ const makeStyles = () => StyleSheet.create({
   backText: { fontSize: FontSize.md, color: Colors.purple },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginBottom: Spacing.xs },
   email: { fontSize: FontSize.sm, color: Colors.textMuted, marginBottom: Spacing.xl },
-  card: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
+  card: { backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
   cardLabel: { ...labelStyle, marginBottom: Spacing.md },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   rowLabel: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },

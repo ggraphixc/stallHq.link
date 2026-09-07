@@ -176,7 +176,7 @@ const makeStyles = () => StyleSheet.create({
   tab: {
     flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm, borderRadius: BorderRadius.full,
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
   },
   tabActive: { borderColor: Colors.purple, backgroundColor: Colors.purpleDim },
   tabText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textMuted },
@@ -184,7 +184,7 @@ const makeStyles = () => StyleSheet.create({
   list: { padding: Spacing.lg, paddingTop: 0 },
   card: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
   },
   logo: { width: 44, height: 44, borderRadius: BorderRadius.md, marginRight: Spacing.lg },
@@ -196,7 +196,7 @@ const makeStyles = () => StyleSheet.create({
   name: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },
   slug: { fontSize: FontSize.xs, color: Colors.textMuted },
   emptyState: {
-    alignItems: "center", backgroundColor: "Colors.glass", borderWidth: 1,
+    alignItems: "center", backgroundColor: Colors.glass, borderWidth: 1,
     borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg,
     padding: Spacing.xxxl * 3, gap: 12,
   },
