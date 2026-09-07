@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
   ActivityIndicator, KeyboardAvoidingView, Platform, Switch,
@@ -11,7 +11,13 @@ import { useAuth } from "../../lib/auth";
 import { BrandLoader } from "../../components/BrandLoader";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput, labelStyle } from "../../lib/theme";
-import { ArrowLeft, Save, Lock, Trash2, Eye, EyeOff, Store as StoreIcon } from "lucide-react-native";
+import { ArrowLeft, Save, Lock, Trash2, Eye, EyeOff, Store as StoreIcon, Clock } from "lucide-react-native";
+
+const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+const DAY_LABELS: Record<string, string> = {
+  sun: "Sun", mon: "Mon", tue: "Tue", wed: "Wed",
+  thu: "Thu", fri: "Fri", sat: "Sat",
+};
 
 export default function SettingsScreen() {
   const styles = useThemeStyles(makeStyles);
@@ -29,6 +35,40 @@ export default function SettingsScreen() {
   const [lowStockThreshold, setLowStockThreshold] = useState(String(store?.low_stock_threshold ?? 5));
   const [saving, setSaving] = useState(false);
 
+  // Store hours
+  const [hoursEnabled, setHoursEnabled] = useState<boolean>(store?.store_hours?.enabled ?? false);
+  const [hoursSun, setHoursSun] = useState<string>(String(store?.store_hours?.days?.sun ?? ""));
+  const [hoursMon, setHoursMon] = useState<string>(String(store?.store_hours?.days?.mon ?? ""));
+  const [hoursTue, setHoursTue] = useState<string>(String(store?.store_hours?.days?.tue ?? ""));
+  const [hoursWed, setHoursWed] = useState<string>(String(store?.store_hours?.days?.wed ?? ""));
+  const [hoursThu, setHoursThu] = useState<string>(String(store?.store_hours?.days?.thu ?? ""));
+  const [hoursFri, setHoursFri] = useState<string>(String(store?.store_hours?.days?.fri ?? ""));
+  const [hoursSat, setHoursSat] = useState<string>(String(store?.store_hours?.days?.sat ?? ""));
+
+  const hoursSetters: Record<string, React.Dispatch<React.SetStateAction<string>>> = {
+    sun: setHoursSun, mon: setHoursMon, tue: setHoursTue, wed: setHoursWed,
+    thu: setHoursThu, fri: setHoursFri, sat: setHoursSat,
+  };
+  const hoursValues: Record<string, string> = {
+    sun: hoursSun, mon: hoursMon, tue: hoursTue, wed: hoursWed,
+    thu: hoursThu, fri: hoursFri, sat: hoursSat,
+  };
+
+  // Sync hours from store on mount / store change
+  useEffect(() => {
+    if (!store) return;
+    setHoursEnabled(store.store_hours?.enabled ?? false);
+    if (store.store_hours?.days) {
+      setHoursSun(String(store.store_hours.days.sun ?? ""));
+      setHoursMon(String(store.store_hours.days.mon ?? ""));
+      setHoursTue(String(store.store_hours.days.tue ?? ""));
+      setHoursWed(String(store.store_hours.days.wed ?? ""));
+      setHoursThu(String(store.store_hours.days.thu ?? ""));
+      setHoursFri(String(store.store_hours.days.fri ?? ""));
+      setHoursSat(String(store.store_hours.days.sat ?? ""));
+    }
+  }, [store?.id]);
+
   // Password fields
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -42,6 +82,23 @@ export default function SettingsScreen() {
     if (!store) return;
     if (!name.trim() || !slug.trim()) { alert("Error", "Store name and URL are required"); return; }
     setSaving(true);
+
+    // Upsert store_hours row
+    const days = {
+      sun: hoursSun.trim() || null,
+      mon: hoursMon.trim() || null,
+      tue: hoursTue.trim() || null,
+      wed: hoursWed.trim() || null,
+      thu: hoursThu.trim() || null,
+      fri: hoursFri.trim() || null,
+      sat: hoursSat.trim() || null,
+    };
+    if ((store.store_hours as any)?.id) {
+      await supabase.from("store_hours").update({ enabled: hoursEnabled, days }).eq("id", (store.store_hours as any).id);
+    } else {
+      await supabase.from("store_hours").insert({ store_id: store.id, enabled: hoursEnabled, days });
+    }
+
     const { error } = await supabase.from("stores").update({
       name: name.trim(),
       slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, ""),
@@ -176,6 +233,44 @@ export default function SettingsScreen() {
             <TextInput style={[styles.input, styles.textArea]} value={description} onChangeText={setDescription} multiline numberOfLines={3} textAlignVertical="top" placeholder="What do you sell?" placeholderTextColor={Colors.textMuted} />
           </View>
 
+          {/* Store hours */}
+          <Text style={styles.sectionLabel}>STORE HOURS</Text>
+          <View style={styles.card}>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <View style={styles.toggleHeader}>
+                  <Clock size={14} color={Colors.purple} />
+                  <Text style={styles.toggleTitle}>Show Open Hours</Text>
+                </View>
+                <Text style={styles.toggleSub}>Display hours on your store profile</Text>
+              </View>
+              <Switch
+                value={hoursEnabled}
+                onValueChange={setHoursEnabled}
+                trackColor={{ false: Colors.bgElevated, true: Colors.purple }}
+                thumbColor="#fff"
+              />
+            </View>
+            {hoursEnabled && (
+              <View style={styles.hoursList}>
+                {DAYS.map((day) => (
+                  <View key={day} style={styles.hoursRow}>
+                    <Text style={styles.dayLabel}>{DAY_LABELS[day]}</Text>
+                    <TextInput
+                      style={[styles.input, styles.hoursInput]}
+                      value={hoursValues[day]}
+                      onChangeText={hoursSetters[day]}
+                      placeholder="9:00 AM - 5:00 PM"
+                      placeholderTextColor={Colors.textMuted}
+                      maxLength={40}
+                      autoCapitalize="words"
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+
           {/* Inventory alerts */}
           <Text style={styles.sectionLabel}>INVENTORY</Text>
           <View style={styles.card}>
@@ -289,8 +384,13 @@ const makeStyles = () => StyleSheet.create({
   cardHeader: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.md },
   cardTitle: { fontSize: FontSize.md, fontWeight: "700", color: Colors.text },
   toggleRow: { flexDirection: "row", alignItems: "center" },
+  toggleHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
   toggleTitle: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },
   toggleSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  hoursList: { marginTop: Spacing.md, gap: Spacing.xs },
+  hoursRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  dayLabel: { width: 36, fontSize: FontSize.sm, fontWeight: "600", color: Colors.textSecondary },
+  hoursInput: { flex: 1, fontSize: FontSize.sm },
   saveBtn: {
     backgroundColor: Colors.purple, borderRadius: BorderRadius.lg, paddingVertical: 14,
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: Spacing.md,

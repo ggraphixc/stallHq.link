@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   LayoutDashboard, Store, Users, ShoppingCart, Crown,
   Activity, MessageCircle, Shield, ArrowLeft, Menu, X,
-  LifeBuoy, Bell, BellRing, Settings, Mail, Sparkles, ShieldCheck
+  LifeBuoy, Send, Settings, Mail, Sparkles, ShieldCheck
 } from "lucide-react";
 import { useState } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -20,8 +20,7 @@ const NAV_ITEMS = [
   { href: "/admin/moderation", label: "Moderation", icon: ShieldCheck },
   { href: "/admin/promo", label: "Promo Cards", icon: Sparkles },
   { href: "/admin/support", label: "Support", icon: LifeBuoy },
-  { href: "/admin/notifications", label: "Notifications", icon: Bell },
-  { href: "/admin/push", label: "Push Notifications", icon: BellRing },
+  { href: "/admin/communications", label: "Communications", icon: Send },
   { href: "/admin/emails", label: "Email Templates", icon: Mail },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/system", label: "System", icon: Activity },
