@@ -23,6 +23,8 @@ function ThemeBridge() {
 }
 
 export default function RootLayout() {
+  useThemeVersion();
+
   // Register for push notifications on app start (lazy-loaded)
   useEffect(() => {
     (async () => {

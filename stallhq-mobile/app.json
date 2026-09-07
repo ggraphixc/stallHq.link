@@ -49,7 +49,16 @@
           "resizeMode": "contain",
           "dark": {
             "backgroundColor": "#06060b"
+          },
+          "light": {
+            "backgroundColor": "#f4f5fa"
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow stallHq to access your photos so you can add images to your reviews."
         }
       ]
     ],
