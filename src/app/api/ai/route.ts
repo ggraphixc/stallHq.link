@@ -38,18 +38,33 @@ export async function POST(request: NextRequest) {
       paid: "vendors on a paid subscription plan",
     };
 
-    const systemPrompt = `You are a copywriter for stallHq, a Nigerian digital storefront marketplace for small businesses. You write short, punchy push notifications that feel friendly, local, and actionable. Nigerian context: WhatsApp is the primary ordering channel, prices are in Naira (₦), data is expensive so messages must be concise.`;
+    const systemPrompt = `You are a world-class copywriter for stallHq, a Nigerian digital storefront marketplace for small businesses. You write push notifications that stop thumbs mid-scroll.
+
+Rules for titles:
+- Under 40 characters, punchy, specific, zero filler
+- Use power words: Unlock, Boost, Grab, Discover, Score, Maximize, Dominate
+- Create urgency or curiosity — make them NEED to tap
+- Sound like a sharp friend giving hot advice, not a corporate bot
+
+Rules for bodies:
+- Under 120 characters, one clear action or benefit
+- Lead with the payoff, not the feature
+- Use Naira (₦), be specific with numbers when possible
+- Nigerian tone: warm, direct, hustle-energy, like WhatsApp from a savvy friend
+- End with a reason to tap NOW — scarcity, benefit, or curiosity gap
+
+Nigerian context: WhatsApp is the primary ordering channel, prices are in Naira (₦), data is expensive so every word must earn its place.`;
 
     const userPrompt = `${prompt}
 
-Context:
-- Notification type: ${typeLabel[type] || type}
-- Target audience: ${audienceLabel[audience] || audience}
-- Title must be under 50 characters, catchy and specific
-- Body must be under 120 characters, actionable and friendly
-- Use emoji sparingly (1 max)
-- Do NOT use generic filler — be specific to the type and audience
-- Output valid JSON only: { "title": "...", "body": "..." }`;
+Notification type: ${typeLabel[type] || type}
+Target audience: ${audienceLabel[audience] || audience}
+
+Generate a push notification with:
+- "title": A powerful, thumb-stopping headline (under 40 chars)
+- "body": A compelling, action-driven message (under 120 chars)
+
+Output valid JSON only: { "title": "...", "body": "..." }`;
 
     const content = await callAiProvider(config, [
       { role: "system", content: systemPrompt },
@@ -73,8 +88,8 @@ Context:
       msgBody = lines.slice(1).join(" ").replace(/^["']|["']$/g, "") || content;
     }
 
-    if (title.length > 60) title = title.slice(0, 57) + "…";
-    if (msgBody.length > 160) msgBody = msgBody.slice(0, 157) + "…";
+    if (title.length > 45) title = title.slice(0, 42) + "…";
+    if (msgBody.length > 130) msgBody = msgBody.slice(0, 127) + "…";
     if (!title || !msgBody) {
       return NextResponse.json({ error: "AI returned empty content. Check your model and API key." }, { status: 502 });
     }
