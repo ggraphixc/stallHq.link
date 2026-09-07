@@ -363,7 +363,7 @@ function AITab({ settings, updateSetting, showAIKey, setShowAIKey }: { settings:
                 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{ color: "var(--glow-blue)", textDecoration: "underline" }}>
                   aistudio.google.com/apikey
                 </a>
-                {" "}. Free tier: 15 RPM, 1M tokens/day.
+                {" "}. Free tier: 15 RPM, 1,500 req/day, 1M tokens/min.
               </p>
             )}
           </div>
