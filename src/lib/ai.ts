@@ -56,6 +56,17 @@ export function adminClient(): SupabaseClient {
   );
 }
 
+/** Normalize Google Gemini model names (fix deprecated/incorrect names) */
+function normalizeGeminiModel(model: string): string {
+  const map: Record<string, string> = {
+    "gemini-2.5-flash": "gemini-2.5-flash-preview-04-17",
+    "gemini-3.5-flash": "gemini-2.5-flash-lite-preview-04-17",
+    "gemini-2.0-flash": "gemini-2.5-flash-preview-04-17",
+    "gemini-2.0-flash-lite": "gemini-2.5-flash-lite-preview-04-17",
+  };
+  return map[model] || model;
+}
+
 /** Load AI settings from platform_settings */
 export async function getAiSettings(): Promise<Record<string, any>> {
   const { data } = await adminClient()
@@ -91,12 +102,15 @@ export function resolveProvider(settings: Record<string, any>): AiProviderConfig
   if (!apiKey) {
     throw new Error("AI_NOT_CONFIGURED_KEY");
   }
-  const model = settings.ai_model;
+  let model = settings.ai_model;
   if (!model) {
     throw new Error("AI_NOT_CONFIGURED_MODEL");
   }
 
   const provider = settings.ai_provider || "openrouter";
+  if (provider === "google" && model) {
+    model = normalizeGeminiModel(model);
+  }
   let baseUrl = settings.ai_base_url || PROVIDER_URLS[provider] || "";
   if (!baseUrl) {
     throw new Error("AI_NO_BASE_URL");
