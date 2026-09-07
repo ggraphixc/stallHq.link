@@ -4,11 +4,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
 import { Store, ShoppingBag, ChevronRight } from "lucide-react-native";
 import { BrandLogo } from "../../components/BrandLogo";
 
 export default function SelectRoleScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
 
   return (
@@ -51,7 +52,7 @@ export default function SelectRoleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { flex: 1, paddingHorizontal: Spacing.xxl, justifyContent: "center" },
   logoContainer: { alignItems: "center", marginBottom: Spacing.xxxl },
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   heading: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, textAlign: "center", marginBottom: Spacing.xs },
   subheading: { fontSize: FontSize.md, color: Colors.textSecondary, textAlign: "center", marginBottom: Spacing.xxxl },
   roleCard: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)",
+    flexDirection: "row", alignItems: "center", backgroundColor: "Colors.glass",
     borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.xl, padding: Spacing.xl, marginBottom: Spacing.lg,
   },
   roleIcon: { width: 48, height: 48, borderRadius: BorderRadius.lg, justifyContent: "center", alignItems: "center", marginRight: Spacing.lg },

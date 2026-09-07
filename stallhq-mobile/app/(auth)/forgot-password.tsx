@@ -8,10 +8,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { BrandLogo } from "../../components/BrandLogo";
-import { Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../lib/theme";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function ForgotPasswordScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -117,7 +118,7 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   flex: { flex: 1 },
   content: { flex: 1, paddingHorizontal: Spacing.xxl, justifyContent: "center" },

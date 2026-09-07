@@ -8,7 +8,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { BrandLoader } from "../../components/BrandLoader";
-import { Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../lib/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { WEB_API_URL } from "../../lib/auth";
 
@@ -27,6 +27,7 @@ const PLAN_PRICES: Record<string, number> = {
 };
 
 export default function BillingScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { store } = useAuth();
   const [payments, setPayments] = useState<any[]>([]);
@@ -186,13 +187,13 @@ export default function BillingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: Spacing.lg },
   backText: { fontSize: FontSize.md, color: Colors.purple },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginBottom: Spacing.xl },
-  planCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
+  planCard: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
   planHeader: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
   planIconBox: { width: 44, height: 44, borderRadius: BorderRadius.lg, backgroundColor: Colors.purpleDim, justifyContent: "center", alignItems: "center" },
   planLabel: { ...labelStyle },
@@ -206,10 +207,10 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: Spacing.md },
   sectionTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text },
   totalSpent: { fontSize: FontSize.sm, color: Colors.textMuted },
-  emptyCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xxl, alignItems: "center" },
+  emptyCard: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xxl, alignItems: "center" },
   emptyText: { fontSize: FontSize.md, color: Colors.textMuted, marginTop: Spacing.md },
   emptySub: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: Spacing.xs },
-  paymentCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  paymentCard: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   paymentHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   paymentPlan: { fontSize: FontSize.md, fontWeight: "700", color: Colors.text },
   paymentDate: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },

@@ -11,7 +11,7 @@ import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { useAuth } from "../../lib/auth";
 import { supabase, Product } from "../../lib/supabase";
-import { Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
 import {
   ArrowLeft, Sparkles, Download, Share2, Package, Check, Layout, Palette, Store,
 } from "lucide-react-native";
@@ -38,6 +38,7 @@ const FORMATS: Record<FormatKey, { label: string; ratio: number; icon: string }>
 };
 
 export default function PromoCardsScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { store } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
@@ -270,7 +271,7 @@ function hexA(hex: string, alpha: number): string {
   return `rgba(${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)},${alpha})`;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: {
     flexDirection: "row", alignItems: "center", gap: Spacing.md,
@@ -312,7 +313,7 @@ const styles = StyleSheet.create({
   cardWrap: { marginTop: Spacing.lg },
   panel: {
     flex: 1, margin: 6, borderRadius: 18, overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "Colors.borderSubtle", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",
     padding: 14, justifyContent: "space-between",
   },
   cardTop: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
   exclusiveText: { color: "#fff", fontWeight: "800", fontSize: 8 },
   productImg: { width: "86%", aspectRatio: 1.1, borderWidth: 1.5 },
   productImgPlaceholder: {
-    backgroundColor: "rgba(255,255,255,0.05)", justifyContent: "center", alignItems: "center",
+    backgroundColor: "Colors.borderSubtle", justifyContent: "center", alignItems: "center",
   },
   cardBody: { alignItems: "center", marginTop: 6 },
   cardName: {

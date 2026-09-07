@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { TouchableOpacity, StyleSheet } from "react-native";
 import { Heart } from "lucide-react-native";
-import { Colors } from "../lib/theme";
+import { useThemeStyles, Colors } from "../lib/theme";
 import { addStoreFavorite, removeStoreFavorite, getStoreFavorites } from "../lib/storeFavorites";
 
 export async function loadFavoriteSlugs(): Promise<string[]> {
@@ -29,6 +29,7 @@ export function StoreFavoriteButton({
   size?: number;
   onChange?: (faved: boolean) => void;
 }) {
+  const styles = useThemeStyles(makeStyles);
   const [faved, setFaved] = useState(false);
   const [ready, setReady] = useState(false);
 
@@ -72,7 +73,7 @@ export function StoreFavoriteButton({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   btn: {
     width: 36,
     height: 36,

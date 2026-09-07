@@ -11,7 +11,7 @@ interface IconBoxProps {
 }
 
 const gradients = {
-  purple: ["rgba(168,85,247,0.2)", "rgba(6,182,212,0.12)"] as const,
+  purple: ["Colors.borderGlow", "rgba(6,182,212,0.12)"] as const,
   green: ["rgba(16,185,129,0.2)", "rgba(6,182,212,0.12)"] as const,
   cyan: ["rgba(6,182,212,0.2)", "rgba(16,185,129,0.12)"] as const,
   amber: ["rgba(245,158,11,0.2)", "rgba(239,68,68,0.12)"] as const,

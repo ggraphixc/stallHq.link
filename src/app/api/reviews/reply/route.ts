@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createCookieClient } from "@/lib/supabase/api";
 import { adminClient } from "@/lib/ai";
 import { sendReviewReplyNotification } from "@/lib/email";
+import { sendPushToUsers } from "@/lib/push";
 import { apiRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -91,6 +92,13 @@ export async function POST(request: NextRequest) {
       } catch (emailError) {
         console.error("Review reply notification failed:", emailError);
       }
+
+      // Real-time push to the review author
+      sendPushToUsers([review.user_id], {
+        title: `${storeData.name} replied to your review`,
+        body: trimmed.length > 120 ? trimmed.slice(0, 120) + "…" : trimmed,
+        data: { screen: "notifications" },
+      }).catch(() => {});
     }
 
     return addRateLimitHeaders(NextResponse.json(updated), rateLimitResult.headers);

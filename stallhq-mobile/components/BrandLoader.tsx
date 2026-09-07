@@ -3,7 +3,7 @@ import { View, Text, Image, Animated, StyleSheet, Easing, StyleProp, ViewStyle }
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Circle } from "react-native-svg";
 import { Store } from "lucide-react-native";
-import { Colors, FontSize } from "../lib/theme";
+import { useThemeStyles, Colors, FontSize } from "../lib/theme";
 import { useBranding } from "../lib/branding";
 
 interface BrandLoaderProps {
@@ -16,6 +16,7 @@ interface BrandLoaderProps {
  * wordmark. Fill the parent: give it style={{ flex: 1 }} when used inline.
  */
 export function BrandLoader({ label = "Loading…", style }: BrandLoaderProps) {
+  const styles = useThemeStyles(makeStyles);
   const { logo_url, platform_name } = useBranding();
   const spin = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(0)).current;
@@ -151,7 +152,7 @@ export function BrandLoader({ label = "Loading…", style }: BrandLoaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
     height: 380,
     top: -160,
     left: -120,
-    backgroundColor: "rgba(168,85,247,0.06)",
+    backgroundColor: "Colors.purpleTint",
   },
   glowBottom: {
     width: 340,

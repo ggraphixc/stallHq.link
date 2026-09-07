@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { TouchableOpacity, StyleSheet } from "react-native";
 import { Heart } from "lucide-react-native";
-import { Colors } from "../lib/theme";
+import { useThemeStyles, Colors } from "../lib/theme";
 import { addProductFavorite, removeProductFavorite, isProductFavorited } from "../lib/productFavorites";
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
 }
 
 export function ProductFavoriteButton({ productId, storeId, size = 18 }: Props) {
+  const styles = useThemeStyles(makeStyles);
   const [faved, setFaved] = useState(false);
 
   useEffect(() => {
@@ -34,10 +35,10 @@ export function ProductFavoriteButton({ productId, storeId, size = 18 }: Props) 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   btn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: "rgba(19,19,29,0.8)", borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(19,19,29,0.8)", borderWidth: 1, borderColor: "Colors.borderSubtle",
     alignItems: "center", justifyContent: "center",
   },
 });

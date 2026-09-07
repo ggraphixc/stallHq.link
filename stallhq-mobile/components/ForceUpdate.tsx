@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated, Easing, Linking, Pressable, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Download, RefreshCw, Store, Zap } from "lucide-react-native";
-import { Colors, FontSize, BorderRadius } from "../lib/theme";
+import { useThemeStyles, Colors, FontSize, BorderRadius } from "../lib/theme";
 import { useBranding } from "../lib/branding";
 import { WEB_API_URL } from "../lib/config";
 import type { AppUpdateInfo } from "../lib/appVersion";
@@ -19,6 +19,7 @@ interface ForceUpdateProps {
  * BrandLoader / ambient design system.
  */
 export function ForceUpdate({ info, otaReady }: ForceUpdateProps) {
+  const styles = useThemeStyles(makeStyles);
   const { logo_url, platform_name } = useBranding();
   const pulse = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
@@ -122,7 +123,7 @@ export function ForceUpdate({ info, otaReady }: ForceUpdateProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.bg,
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   glow: { position: "absolute", borderRadius: 999, opacity: 0.5 },
-  glowTop: { width: 380, height: 380, top: -160, left: -120, backgroundColor: "rgba(168,85,247,0.06)" },
+  glowTop: { width: 380, height: 380, top: -160, left: -120, backgroundColor: "Colors.purpleTint" },
   glowBottom: { width: 340, height: 340, bottom: -150, right: -110, backgroundColor: "rgba(6,182,212,0.05)" },
   markWrap: {
     width: 58,
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     backgroundColor: "rgba(168,85,247,0.12)",
     borderWidth: 1,
-    borderColor: "rgba(168,85,247,0.25)",
+    borderColor: "Colors.borderGlow",
   },
   badgeText: { fontSize: 11, fontWeight: "700", color: Colors.purple, letterSpacing: 0.3 },
   title: { fontSize: 19, fontWeight: "800", color: Colors.text, letterSpacing: -0.3 },

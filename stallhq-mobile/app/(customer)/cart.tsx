@@ -7,13 +7,14 @@ import { alert } from "../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useCart, CartItem } from "../../lib/cart";
-import { Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
 import { WEB_API_URL } from "../../lib/auth";
 import {
   ArrowLeft, Trash2, Plus, Minus, MessageCircle, ShoppingBag,
 } from "lucide-react-native";
 
 export default function CartScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { items, total, updateQuantity, removeItem, clearCart, clearStore } = useCart();
   const [orderModal, setOrderModal] = useState(false);
@@ -299,7 +300,7 @@ export default function CartScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   topRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
@@ -322,7 +323,7 @@ const styles = StyleSheet.create({
   },
   browseBtnText: { color: Colors.purple, fontWeight: "700", fontSize: FontSize.sm },
   storeGroup: {
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.xl, padding: Spacing.lg, marginBottom: Spacing.lg,
   },
   storeGroupHeader: {
@@ -358,7 +359,7 @@ const styles = StyleSheet.create({
   orderBtnText: { color: "#fff", fontSize: FontSize.sm, fontWeight: "700" },
   totalBar: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.xl, padding: Spacing.lg, marginBottom: 40,
   },
   totalLabel: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text },

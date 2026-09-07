@@ -7,12 +7,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase, Order } from "../../../lib/supabase";
 import { BrandLoader } from "../../../components/BrandLoader";
-import { Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
 import { ArrowLeft, Phone, Clock, StickyNote } from "lucide-react-native";
 
 const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
 export default function OrderDetailScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null>(null);
@@ -118,14 +119,14 @@ export default function OrderDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: Spacing.lg },
   backText: { fontSize: FontSize.md, color: Colors.purple },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginBottom: Spacing.xl },
-  card: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  card: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: Spacing.sm },
   label: { ...labelStyle, marginBottom: Spacing.sm },
   value: { fontSize: FontSize.md, color: Colors.text },

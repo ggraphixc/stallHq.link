@@ -9,10 +9,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { BrandLoader } from "../../components/BrandLoader";
-import { Colors, FontSize, Spacing, BorderRadius, ambientInput, labelStyle } from "../../lib/theme";
+import { ThemeToggle } from "../../components/ThemeToggle";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput, labelStyle } from "../../lib/theme";
 import { ArrowLeft, Save, Lock, Trash2, Eye, EyeOff, Store as StoreIcon } from "lucide-react-native";
 
 export default function SettingsScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { store, session, refreshStore, signOut } = useAuth();
 
@@ -124,6 +126,8 @@ export default function SettingsScreen() {
             </TouchableOpacity>
             <Text style={styles.title}>Settings</Text>
           </View>
+
+          <ThemeToggle />
 
           {/* Store identity preview */}
           <View style={styles.identityCard}>
@@ -248,7 +252,7 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   scroll: { padding: Spacing.lg, paddingBottom: 120 },
@@ -257,7 +261,7 @@ const styles = StyleSheet.create({
   backText: { fontSize: FontSize.md, color: Colors.purple },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
   identityCard: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)",
+    flexDirection: "row", alignItems: "center", backgroundColor: "Colors.glass",
     borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg,
     padding: Spacing.lg, marginBottom: Spacing.xxl,
   },
@@ -281,7 +285,7 @@ const styles = StyleSheet.create({
   prefixText: { fontSize: FontSize.sm, color: Colors.textMuted },
   prefixInput: { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 },
   textArea: { minHeight: 90, paddingTop: Spacing.md },
-  card: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  card: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.md },
   cardTitle: { fontSize: FontSize.md, fontWeight: "700", color: Colors.text },
   toggleRow: { flexDirection: "row", alignItems: "center" },

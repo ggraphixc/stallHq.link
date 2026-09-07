@@ -9,7 +9,7 @@ import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth";
 import { supabase } from "../../lib/supabase";
 import { postReviewReply } from "../../lib/reviewActions";
-import { Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
 import { ArrowLeft, Star, Trash2, Flag, ShieldAlert, MessageSquare, Inbox, Reply, X, CheckCircle2, Clock } from "lucide-react-native";
 
 type Mode = "reviews" | "reports" | "history";
@@ -25,6 +25,7 @@ const REVIEW_REPORT_LABELS: Record<string, string> = {
 };
 
 export default function MonitoringScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { store, user } = useAuth();
   const [mode, setMode] = useState<Mode>("reviews");
@@ -416,7 +417,7 @@ export default function MonitoringScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { flexDirection: "row", alignItems: "center", gap: Spacing.md, padding: Spacing.lg, paddingBottom: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   backBtn: { width: 36, height: 36, borderRadius: BorderRadius.md, backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle, justifyContent: "center", alignItems: "center" },
@@ -428,14 +429,14 @@ const styles = StyleSheet.create({
   tabText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textMuted },
   tabTextActive: { color: Colors.purple },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
-  itemCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  itemCard: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   itemHead: { flexDirection: "row", alignItems: "flex-start", gap: Spacing.md },
   itemName: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text, marginTop: 4 },
   itemMeta: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 1 },
   comment: { fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: Spacing.sm, lineHeight: 19 },
   deleteBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.redDim, justifyContent: "center", alignItems: "center" },
   replyBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.cyanDim, justifyContent: "center", alignItems: "center" },
-  replyBox: { marginTop: Spacing.sm, backgroundColor: "rgba(6,182,212,0.05)", borderWidth: 1, borderColor: "rgba(6,182,212,0.15)", borderRadius: BorderRadius.md, padding: Spacing.md },
+  replyBox: { marginTop: Spacing.sm, backgroundColor: "rgba(6,182,212,0.05)", borderWidth: 1, borderColor: "Colors.cyanDim", borderRadius: BorderRadius.md, padding: Spacing.md },
   replyInput: { backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: FontSize.sm, color: Colors.text, minHeight: 90, textAlignVertical: "top" },
   postReplyBtn: { backgroundColor: Colors.purple, borderRadius: BorderRadius.lg, padding: Spacing.md, alignItems: "center", marginTop: Spacing.md },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },

@@ -2,20 +2,35 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useColorScheme } from "react-native";
 import { AuthProvider } from "../lib/auth";
 import { CartProvider } from "../lib/cart";
-import { Colors } from "../lib/theme";
+import {
+  Colors, getIsDark, initTheme, setSystemScheme, useThemeVersion,
+} from "../lib/theme";
 import { AlertProvider } from "../components/ui/CustomAlert";
+
+function ThemeBridge() {
+  const scheme = useColorScheme();
+  useThemeVersion();
+  useEffect(() => {
+    setSystemScheme(scheme === "dark" ? "dark" : scheme === "light" ? "light" : null);
+  }, [scheme]);
+  useEffect(() => {
+    initTheme();
+  }, []);
+  return <StatusBar style={getIsDark() ? "light" : "dark"} />;
+}
 
 export default function RootLayout() {
   // Register for push notifications on app start (lazy-loaded)
   useEffect(() => {
     (async () => {
       try {
-        const { registerForPushNotifications, onNotificationReceived, onNotificationTapped } = await import("../lib/notify");
-        registerForPushNotifications();
+        const { setupPushRegistration, onNotificationReceived, onNotificationTapped } = await import("../lib/notify");
+        setupPushRegistration();
         onNotificationReceived(() => {});
-        onNotificationTapped(() => {});
+        onNotificationTapped();
       } catch {}
     })();
   }, []);
@@ -25,7 +40,7 @@ export default function RootLayout() {
       <AuthProvider>
         <CartProvider>
           <AlertProvider>
-            <StatusBar style="light" />
+            <ThemeBridge />
             <Stack
               screenOptions={{
                 headerShown: false,

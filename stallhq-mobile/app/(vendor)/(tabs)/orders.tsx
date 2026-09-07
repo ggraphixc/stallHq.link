@@ -6,12 +6,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../../lib/auth";
 import { supabase, Order } from "../../../lib/supabase";
-import { Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
+import { NotificationBell } from "../../../components/NotificationBell";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
 import { Phone } from "lucide-react-native";
 
 const STATUS_FILTERS = ["all", "pending", "confirmed", "shipped", "delivered"];
 
 export default function OrdersScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { store } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -62,6 +64,7 @@ export default function OrdersScreen() {
           <Text style={styles.title}>Orders</Text>
           <Text style={styles.count}>{filtered.length} order{filtered.length !== 1 ? "s" : ""}</Text>
         </View>
+        <NotificationBell />
       </View>
 
       <FlatList
@@ -125,7 +128,7 @@ export default function OrdersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: Spacing.lg, paddingBottom: Spacing.sm },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
@@ -140,7 +143,7 @@ const styles = StyleSheet.create({
   filterTextActive: { color: Colors.purple },
   list: { padding: Spacing.lg, paddingTop: 0 },
   orderCard: {
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
   },
   orderHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: Spacing.sm },
@@ -155,6 +158,6 @@ const styles = StyleSheet.create({
   statusText: { fontSize: FontSize.xs, fontWeight: "600", textTransform: "capitalize" },
   phoneRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   phone: { fontSize: FontSize.xs, color: Colors.textMuted },
-  emptyState: { alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xxxl * 2 },
+  emptyState: { alignItems: "center", backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xxxl * 2 },
   emptyText: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.textSecondary },
 });

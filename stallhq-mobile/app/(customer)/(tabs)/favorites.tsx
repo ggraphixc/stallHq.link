@@ -5,8 +5,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { supabase, Store, Product } from "../../../lib/supabase";
-import { Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
 import { Heart, Store as StoreIcon, ChevronRight, Package } from "lucide-react-native";
+import { NotificationBell } from "../../../components/NotificationBell";
 import { loadFavoriteSlugs } from "../../../components/StoreFavoriteButton";
 import { getProductFavorites } from "../../../lib/productFavorites";
 
@@ -23,6 +24,7 @@ interface ProductFav {
 }
 
 export default function FavoritesScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const [stores, setStores] = useState<Store[]>([]);
   const [productFavs, setProductFavs] = useState<ProductFav[]>([]);
@@ -63,7 +65,10 @@ export default function FavoritesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Favorites</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Favorites</Text>
+          <NotificationBell />
+        </View>
       </View>
 
       {hasAny && (
@@ -160,9 +165,10 @@ export default function FavoritesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { padding: Spacing.lg, paddingBottom: Spacing.sm },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
   tabRow: {
     flexDirection: "row", gap: Spacing.sm, paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm,
@@ -170,7 +176,7 @@ const styles = StyleSheet.create({
   tab: {
     flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm, borderRadius: BorderRadius.full,
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
   },
   tabActive: { borderColor: Colors.purple, backgroundColor: Colors.purpleDim },
   tabText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textMuted },
@@ -178,7 +184,7 @@ const styles = StyleSheet.create({
   list: { padding: Spacing.lg, paddingTop: 0 },
   card: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
   },
   logo: { width: 44, height: 44, borderRadius: BorderRadius.md, marginRight: Spacing.lg },
@@ -190,7 +196,7 @@ const styles = StyleSheet.create({
   name: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },
   slug: { fontSize: FontSize.xs, color: Colors.textMuted },
   emptyState: {
-    alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1,
+    alignItems: "center", backgroundColor: "Colors.glass", borderWidth: 1,
     borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg,
     padding: Spacing.xxxl * 3, gap: 12,
   },

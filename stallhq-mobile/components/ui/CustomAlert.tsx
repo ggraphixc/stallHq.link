@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import {
   View, Text, TouchableOpacity, Modal, StyleSheet,
 } from "react-native";
-import { Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
 
 interface AlertButton {
   text: string;
@@ -42,6 +42,7 @@ export function alert(title: string, message?: string, buttons?: AlertButton[]):
 }
 
 export function AlertProvider({ children }: { children: React.ReactNode }) {
+  const styles = useThemeStyles(makeStyles);
   const [state, setState] = useState<AlertState>({
     visible: false,
     title: "",
@@ -111,7 +112,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.7)",

@@ -8,10 +8,11 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, Product } from "../../../lib/supabase";
 import { BrandLoader } from "../../../components/BrandLoader";
-import { Colors, FontSize, Spacing, BorderRadius, ambientInput, labelStyle } from "../../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput, labelStyle } from "../../../lib/theme";
 import { ArrowLeft, Save, Trash2, Package, Eye } from "lucide-react-native";
 
 export default function ProductDetailScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
@@ -202,7 +203,7 @@ export default function ProductDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
     width: "100%", height: 220, borderRadius: BorderRadius.lg, marginBottom: Spacing.lg,
     backgroundColor: Colors.bgCard, justifyContent: "center", alignItems: "center",
   },
-  card: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  card: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   productName: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, flex: 1, marginRight: Spacing.sm },
   stockBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: BorderRadius.sm },
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.sm },
   actionBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderRadius: BorderRadius.lg,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderRadius: BorderRadius.lg,
     paddingVertical: 14,
   },
   actionText: { color: Colors.text, fontSize: FontSize.sm, fontWeight: "600" },

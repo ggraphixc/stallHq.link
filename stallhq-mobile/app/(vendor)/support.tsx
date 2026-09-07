@@ -8,7 +8,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { BrandLoader } from "../../components/BrandLoader";
-import { Colors, FontSize, Spacing, BorderRadius, labelStyle, ambientInput } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle, ambientInput } from "../../lib/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { WEB_API_URL } from "../../lib/auth";
 
@@ -28,6 +28,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export default function SupportScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { store } = useAuth();
   const [tickets, setTickets] = useState<any[]>([]);
@@ -200,13 +201,13 @@ export default function SupportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: Spacing.lg },
   backText: { fontSize: FontSize.md, color: Colors.purple },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginBottom: Spacing.xl },
-  card: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
+  card: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
   cardLabel: { ...labelStyle, marginBottom: Spacing.md },
   label: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.textSecondary, marginTop: Spacing.md, marginBottom: Spacing.xs },
   input: { ...ambientInput, padding: Spacing.md, fontSize: FontSize.md, color: Colors.text },
@@ -220,7 +221,7 @@ const styles = StyleSheet.create({
   submitBtnText: { color: "#fff", fontSize: FontSize.md, fontWeight: "700" },
   section: { marginBottom: Spacing.xl },
   sectionTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text, marginBottom: Spacing.md },
-  ticketCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  ticketCard: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   ticketHeader: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
   ticketSubject: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },
   ticketMeta: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },

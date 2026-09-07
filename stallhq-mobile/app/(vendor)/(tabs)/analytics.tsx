@@ -6,7 +6,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../../lib/auth";
 import { supabase } from "../../../lib/supabase";
-import { Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
+import { NotificationBell } from "../../../components/NotificationBell";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
 import { Eye, Link, ShoppingCart, DollarSign, TrendingUp, Calendar, ChevronRight } from "lucide-react-native";
 import { IconBox } from "../../../components/ui/IconBox";
 
@@ -22,6 +23,7 @@ interface DayPoint {
 }
 
 export default function AnalyticsScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { store } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -162,7 +164,10 @@ export default function AnalyticsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.purple} />
         }
       >
-        <Text style={styles.title}>Analytics</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Analytics</Text>
+          <NotificationBell />
+        </View>
 
         <View style={styles.periodRow}>
           {(["7d", "30d", "all"] as const).map((p) => (
@@ -257,10 +262,14 @@ export default function AnalyticsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
-  title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginBottom: Spacing.lg },
+  headerRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    marginBottom: Spacing.lg,
+  },
+  title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
   periodRow: { flexDirection: "row", gap: Spacing.sm, marginBottom: Spacing.xl },
   periodChip: {
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full,
@@ -271,13 +280,13 @@ const styles = StyleSheet.create({
   periodTextActive: { color: Colors.purple },
   heroRow: { flexDirection: "row", gap: Spacing.sm, marginBottom: Spacing.sm },
   heroCard: {
-    flex: 1, backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1,
+    flex: 1, backgroundColor: "Colors.glass", borderWidth: 1,
     borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg,
   },
   heroLabel: { ...labelStyle, marginBottom: 4 },
   heroValue: { fontSize: 22, fontWeight: "700", color: Colors.text, lineHeight: 28 },
   card: {
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
   },
   cardTitleRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.md },

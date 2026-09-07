@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from "../../lib/theme";
+import { useThemeStyles, Colors } from "../../lib/theme";
 
 interface ScreenProps {
   children: React.ReactNode;
@@ -11,6 +11,7 @@ interface ScreenProps {
 }
 
 export function Screen({ children, style, edges, withHeader = false }: ScreenProps) {
+  const styles = useThemeStyles(makeStyles);
   return (
     <SafeAreaView
       style={[styles.screen, style]}
@@ -21,7 +22,7 @@ export function Screen({ children, style, edges, withHeader = false }: ScreenPro
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Colors.bg,

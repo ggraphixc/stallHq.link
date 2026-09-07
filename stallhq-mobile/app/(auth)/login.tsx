@@ -14,9 +14,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth";
 import { BrandLogo } from "../../components/BrandLogo";
-import { Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../lib/theme";
 
 export default function LoginScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
@@ -118,7 +119,7 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   flex: { flex: 1 },
   content: { flex: 1, paddingHorizontal: Spacing.xxl, justifyContent: "center" },

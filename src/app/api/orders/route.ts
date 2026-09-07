@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createAuthClient } from "@/lib/supabase/api";
 import { sendOrderNotification } from "@/lib/email";
+import { sendPushToUsers } from "@/lib/push";
 import { orderRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
 
 export async function GET(request: NextRequest) {
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
     // Validate store exists
     const { data: store } = await supabase
       .from("stores")
-      .select("id, name, email")
+      .select("id, name, email, user_id")
       .eq("id", body.store_id)
       .single();
 
@@ -112,6 +113,18 @@ export async function POST(request: NextRequest) {
         items: body.items,
         total: body.total,
         notes: body.notes,
+      }).catch(() => {});
+    }
+
+    // Push the vendor a real-time notification (non-blocking)
+    if (store.user_id) {
+      const itemCount = Array.isArray(body.items)
+        ? body.items.reduce((s: number, i: any) => s + (Number(i.quantity) || 0), 0)
+        : 0;
+      sendPushToUsers([store.user_id], {
+        title: "New order received 🎉",
+        body: `${body.customer_name || "A customer"} ordered ${itemCount} item${itemCount === 1 ? "" : "s"} — ₦${Number(body.total || 0).toLocaleString()}`,
+        data: { screen: "orders" },
       }).catch(() => {});
     }
 

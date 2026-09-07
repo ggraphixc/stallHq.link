@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase, Store } from "../../lib/supabase";
-import { Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../lib/theme";
 import { ArrowLeft, Search, Store as StoreIcon, MessageCircle, Camera, Compass } from "lucide-react-native";
 
 /**
@@ -14,6 +14,7 @@ import { ArrowLeft, Search, Store as StoreIcon, MessageCircle, Camera, Compass }
  * other public stores and open them in the native storefront screen.
  */
 export default function BrowseScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const [stores, setStores] = useState<Store[]>([]);
   const [search, setSearch] = useState("");
@@ -150,7 +151,7 @@ export default function BrowseScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: {
     flexDirection: "row", alignItems: "center", gap: Spacing.md,
@@ -170,7 +171,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: FontSize.md, color: Colors.text, padding: 0 },
   list: { padding: Spacing.lg, paddingTop: 0 },
   storeCard: {
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.xl, marginBottom: Spacing.lg, overflow: "hidden",
   },
   banner: { width: "100%", height: 110 },
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
   },
   chipText: { fontSize: FontSize.xs, color: Colors.textMuted },
   emptyState: {
-    alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1,
+    alignItems: "center", backgroundColor: "Colors.glass", borderWidth: 1,
     borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg,
     padding: Spacing.xxxl * 2, gap: 8,
   },

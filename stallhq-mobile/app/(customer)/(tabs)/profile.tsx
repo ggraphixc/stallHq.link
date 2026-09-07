@@ -5,10 +5,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../../lib/auth";
-import { Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
 import { Store, Globe, Mail, FileText, Shield, LogOut, ChevronRight, User, Sparkles, LogIn, Package, Clock } from "lucide-react-native";
+import { NotificationBell } from "../../../components/NotificationBell";
+import { ThemeToggle } from "../../../components/ThemeToggle";
 
 export default function ProfileScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { session, signOut } = useAuth();
 
@@ -24,7 +27,12 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}><Text style={styles.title}>Profile</Text></View>
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Profile</Text>
+          <NotificationBell />
+        </View>
+      </View>
 
       {session?.user ? (
         <View style={styles.userCard}>
@@ -88,6 +96,8 @@ export default function ProfileScreen() {
         ))}
       </View>
 
+      <ThemeToggle />
+
       {session && (
         <TouchableOpacity style={styles.signOutBtn} onPress={signOut}>
           <LogOut size={18} color={Colors.red} /><Text style={styles.signOutText}>Sign Out</Text>
@@ -99,16 +109,17 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { padding: Spacing.lg, paddingBottom: Spacing.sm },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
   userCard: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    flexDirection: "row", alignItems: "center", backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.xl, marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
   },
   guestCard: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    flexDirection: "row", alignItems: "center", backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.xl, marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
   },
   avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.purple, justifyContent: "center", alignItems: "center", marginRight: Spacing.lg },
@@ -126,7 +137,7 @@ const styles = StyleSheet.create({
   accountBtnText: { color: Colors.text, fontSize: FontSize.sm, fontWeight: "600" },
   vendorCta: {
     flexDirection: "row", alignItems: "center", gap: Spacing.md,
-    backgroundColor: "rgba(168,85,247,0.05)", borderWidth: 1, borderColor: "rgba(168,85,247,0.2)",
+    backgroundColor: "rgba(168,85,247,0.05)", borderWidth: 1, borderColor: "Colors.borderGlow",
     borderRadius: BorderRadius.lg, padding: Spacing.md, marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
   },
   vendorCtaTitle: { fontSize: FontSize.sm, fontWeight: "700", color: Colors.text },
@@ -139,7 +150,7 @@ const styles = StyleSheet.create({
   userLabel: { fontSize: FontSize.sm, color: Colors.textMuted },
   menu: { paddingHorizontal: Spacing.lg },
   menuItem: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    flexDirection: "row", alignItems: "center", backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
   },
   menuIcon: { width: 36, height: 36, borderRadius: BorderRadius.md, backgroundColor: Colors.bgSecondary, justifyContent: "center", alignItems: "center", marginRight: Spacing.lg },

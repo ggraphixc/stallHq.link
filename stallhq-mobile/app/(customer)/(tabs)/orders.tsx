@@ -6,7 +6,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { supabase, Order } from "../../../lib/supabase";
 import { BrandLoader } from "../../../components/BrandLoader";
-import { Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
+import { NotificationBell } from "../../../components/NotificationBell";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
 import { Ionicons } from "@expo/vector-icons";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -18,6 +19,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function OrdersScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +92,10 @@ export default function OrdersScreen() {
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.purple} />}
       >
-        <Text style={styles.title}>My Orders</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>My Orders</Text>
+          <NotificationBell />
+        </View>
 
         {/* Email lookup for guest users */}
         {orders.length === 0 && !lookupMode && (
@@ -161,11 +166,15 @@ export default function OrdersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
-  title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginBottom: Spacing.xl },
-  lookupCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
+  headerRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    marginBottom: Spacing.xl,
+  },
+  title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
+  lookupCard: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
   lookupTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text },
   lookupSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: Spacing.xs, marginBottom: Spacing.lg },
   lookupRow: { flexDirection: "row", gap: Spacing.sm },
@@ -176,7 +185,7 @@ const styles = StyleSheet.create({
   empty: { alignItems: "center", paddingVertical: Spacing.xxxl * 2 },
   emptyText: { fontSize: FontSize.lg, color: Colors.textMuted, marginTop: Spacing.lg },
   emptyLink: { fontSize: FontSize.md, color: Colors.purple, fontWeight: "600", marginTop: Spacing.md },
-  orderCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  orderCard: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   orderHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   orderIdRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
   orderId: { fontSize: FontSize.sm, fontWeight: "700", color: Colors.text },

@@ -13,7 +13,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../../lib/auth";
 import { supabase, Order } from "../../../lib/supabase";
-import { Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
+import { NotificationBell } from "../../../components/NotificationBell";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
 import {
   Link,
   Users,
@@ -65,6 +66,7 @@ function StatCard({
   valueSize?: number;
   numberOfLines?: number;
 }) {
+  const styles = useThemeStyles(makeStyles);
   return (
     <View style={styles.statCard}>
       <View style={styles.statRow}>
@@ -103,6 +105,7 @@ function accentColorHex(accent: string): string {
 }
 
 export default function VendorDashboard() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { store, signOut } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -268,6 +271,7 @@ export default function VendorDashboard() {
           </View>
         </View>
         <View style={styles.headerActions}>
+          <NotificationBell />
           <TouchableOpacity
             style={styles.iconBtn}
             onPress={() => router.push(`/(customer)/store/${store.slug}`)}
@@ -525,7 +529,7 @@ export default function VendorDashboard() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
@@ -556,7 +560,7 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm, marginBottom: Spacing.lg },
   statCard: {
     width: "48%", flexGrow: 1,
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg,
   },
   statRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.sm },
@@ -567,7 +571,7 @@ const styles = StyleSheet.create({
 
   // Plan
   planCard: {
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.lg,
   },
   planRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.md },
@@ -609,7 +613,7 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     width: "48%", flexGrow: 1,
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, paddingVertical: Spacing.lg, paddingHorizontal: Spacing.sm,
     alignItems: "center", gap: 8,
   },
@@ -618,7 +622,7 @@ const styles = StyleSheet.create({
   // Discover stores card
   discoverCard: {
     flexDirection: "row", alignItems: "center", gap: Spacing.md,
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.xl,
   },
   discoverIcon: {
@@ -652,7 +656,7 @@ const styles = StyleSheet.create({
 
   // Empty
   emptyCard: {
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.xxxl, alignItems: "center",
   },
   emptyIcon: {
@@ -666,7 +670,7 @@ const styles = StyleSheet.create({
   // Orders
   orderCard: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
   },
   orderLeft: {},

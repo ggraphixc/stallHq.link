@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Compass, Heart, User, Package, Bell } from "lucide-react-native";
+import { Compass, Heart, User, Package } from "lucide-react-native";
 import { Colors, FontSize } from "../../../lib/theme";
 
 export default function CustomerTabsLayout() {
@@ -47,15 +47,6 @@ export default function CustomerTabsLayout() {
           title: "Orders",
           tabBarIcon: ({ color, focused }) => (
             <Package size={22} color={focused ? Colors.purple : color} strokeWidth={focused ? 2.5 : 1.8} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: "Alerts",
-          tabBarIcon: ({ color, focused }) => (
-            <Bell size={22} color={focused ? Colors.purple : color} strokeWidth={focused ? 2.5 : 1.8} />
           ),
         }}
       />

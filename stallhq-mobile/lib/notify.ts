@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { router } from "expo-router";
 import { supabase } from "./supabase";
 
 let Notifications: typeof import("expo-notifications") | null = null;
@@ -38,7 +39,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     const tokenData = await N.getExpoPushTokenAsync();
     const pushToken = tokenData.data;
 
-    // Save to Supabase
+    // Save to Supabase (upsert by token keeps the latest user_id)
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       await supabase.from("push_tokens").upsert(
@@ -69,6 +70,19 @@ export async function registerForPushNotifications(): Promise<string | null> {
 }
 
 /**
+ * Register on launch and re-register whenever the signed-in user changes,
+ * so tokens always point at the current account.
+ */
+export function setupPushRegistration(): void {
+  registerForPushNotifications();
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      registerForPushNotifications();
+    }
+  });
+}
+
+/**
  * Subscribe to foreground notification events. Returns an unsubscribe function.
  */
 export function onNotificationReceived(
@@ -81,15 +95,41 @@ export function onNotificationReceived(
   return () => sub?.remove();
 }
 
+async function navigateForNotification(notification: any): Promise<void> {
+  const data = notification?.request?.content?.data ?? {};
+  const screen = data.screen;
+
+  if (screen === "orders") {
+    // Vendors land on their orders; customers on their order history.
+    const { data: store } = await supabase
+      .from("stores")
+      .select("id")
+      .eq("user_id", notification.request?.content?.data?.userId ?? "")
+      .maybeSingle();
+    if (store) {
+      router.push("/(vendor)/(tabs)/orders");
+    } else {
+      router.push("/(customer)/(tabs)/orders");
+    }
+    return;
+  }
+
+  // Default: open the tab shell (bell overlay is one tap away)
+  router.push("/(customer)/(tabs)");
+}
+
 /**
- * Subscribe to notification tap events. Returns an unsubscribe function.
+ * Subscribe to notification tap events — navigates to the relevant screen.
  */
 export function onNotificationTapped(
-  handler: (response: any) => void
+  handler?: (response: any) => void
 ): () => void {
   let sub: any = null;
   getNotifications().then((N) => {
-    sub = N.addNotificationResponseReceivedListener(handler);
+    sub = N.addNotificationResponseReceivedListener((response) => {
+      handler?.(response);
+      navigateForNotification(response.notification).catch(() => {});
+    });
   });
   return () => sub?.remove();
 }

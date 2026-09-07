@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase, Order } from "../../../lib/supabase";
 import { BrandLoader } from "../../../components/BrandLoader";
-import { Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
 import { Ionicons } from "@expo/vector-icons";
 
 const STATUSES = ["pending", "confirmed", "shipped", "delivered"] as const;
@@ -20,6 +20,7 @@ const STATUS_META: Record<string, { iconName: keyof typeof Ionicons.glyphMap; co
 };
 
 export default function OrderDetailScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null>(null);
@@ -124,7 +125,7 @@ export default function OrderDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: Spacing.lg },
@@ -132,9 +133,9 @@ const styles = StyleSheet.create({
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginBottom: Spacing.sm },
   statusBadge: { alignSelf: "flex-start", paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderRadius: BorderRadius.sm, marginBottom: Spacing.xl },
   statusText: { fontSize: FontSize.md, fontWeight: "700", textTransform: "capitalize" },
-  card: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  card: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   cardLabel: { ...labelStyle, marginBottom: Spacing.sm },
-  timelineCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  timelineCard: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   timelineRow: { flexDirection: "row", gap: Spacing.md },
   timelineLeft: { alignItems: "center", width: 24 },
   timelineDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle, justifyContent: "center", alignItems: "center" },

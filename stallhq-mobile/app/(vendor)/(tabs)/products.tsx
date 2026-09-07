@@ -8,11 +8,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../../lib/auth";
 import { supabase, Product } from "../../../lib/supabase";
-import { Colors, FontSize, Spacing, BorderRadius, ambientInput, labelStyle } from "../../../lib/theme";
+import { NotificationBell } from "../../../components/NotificationBell";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput, labelStyle } from "../../../lib/theme";
 import { Plus, Search, Package, Sparkles, Lock } from "lucide-react-native";
 import { WEB_API_URL } from "../../../lib/config";
 
 export default function ProductsScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { store } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
@@ -124,10 +126,13 @@ export default function ProductsScreen() {
           <Text style={styles.title}>Products</Text>
           <Text style={styles.count}>{products.length} product{products.length !== 1 ? "s" : ""}</Text>
         </View>
-        <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push("/(vendor)/products/new")}>
-          <Plus size={16} color="#fff" />
-          <Text style={styles.primaryBtnText}>Add</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <NotificationBell />
+          <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push("/(vendor)/products/new")}>
+            <Plus size={16} color="#fff" />
+            <Text style={styles.primaryBtnText}>Add</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.searchRow}>
@@ -201,7 +206,7 @@ export default function ProductsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
@@ -209,6 +214,7 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
   count: { ...labelStyle, marginTop: 2 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
   primaryBtn: {
     backgroundColor: Colors.purple, borderRadius: BorderRadius.lg,
     paddingVertical: 10, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 4,
@@ -225,7 +231,7 @@ const styles = StyleSheet.create({
   aiBanner: {
     flexDirection: "row", alignItems: "center", gap: Spacing.md,
     marginHorizontal: Spacing.lg, marginBottom: Spacing.sm,
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: "rgba(168,85,247,0.25)",
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: "Colors.borderGlow",
     borderRadius: BorderRadius.lg, padding: Spacing.md,
   },
   aiBannerIcon: {
@@ -237,14 +243,14 @@ const styles = StyleSheet.create({
   aiProgress: {
     flexDirection: "row", alignItems: "center", gap: Spacing.sm,
     marginHorizontal: Spacing.lg, marginBottom: Spacing.sm,
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.md,
   },
   aiProgressText: { fontSize: FontSize.sm, color: Colors.textSecondary },
 
   productCard: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle,
     borderRadius: BorderRadius.lg, padding: Spacing.md, marginBottom: Spacing.sm,
   },
   productImage: { width: 52, height: 52, borderRadius: BorderRadius.md, marginRight: Spacing.md },
@@ -260,7 +266,7 @@ const styles = StyleSheet.create({
   availDot: { width: 8, height: 8, borderRadius: 4, marginBottom: 4 },
   availText: { fontSize: FontSize.xs, color: Colors.textMuted },
   emptyState: {
-    alignItems: "center", backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1,
+    alignItems: "center", backgroundColor: "Colors.glass", borderWidth: 1,
     borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xxxl * 2,
   },
   emptyIcon: {

@@ -10,7 +10,7 @@ import { supabase, Product } from "../../../lib/supabase";
 import { trackStoreClick, trackEvent, trackStoreVisit } from "../../../lib/track";
 import { postReviewReply } from "../../../lib/reviewActions";
 import { BrandLoader } from "../../../components/BrandLoader";
-import { Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
 import { ArrowLeft, Package, MessageCircle, Star, Send, Flag, ChevronRight, Pencil, Trash2, Reply, X, ShoppingCart } from "lucide-react-native";
 import { WEB_API_URL } from "../../../lib/auth";
 import { useCart } from "../../../lib/cart";
@@ -46,6 +46,7 @@ function Stars({ value, size = 14, onSelect }: { value: number; size?: number; o
 }
 
 export default function ProductDetailScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [product, setProduct] = useState<(Product & { store?: any }) | null>(null);
@@ -548,7 +549,7 @@ export default function ProductDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   scroll: { paddingBottom: 40 },
   topRow: { padding: Spacing.lg, paddingBottom: Spacing.sm },
@@ -566,7 +567,7 @@ const styles = StyleSheet.create({
   desc: { fontSize: FontSize.md, color: Colors.textSecondary, lineHeight: 22, marginTop: Spacing.md },
   catChip: { alignSelf: "flex-start", paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.sm, backgroundColor: Colors.purpleDim },
   catText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.purple, textTransform: "uppercase" },
-  storeCard: { flexDirection: "row", alignItems: "center", gap: Spacing.md, backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.md, marginTop: Spacing.xl },
+  storeCard: { flexDirection: "row", alignItems: "center", gap: Spacing.md, backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.md, marginTop: Spacing.xl },
   storeAvatar: { width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: Colors.purpleDim, justifyContent: "center", alignItems: "center" },
   orderBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#25d366", borderRadius: BorderRadius.lg, padding: Spacing.lg },
   orderText: { color: "#fff", fontSize: FontSize.lg, fontWeight: "700" },
@@ -579,13 +580,13 @@ const styles = StyleSheet.create({
   reportBtn: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "center", marginTop: Spacing.md, padding: Spacing.sm },
   reportText: { fontSize: FontSize.xs, color: Colors.textMuted },
   sectionTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text },
-  reviewForm: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.md, gap: Spacing.xs },
+  reviewForm: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.md, gap: Spacing.xs },
   label: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textSecondary, marginTop: Spacing.sm },
   input: { backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: FontSize.sm, color: Colors.text },
   submitBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: Colors.purple, borderRadius: BorderRadius.lg, padding: Spacing.md, marginTop: Spacing.md },
-  reviewCard: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
+  reviewCard: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.purpleDim, justifyContent: "center", alignItems: "center" },
-  replyBox: { marginTop: Spacing.sm, backgroundColor: "rgba(6,182,212,0.05)", borderWidth: 1, borderColor: "rgba(6,182,212,0.15)", borderRadius: BorderRadius.md, padding: Spacing.md },
+  replyBox: { marginTop: Spacing.sm, backgroundColor: "rgba(6,182,212,0.05)", borderWidth: 1, borderColor: "Colors.cyanDim", borderRadius: BorderRadius.md, padding: Spacing.md },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
   modalCard: { backgroundColor: Colors.bgSecondary, borderTopLeftRadius: BorderRadius.xxl, borderTopRightRadius: BorderRadius.xxl, padding: Spacing.xxl, gap: Spacing.md, paddingBottom: 44 },
   modalTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text },

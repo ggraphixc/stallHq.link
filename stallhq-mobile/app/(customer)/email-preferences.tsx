@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { BrandLoader } from "../../components/BrandLoader";
-import { Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../lib/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { WEB_API_URL } from "../../lib/auth";
 
@@ -28,6 +28,7 @@ const DEFAULT_PREFS: Prefs = {
 };
 
 export default function EmailPreferencesScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
@@ -128,14 +129,14 @@ export default function EmailPreferencesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: Spacing.lg },
   backText: { fontSize: FontSize.md, color: Colors.purple },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginBottom: Spacing.xs },
   email: { fontSize: FontSize.sm, color: Colors.textMuted, marginBottom: Spacing.xl },
-  card: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
+  card: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
   cardLabel: { ...labelStyle, marginBottom: Spacing.md },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   rowLabel: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },

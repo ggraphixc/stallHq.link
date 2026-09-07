@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Store } from "lucide-react-native";
 import { useBranding } from "../lib/branding";
-import { Colors, FontSize, Spacing } from "../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing } from "../lib/theme";
 
 interface BrandLogoProps {
   size?: number;
@@ -21,6 +21,7 @@ export function BrandLogo({
   showWordmark = true,
   wordmarkSize = FontSize.hero,
 }: BrandLogoProps) {
+  const styles = useThemeStyles(makeStyles);
   const { logo_url, platform_name } = useBranding();
   const radius = Math.round(size * 0.28);
 
@@ -61,7 +62,7 @@ export function BrandLogo({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { alignItems: "center" },
   imageWrap: {
     backgroundColor: "rgba(10,10,15,0.9)",

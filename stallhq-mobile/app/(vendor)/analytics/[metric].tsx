@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAuth } from "../../../lib/auth";
 import { supabase } from "../../../lib/supabase";
-import { Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
 import { ArrowLeft, Eye, Link, ShoppingCart, DollarSign, Calendar, TrendingUp } from "lucide-react-native";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -31,6 +31,7 @@ const METRIC_META: Record<Metric, { title: string; subtitle: string }> = {
 };
 
 export default function AnalyticsDetailScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { metric = "visits", period = "7d" } = useLocalSearchParams<{ metric?: Metric; period?: string }>();
   const { store } = useAuth();
@@ -205,7 +206,7 @@ export default function AnalyticsDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: {
     flexDirection: "row", alignItems: "center", gap: Spacing.md,
@@ -216,10 +217,10 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 1 },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
   totalsRow: { flexDirection: "row", gap: Spacing.sm, marginBottom: Spacing.lg },
-  totalCard: { flex: 1, backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.md, alignItems: "center", gap: 2 },
+  totalCard: { flex: 1, backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.md, alignItems: "center", gap: 2 },
   totalValue: { fontSize: FontSize.md, fontWeight: "800", color: Colors.text, marginTop: 2 },
   totalLabel: { ...labelStyle, fontSize: 8 },
-  card: { backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.lg },
+  card: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.lg },
   cardHead: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.md },
   cardTitle: { fontSize: FontSize.md, fontWeight: "700", color: Colors.text },
   dayRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, paddingVertical: 5 },

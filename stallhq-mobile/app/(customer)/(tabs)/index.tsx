@@ -6,11 +6,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase, Store } from "../../../lib/supabase";
-import { Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../../lib/theme";
 import { Search, Store as StoreIcon, ShoppingCart } from "lucide-react-native";
 import { useAuth } from "../../../lib/auth";
 import { BrandLogo } from "../../../components/BrandLogo";
 import { StoreFavoriteButton } from "../../../components/StoreFavoriteButton";
+import { NotificationBell } from "../../../components/NotificationBell";
 import { useCart } from "../../../lib/cart";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -25,6 +26,7 @@ const CATEGORY_PRESETS = [
 ];
 
 export default function ExploreScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { session, store: vendorStore } = useAuth();
   const cart = useCart();
@@ -70,21 +72,24 @@ export default function ExploreScreen() {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.brandRow}>
-            <BrandLogo size={24} />
+            <BrandLogo size={24} showWordmark={false} />
             <Text style={styles.title}>stallHq</Text>
           </View>
-          <TouchableOpacity
-            style={styles.cartBtn}
-            onPress={() => router.push("/(customer)/cart")}
-            activeOpacity={0.7}
-          >
-            <ShoppingCart size={18} color={Colors.textSecondary} />
-            {cart.itemCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{cart.itemCount > 99 ? "99+" : cart.itemCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <NotificationBell />
+            <TouchableOpacity
+              style={styles.cartBtn}
+              onPress={() => router.push("/(customer)/cart")}
+              activeOpacity={0.7}
+            >
+              <ShoppingCart size={18} color={Colors.textSecondary} />
+              {cart.itemCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{cart.itemCount > 99 ? "99+" : cart.itemCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -192,7 +197,7 @@ export default function ExploreScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
 
   // Header
@@ -200,6 +205,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   brandRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
   title: { fontSize: FontSize.lg, fontWeight: "800", color: Colors.text, letterSpacing: -0.3 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
   cartBtn: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,

@@ -4,7 +4,7 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator,
 } from "react-native";
 import { Bot, X, Send } from "lucide-react-native";
-import { Colors, FontSize, Spacing, BorderRadius } from "../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../lib/theme";
 import { WEB_API_URL } from "../lib/config";
 
 interface Message {
@@ -26,6 +26,7 @@ const SUGGESTIONS = [
 ];
 
 export function AssistantChat({ visible, onClose, storeSlug, storeName }: AssistantChatProps) {
+  const styles = useThemeStyles(makeStyles);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -159,7 +160,7 @@ export function AssistantChat({ visible, onClose, storeSlug, storeName }: Assist
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   backdrop: {
     flex: 1, backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "flex-end",
@@ -192,7 +193,7 @@ const styles = StyleSheet.create({
   suggestChip: {
     padding: Spacing.md, borderRadius: BorderRadius.lg,
     backgroundColor: "rgba(168,85,247,0.08)",
-    borderWidth: 1, borderColor: "rgba(168,85,247,0.25)",
+    borderWidth: 1, borderColor: "Colors.borderGlow",
   },
   suggestChipText: { fontSize: FontSize.sm, color: Colors.purple },
   bubble: { maxWidth: "85%", padding: Spacing.md, borderRadius: BorderRadius.lg },
@@ -201,7 +202,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   bubbleBot: {
-    alignSelf: "flex-start", backgroundColor: "rgba(255,255,255,0.05)",
+    alignSelf: "flex-start", backgroundColor: "Colors.borderSubtle",
     borderBottomLeftRadius: 4,
   },
   bubbleText: { fontSize: FontSize.md, color: Colors.text, lineHeight: 21 },

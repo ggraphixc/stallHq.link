@@ -6,10 +6,11 @@ import { alert } from "../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth";
-import { Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../lib/theme";
 import { ArrowLeft, Store, Sparkles } from "lucide-react-native";
 
 export default function BecomeVendorScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { becomeVendor } = useAuth();
   const [storeName, setStoreName] = useState("");
@@ -85,7 +86,7 @@ export default function BecomeVendorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   flex: { flex: 1 },
   content: { flex: 1, paddingHorizontal: Spacing.xxl, justifyContent: "center" },

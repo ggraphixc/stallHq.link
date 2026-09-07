@@ -15,10 +15,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAuth, SignupRole } from "../../lib/auth";
 import { BrandLogo } from "../../components/BrandLogo";
-import { Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../lib/theme";
 import { Store, ShoppingBag } from "lucide-react-native";
 
 export default function SignupScreen() {
+  const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const params = useLocalSearchParams<{ role?: string }>();
   const role: SignupRole = params.role === "customer" ? "customer" : "vendor";
@@ -163,7 +164,7 @@ export default function SignupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   flex: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: Spacing.xxl, paddingVertical: Spacing.xxxl, justifyContent: "center" },
