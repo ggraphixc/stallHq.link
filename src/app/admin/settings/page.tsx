@@ -14,7 +14,7 @@ const DEFAULT_SETTINGS: Record<string, any> = {
   brevo_sender_email: process.env.BREVO_SENDER_EMAIL || "", brevo_sender_name: "StallHq",
   maintenance_mode: false, allow_signup: true,
   max_free_products: 10, trial_days: 14, support_email: "",
-  ai_enabled: false, ai_provider: "openrouter", ai_model: "", ai_api_key: "", ai_base_url: "", ai_assistant_enabled: false,
+  ai_enabled: false, ai_provider: "openrouter", ai_model: "gemini-2.5-flash-preview-04-17", ai_api_key: "", ai_base_url: "", ai_assistant_enabled: false,
   logo_url: "", favicon_url: "", platform_name: "",
   android_version: "1.0.0", android_version_code: 1, android_min_version: "1.0.0", android_download_url: "",
   ios_version: "1.0.0", ios_min_version: "1.0.0", ios_download_url: "",
@@ -363,16 +363,16 @@ function AITab({ settings, updateSetting, showAIKey, setShowAIKey }: { settings:
                 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{ color: "var(--glow-blue)", textDecoration: "underline" }}>
                   aistudio.google.com/apikey
                 </a>
-                {" "}. Free tier available. Use gemini-2.5-flash (cheap) or gemini-3.5-flash (smarter, 6x cost if you exceed free tier).
+                {" "}. Free tier available. Use gemini-2.5-flash-preview-04-17 (cheap) or gemini-2.5-flash-lite-preview-04-17 (smarter, 6x cost if you exceed free tier).
               </p>
             )}
           </div>
           <div>
             <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Model</label>
             {settings.ai_provider === "google" ? (
-              <select className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", background: "var(--bg-primary)", boxSizing: "border-box" }} value={settings.ai_model || "gemini-2.5-flash"} onChange={(e) => updateSetting("ai_model", e.target.value)}>
-                <option value="gemini-2.5-flash">gemini-2.5-flash (cheap, 250 req/day free)</option>
-                <option value="gemini-3.5-flash">gemini-3.5-flash (smarter, 6x cost over free tier)</option>
+              <select className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", background: "var(--bg-primary)", boxSizing: "border-box" }} value={settings.ai_model || "gemini-2.5-flash-preview-04-17"} onChange={(e) => updateSetting("ai_model", e.target.value)}>
+                <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash-preview-04-17 (cheap, 250 req/day free)</option>
+                <option value="gemini-2.5-flash-lite-preview-04-17">gemini-2.5-flash-lite-preview-04-17 (smarter, 6x cost over free tier)</option>
               </select>
             ) : (
               <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.ai_model || ""} onChange={(e) => updateSetting("ai_model", e.target.value)} placeholder={settings.ai_provider === "openrouter" ? "google/gemini-2.0-flash-exp:free" : "model-name"} />
