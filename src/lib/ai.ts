@@ -70,7 +70,14 @@ export async function getAiSettings(): Promise<Record<string, any>> {
       "ai_assistant_enabled",
     ]);
   const settings: Record<string, any> = {};
-  data?.forEach((r) => { settings[r.key] = r.value; });
+  data?.forEach((r) => {
+    // Unwrap JSONB value — Supabase stores strings as JSON-encoded values
+    let v = r.value;
+    if (typeof v === "string") {
+      try { v = JSON.parse(v); } catch { /* keep as-is */ }
+    }
+    settings[r.key] = v;
+  });
   return settings;
 }
 
@@ -152,7 +159,7 @@ async function callGoogleGemini(
     ? { parts: [{ text: typeof systemMsg.content === "string" ? systemMsg.content : JSON.stringify(systemMsg.content) }] }
     : undefined;
 
-  const url = `${config.baseUrl}/models/${config.model}:generateContent?key=${config.apiKey}`;
+  const url = `${config.baseUrl}/models/${config.model}:generateContent`;
 
   const body: Record<string, any> = {
     contents,
@@ -169,7 +176,10 @@ async function callGoogleGemini(
   try {
     response = await fetchWithTimeout(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": config.apiKey,
+      },
       body: JSON.stringify(body),
     }, 30000);
   } catch (err: any) {
