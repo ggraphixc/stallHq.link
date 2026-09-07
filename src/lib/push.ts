@@ -23,33 +23,52 @@ export async function sendPushToTokens(
   const unique = [...new Set(tokens.filter(Boolean))];
   if (!unique.length) return 0;
 
-  const messages = unique.map((token) => ({
-    to: token,
-    title: payload.title,
-    body: payload.body,
-    sound: "default",
-    data: payload.data ?? {},
-  }));
+  // Send one request per token so a bad token doesn't fail the whole batch,
+  // and we can log which token failed and why.
+  const failed: { token: string; reason: string }[] = [];
+  let sent = 0;
 
-  try {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (process.env.EXPO_ACCESS_TOKEN) {
-      headers.Authorization = `Bearer ${process.env.EXPO_ACCESS_TOKEN}`;
+  for (const token of unique) {
+    const message = {
+      to: token,
+      title: payload.title,
+      body: payload.body,
+      sound: "default",
+      data: payload.data ?? {},
+    };
+
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (process.env.EXPO_ACCESS_TOKEN) {
+        headers.Authorization = `Bearer ${process.env.EXPO_ACCESS_TOKEN}`;
+      }
+      const res = await fetch(EXPO_PUSH_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(message),
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        failed.push({ token: token.slice(0, 16) + "…", reason: `${res.status} ${body.slice(0, 200)}` });
+        console.error("[push] Expo rejected token", token.slice(0, 8) + "…:", res.status, body.slice(0, 300));
+        continue;
+      }
+      sent++;
+    } catch (err) {
+      failed.push({ token: token.slice(0, 16) + "…", reason: String(err) });
+      console.error("[push] Expo send threw for token", token.slice(0, 8) + "…:", err);
     }
-    const res = await fetch(EXPO_PUSH_URL, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(messages),
-    });
-    if (!res.ok) {
-      console.error("[push] Expo API error:", res.status, await res.text());
-      return 0;
-    }
-    return messages.length;
-  } catch (error) {
-    console.error("[push] Send failed:", error);
-    return 0;
   }
+
+  if (failed.length) {
+    console.warn("[push] push send summary:", {
+      sent,
+      failed: failed.length,
+      failedTokens: failed.map((f) => f.token),
+      reasons: failed.map((f) => f.reason),
+    });
+  }
+  return sent;
 }
 
 /** Push to every device token belonging to the given user ids. */

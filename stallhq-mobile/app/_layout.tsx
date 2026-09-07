@@ -9,6 +9,7 @@ import {
   Colors, getIsDark, initTheme, setSystemScheme, useThemeVersion,
 } from "../lib/theme";
 import { AlertProvider } from "../components/ui/CustomAlert";
+import { useAuth } from "../lib/auth";
 
 function ThemeBridge() {
   const scheme = useColorScheme();
@@ -25,8 +26,12 @@ function ThemeBridge() {
 export default function RootLayout() {
   useThemeVersion();
 
-  // Register for push notifications on app start (lazy-loaded)
+  // Register for push notifications AFTER auth has hydrated.
+  // AuthProvider.setLoading becomes false once session is resolved, so we
+  // subscribe to that and only boot push registration when a real session exists.
+  const { loading: authLoading, user: authUser } = useAuth();
   useEffect(() => {
+    if (authLoading) return;
     (async () => {
       try {
         const { setupPushRegistration, onNotificationReceived, onNotificationTapped } = await import("../lib/notify");
@@ -35,7 +40,7 @@ export default function RootLayout() {
         onNotificationTapped();
       } catch {}
     })();
-  }, []);
+  }, [authLoading, authUser?.id]);
 
   return (
     <SafeAreaProvider>
