@@ -59,10 +59,16 @@ export function adminClient(): SupabaseClient {
 /** Normalize Google Gemini model names (fix deprecated/incorrect names) */
 function normalizeGeminiModel(model: string): string {
   const map: Record<string, string> = {
-    "gemini-2.5-flash": "gemini-2.5-flash-preview-04-17",
-    "gemini-3.5-flash": "gemini-2.5-flash-lite-preview-04-17",
-    "gemini-2.0-flash": "gemini-2.5-flash-preview-04-17",
-    "gemini-2.0-flash-lite": "gemini-2.5-flash-lite-preview-04-17",
+    "gemini-2.5-flash": "gemini-3.5-flash",
+    "gemini-3.5-flash": "gemini-3.5-flash",
+    "gemini-2.5-flash-preview-04-17": "gemini-3.5-flash",
+    "gemini-2.5-flash-lite-preview-04-17": "gemini-3.5-flash-lite",
+    "gemini-3.5-flash-lite": "gemini-3.5-flash-lite",
+    "gemini-2.0-flash": "gemini-3.5-flash",
+    "gemini-2.0-flash-lite": "gemini-3.5-flash-lite",
+    "gemini-3.5-flash-lite-preview-04-17": "gemini-3.5-flash-lite",
+    "gemini-3.6-flash": "gemini-3.6-flash",
+    "gemini-3.8-flash": "gemini-3.8-flash",
   };
   return map[model] || model;
 }
