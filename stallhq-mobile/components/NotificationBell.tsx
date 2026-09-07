@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  View, Text, Modal, FlatList, TouchableOpacity, StyleSheet, RefreshControl,
+  View, Text, Modal, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Image, Linking,
 } from "react-native";
-import { Bell, CheckCheck, X } from "lucide-react-native";
+import { Bell, CheckCheck, X, ChevronRight, ImageOff } from "lucide-react-native";
 import { useAuth } from "../lib/auth";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../lib/theme";
 import { WEB_API_URL } from "../lib/config";
@@ -14,6 +14,9 @@ interface UserNotification {
   type: string;
   read: boolean;
   link?: string;
+  image_url?: string;
+  action_label?: string;
+  action_link?: string;
   created_at: string;
 }
 
@@ -23,6 +26,22 @@ const TYPE_COLORS: Record<string, string> = {
   promo: Colors.purple,
   reply: Colors.amber,
   trend: Colors.blue,
+  success: Colors.green,
+  warning: Colors.amber,
+  error: Colors.red,
+  announcement: Colors.blue,
+};
+
+const TYPE_ICONS: Record<string, string> = {
+  info: "ℹ️",
+  order: "📦",
+  promo: "🎉",
+  reply: "💬",
+  trend: "📈",
+  success: "✅",
+  warning: "⚠️",
+  error: "❌",
+  announcement: "📢",
 };
 
 function timeAgo(dateStr: string): string {
@@ -37,16 +56,13 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
-/**
- * Bell icon with an unread badge, placed in screen headers (customer + vendor).
- * Tapping it slides up a bottom-sheet overlay with the full notification list.
- */
 export function NotificationBell({ size = 36 }: { size?: number }) {
   const styles = useThemeStyles(makeStyles);
   const { session } = useAuth();
   const [visible, setVisible] = useState(false);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [imgErrors, setImgErrors] = useState<Set<string>>(new Set());
   const userId = session?.user?.id;
 
   const load = useCallback(async () => {
@@ -93,6 +109,10 @@ export function NotificationBell({ size = 36 }: { size?: number }) {
       });
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch {}
+  };
+
+  const handleAction = (link: string) => {
+    Linking.openURL(link).catch(() => {});
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -145,23 +165,48 @@ export function NotificationBell({ size = 36 }: { size?: number }) {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.purple} />}
                 renderItem={({ item }) => {
                   const color = TYPE_COLORS[item.type] || Colors.textMuted;
+                  const hasImage = item.image_url && !imgErrors.has(item.id);
+                  const hasAction = item.action_label && item.action_link;
                   return (
                     <TouchableOpacity
                       style={[styles.card, !item.read && styles.cardUnread]}
                       activeOpacity={0.85}
                       onPress={() => markRead(item.id)}
                     >
-                      <View style={[styles.dot, { backgroundColor: color }]} />
-                      <View style={styles.cardBody}>
-                        <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-                        <Text style={styles.cardText} numberOfLines={2}>{item.body}</Text>
-                        <Text style={styles.cardTime}>{timeAgo(item.created_at)}</Text>
-                      </View>
-                      {!item.read ? (
-                        <View style={[styles.unreadBadge, { backgroundColor: color }]} />
+                      {hasImage ? (
+                        <View style={styles.imageContainer}>
+                          <Image
+                            source={{ uri: item.image_url! }}
+                            style={styles.image}
+                            resizeMode="cover"
+                            onError={() => setImgErrors(prev => new Set(prev).add(item.id))}
+                          />
+                        </View>
                       ) : (
-                        <CheckCheck size={14} color={Colors.green} />
+                        <View style={[styles.typeIcon, { backgroundColor: color + "18" }]}>
+                          <Text style={styles.typeEmoji}>{TYPE_ICONS[item.type] || "🔔"}</Text>
+                        </View>
                       )}
+                      <View style={styles.cardContent}>
+                        <View style={styles.cardTopRow}>
+                          <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+                          {!item.read && <View style={[styles.unreadDot, { backgroundColor: color }]} />}
+                        </View>
+                        <Text style={styles.cardBody} numberOfLines={2}>{item.body}</Text>
+                        <View style={styles.cardBottomRow}>
+                          <Text style={styles.cardTime}>{timeAgo(item.created_at)}</Text>
+                          {hasAction && (
+                            <TouchableOpacity
+                              style={[styles.actionBtn, { borderColor: color + "40" }]}
+                              onPress={() => handleAction(item.action_link!)}
+                              activeOpacity={0.7}
+                            >
+                              <Text style={[styles.actionText, { color }]} numberOfLines={1}>{item.action_label}</Text>
+                              <ChevronRight size={10} color={color} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
                     </TouchableOpacity>
                   );
                 }}
@@ -169,6 +214,7 @@ export function NotificationBell({ size = 36 }: { size?: number }) {
                   <View style={styles.empty}>
                     <Bell size={32} color={Colors.textMuted} />
                     <Text style={styles.emptyTitle}>No notifications yet</Text>
+                    <Text style={styles.emptySub}>Order updates and alerts will appear here.</Text>
                   </View>
                 }
               />
@@ -210,7 +256,7 @@ const makeStyles = () => StyleSheet.create({
     borderTopRightRadius: BorderRadius.xxl,
     padding: Spacing.lg,
     paddingBottom: 40,
-    maxHeight: "78%",
+    maxHeight: "82%",
   },
   handle: {
     alignSelf: "center",
@@ -236,18 +282,39 @@ const makeStyles = () => StyleSheet.create({
 
   list: { paddingBottom: Spacing.sm },
   card: {
-    flexDirection: "row", alignItems: "center", gap: Spacing.sm,
+    flexDirection: "row", gap: Spacing.sm,
     padding: Spacing.md, marginBottom: Spacing.sm,
     backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
+    overflow: "hidden",
   },
   cardUnread: { backgroundColor: Colors.purpleTint, borderColor: "rgba(168,85,247,0.15)" },
-  dot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  cardBody: { flex: 1 },
-  cardTitle: { fontSize: FontSize.sm, fontWeight: "700", color: Colors.text },
-  cardText: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 2, lineHeight: 16 },
-  cardTime: { fontSize: 10, color: Colors.textMuted, marginTop: 4 },
-  unreadBadge: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
+
+  imageContainer: {
+    width: 56, height: 56, borderRadius: BorderRadius.md, overflow: "hidden", flexShrink: 0,
+  },
+  image: { width: "100%", height: "100%" },
+  typeIcon: {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: "center", justifyContent: "center", flexShrink: 0,
+  },
+  typeEmoji: { fontSize: 16 },
+
+  cardContent: { flex: 1, gap: 2 },
+  cardTopRow: { flexDirection: "row", alignItems: "center", gap: Spacing.xs },
+  cardTitle: { fontSize: FontSize.sm, fontWeight: "700", color: Colors.text, flex: 1 },
+  unreadDot: { width: 7, height: 7, borderRadius: 4 },
+  cardBody: { fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 17 },
+  cardBottomRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4,
+  },
+  cardTime: { fontSize: 10, color: Colors.textMuted },
+  actionBtn: {
+    flexDirection: "row", alignItems: "center", gap: 2,
+    paddingHorizontal: 8, paddingVertical: 3,
+    borderWidth: 1, borderRadius: 12,
+  },
+  actionText: { fontSize: 10, fontWeight: "600" },
 
   empty: { alignItems: "center", paddingVertical: Spacing.xxxl * 2, gap: Spacing.sm },
   emptyTitle: { fontSize: FontSize.md, color: Colors.textMuted, fontWeight: "600" },
