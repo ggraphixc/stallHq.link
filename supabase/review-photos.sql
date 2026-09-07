@@ -11,10 +11,12 @@ values ('review-photos', 'review-photos', true)
 on conflict (id) do nothing;
 
 -- Allow any signed-in user to upload into the review-photos bucket
+drop policy if exists "Anyone can upload review photos" on storage.objects;
 create policy "Anyone can upload review photos"
   on storage.objects for insert
   with check (bucket_id = 'review-photos');
 
+drop policy if exists "Anyone can read review photos" on storage.objects;
 create policy "Anyone can read review photos"
   on storage.objects for select
   using (bucket_id = 'review-photos');

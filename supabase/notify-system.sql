@@ -46,25 +46,30 @@ ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_notifications ENABLE ROW LEVEL SECURITY;
 
 -- push_tokens: users can manage their own tokens
+DROP POLICY IF EXISTS "Users manage own push tokens" ON push_tokens;
 CREATE POLICY "Users manage own push tokens"
   ON push_tokens FOR ALL
   USING (auth.uid() = user_id);
 
 -- notification_preferences: users can manage their own prefs
+DROP POLICY IF EXISTS "Users manage own notification prefs" ON notification_preferences;
 CREATE POLICY "Users manage own notification prefs"
   ON notification_preferences FOR ALL
   USING (auth.uid() = user_id);
 
 -- user_notifications: users can read their own, admins can insert
+DROP POLICY IF EXISTS "Users read own notifications" ON user_notifications;
 CREATE POLICY "Users read own notifications"
   ON user_notifications FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users update own notifications" ON user_notifications;
 CREATE POLICY "Users update own notifications"
   ON user_notifications FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- Service role inserts (via API routes with service key)
+DROP POLICY IF EXISTS "Service role inserts notifications" ON user_notifications;
 CREATE POLICY "Service role inserts notifications"
   ON user_notifications FOR INSERT
   WITH CHECK (true);
@@ -85,6 +90,7 @@ CREATE INDEX IF NOT EXISTS idx_web_push_endpoint ON web_push_subscriptions(endpo
 
 ALTER TABLE web_push_subscriptions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage own web push subs" ON web_push_subscriptions;
 CREATE POLICY "Users manage own web push subs"
   ON web_push_subscriptions FOR ALL
   USING (auth.uid() = user_id);
