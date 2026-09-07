@@ -363,13 +363,13 @@ function AITab({ settings, updateSetting, showAIKey, setShowAIKey }: { settings:
                 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{ color: "var(--glow-blue)", textDecoration: "underline" }}>
                   aistudio.google.com/apikey
                 </a>
-                {" "}. Free tier: 10 RPM, 250 req/day. Use gemini-2.5-flash (stable).
+                {" "}. Free tier available. Use gemini-2.5-flash (cheap) or gemini-3.5-flash (smarter, 6x cost if you exceed free tier).
               </p>
             )}
           </div>
           <div>
             <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Model</label>
-            <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.ai_model || ""} onChange={(e) => updateSetting("ai_model", e.target.value)}               placeholder={settings.ai_provider === "openrouter" ? "google/gemini-2.0-flash-exp:free" : settings.ai_provider === "google" ? "gemini-2.5-flash" : "model-name"} />
+            <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.ai_model || ""} onChange={(e) => updateSetting("ai_model", e.target.value)}               placeholder={settings.ai_provider === "openrouter" ? "google/gemini-2.0-flash-exp:free" : settings.ai_provider === "google" ? "gemini-2.5-flash (recommended) or gemini-3.5-flash" : "model-name"} />
           </div>
           <div>
             <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>API Key</label>
