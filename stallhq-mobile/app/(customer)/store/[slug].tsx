@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Image,
-  Linking, RefreshControl, TextInput, Modal,
+  Linking, RefreshControl, TextInput, Modal, Share,
 } from "react-native";
 import { alert } from "../../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,12 +9,13 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase, Store, Product } from "../../../lib/supabase";
 import { trackStoreVisit, trackStoreClick } from "../../../lib/track";
 import { postReviewReply } from "../../../lib/reviewActions";
+import { pickAndUploadReviewPhotos } from "../../../lib/reviewPhotos";
 import { BrandLoader } from "../../../components/BrandLoader";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
 import {
   ArrowLeft, Store as StoreIcon, MessageCircle, Camera, Package, Bot,
-  ChevronRight, Star, Heart, Send, Pencil, Trash2, Reply, X, Flag,
-  ShoppingCart, Plus, Clock,
+  ChevronRight,  Star, Heart, Send, Pencil, Trash2, Reply, X, Flag,
+  ShoppingCart, Plus, Clock, Share2,
 } from "lucide-react-native";
 import { AssistantChat } from "../../../components/AssistantChat";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -40,6 +41,8 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
   const [name, setName] = useState("");
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [formPhotos, setFormPhotos] = useState<string[]>([]);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -89,6 +92,7 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
           reviewer_name: name.trim(),
           rating,
           comment: comment.trim() || null,
+          photos: formPhotos.length > 0 ? formPhotos : undefined,
           user_id: user?.id || null,
         })
         .select()
@@ -96,7 +100,7 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
       if (error) {
         alert("Review failed", error.message || "Please try again.");
       } else if (data) {
-        setName(""); setRating(0); setComment(""); setShowForm(false);
+        setName(""); setRating(0); setComment(""); setFormPhotos([]); setShowForm(false);
         await load();
       }
     } catch {
@@ -212,6 +216,35 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
           </View>
           <Text style={styles.reviewFormLabel}>Comment (optional)</Text>
           <TextInput style={[styles.reviewInput, { minHeight: 70, textAlignVertical: "top" }]} placeholder="How was shopping here?" placeholderTextColor={Colors.textMuted} value={comment} onChangeText={setComment} multiline maxLength={1000} />
+          <Text style={styles.reviewFormLabel}>Photos (optional, up to 4)</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm, flexWrap: "wrap" }}>
+            {formPhotos.map((url, i) => (
+              <View key={i}>
+                <Image source={{ uri: url }} style={{ width: 56, height: 56, borderRadius: BorderRadius.sm }} />
+                <TouchableOpacity
+                  onPress={() => setFormPhotos((p) => p.filter((_, idx) => idx !== i))}
+                  style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: 9, backgroundColor: Colors.red, alignItems: "center", justifyContent: "center" }}
+                >
+                  <X size={10} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            {formPhotos.length < 4 && (
+              <TouchableOpacity
+                onPress={async () => {
+                  setPhotoBusy(true);
+                  const urls = await pickAndUploadReviewPhotos(formPhotos);
+                  setPhotoBusy(false);
+                  if (urls.length) setFormPhotos((p) => [...p, ...urls]);
+                }}
+                disabled={photoBusy}
+                style={[styles.photoAddBtn, photoBusy && { opacity: 0.6 }]}
+              >
+                <Camera size={16} color={Colors.textMuted} />
+                <Text style={{ fontSize: 11, color: Colors.textMuted }}>{photoBusy ? "Uploading…" : "Add"}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <TouchableOpacity style={[styles.submitReviewBtn, busy && { opacity: 0.6 }]} onPress={submit} disabled={busy}>
             <Send size={14} color="#fff" />
             <Text style={{ color: "#fff", fontSize: FontSize.sm, fontWeight: "700" }}>{busy ? "Submitting…" : "Submit Review"}</Text>
@@ -238,6 +271,13 @@ function StoreReviews({ storeId, storeName, storeUserId }: { storeId: string; st
               <Stars value={r.rating} />
             </View>
             {r.comment ? <Text style={{ fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: Spacing.sm, lineHeight: 19 }}>{r.comment}</Text> : null}
+            {Array.isArray(r.photos) && r.photos.length > 0 && (
+              <View style={{ flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.sm, flexWrap: "wrap" }}>
+                {r.photos.slice(0, 4).map((url: string, i: number) => (
+                  <Image key={i} source={{ uri: url }} style={styles.reviewPhoto} />
+                ))}
+              </View>
+            )}
 
             {/* Report review — available to everyone */}
             <TouchableOpacity
@@ -448,6 +488,16 @@ export default function StoreDetailScreen() {
     Linking.openURL(`https://instagram.com/${handle}`);
   };
 
+  const shareStore = () => {
+    if (!store) return;
+    const url = `https://hqlink.vercel.app/${store.slug}`;
+    Share.share({
+      message: `Check out ${store.name} on stallHq! 🛍️\n${url}`,
+      url,
+      title: store.name,
+    }).catch(() => {});
+  };
+
   if (!store) return <BrandLoader label="Opening store" />;
 
   return (
@@ -459,6 +509,9 @@ export default function StoreDetailScreen() {
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
           <View style={{ flexDirection: "row", gap: Spacing.sm }}>
+            <TouchableOpacity style={styles.shareBtn} onPress={shareStore} activeOpacity={0.7}>
+              <Share2 size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.favBtn}
               onPress={() => router.push("/(customer)/cart")}
@@ -591,7 +644,14 @@ const makeStyles = () => StyleSheet.create({
     paddingHorizontal: 4,
   },
   cartBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
+  shareBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: Colors.borderSubtle, backgroundColor: Colors.bgCard, justifyContent: "center", alignItems: "center" },
   banner: { width: "100%", height: 180 },
+  photoAddBtn: {
+    width: 56, height: 56, borderRadius: BorderRadius.sm,
+    borderWidth: 1, borderStyle: "dashed", borderColor: Colors.borderMedium,
+    backgroundColor: Colors.bgCard, alignItems: "center", justifyContent: "center", gap: 2,
+  },
+  reviewPhoto: { width: 64, height: 64, borderRadius: BorderRadius.sm, backgroundColor: Colors.bgCard },
   storeInfo: { padding: Spacing.lg },
   storeRow: { flexDirection: "row", alignItems: "center", marginBottom: Spacing.md },
   logo: { width: 56, height: 56, borderRadius: BorderRadius.md, marginRight: Spacing.lg },

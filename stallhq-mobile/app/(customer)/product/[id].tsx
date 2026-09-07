@@ -9,9 +9,10 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase, Product } from "../../../lib/supabase";
 import { trackStoreClick, trackEvent, trackStoreVisit } from "../../../lib/track";
 import { postReviewReply } from "../../../lib/reviewActions";
+import { pickAndUploadReviewPhotos } from "../../../lib/reviewPhotos";
 import { BrandLoader } from "../../../components/BrandLoader";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
-import { ArrowLeft, Package, MessageCircle, Star, Send, Flag, ChevronRight, Pencil, Trash2, Reply, X, ShoppingCart } from "lucide-react-native";
+import { ArrowLeft, Package, MessageCircle, Star, Send, Flag, ChevronRight, Pencil, Trash2, Reply, X, ShoppingCart, Camera } from "lucide-react-native";
 import { WEB_API_URL } from "../../../lib/auth";
 import { useCart } from "../../../lib/cart";
 import { ProductFavoriteButton } from "../../../components/ProductFavoriteButton";
@@ -57,6 +58,8 @@ export default function ProductDetailScreen() {
   const [name, setName] = useState("");
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [formPhotos, setFormPhotos] = useState<string[]>([]);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -138,6 +141,7 @@ export default function ProductDetailScreen() {
           reviewer_name: name.trim(),
           rating,
           comment: comment.trim() || null,
+          photos: formPhotos.length > 0 ? formPhotos : undefined,
           user_id: user?.id || null,
         })
         .select()
@@ -145,7 +149,7 @@ export default function ProductDetailScreen() {
       if (error) {
         alert("Review failed", error.message || "Please try again.");
       } else if (data) {
-        setName(""); setRating(0); setComment("");
+        setName(""); setRating(0); setComment(""); setFormPhotos([]);
         const fresh = [data, ...reviews];
         setReviews(fresh);
         setAvg(Math.round((fresh.reduce((s2, r) => s2 + r.rating, 0) / fresh.length) * 10) / 10);
@@ -364,6 +368,35 @@ export default function ProductDetailScreen() {
               <Stars value={rating} size={30} onSelect={setRating} />
               <Text style={styles.label}>Comment (optional)</Text>
               <TextInput style={[styles.input, { minHeight: 64, textAlignVertical: "top" }]} placeholder="Share your experience…" placeholderTextColor={Colors.textMuted} value={comment} onChangeText={setComment} multiline maxLength={1000} />
+              <Text style={styles.label}>Photos (optional, up to 4)</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm, flexWrap: "wrap" }}>
+                {formPhotos.map((url, i) => (
+                  <View key={i}>
+                    <Image source={{ uri: url }} style={{ width: 56, height: 56, borderRadius: BorderRadius.sm }} />
+                    <TouchableOpacity
+                      onPress={() => setFormPhotos((p) => p.filter((_, idx) => idx !== i))}
+                      style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: 9, backgroundColor: Colors.red, alignItems: "center", justifyContent: "center" }}
+                    >
+                      <X size={10} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                {formPhotos.length < 4 && (
+                  <TouchableOpacity
+                    onPress={async () => {
+                      setPhotoBusy(true);
+                      const urls = await pickAndUploadReviewPhotos(formPhotos);
+                      setPhotoBusy(false);
+                      if (urls.length) setFormPhotos((p) => [...p, ...urls]);
+                    }}
+                    disabled={photoBusy}
+                    style={[styles.photoAddBtn, photoBusy && { opacity: 0.6 }]}
+                  >
+                    <Camera size={16} color={Colors.textMuted} />
+                    <Text style={{ fontSize: 11, color: Colors.textMuted }}>{photoBusy ? "Uploading…" : "Add"}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               <TouchableOpacity style={[styles.submitBtn, busy && { opacity: 0.6 }]} onPress={submitReview} disabled={busy}>
                 <Send size={14} color="#fff" /><Text style={{ color: "#fff", fontSize: FontSize.sm, fontWeight: "700" }}>{busy ? "Submitting…" : "Submit Review"}</Text>
               </TouchableOpacity>
@@ -385,6 +418,13 @@ export default function ProductDetailScreen() {
                   <Stars value={r.rating} />
                 </View>
                 {r.comment ? <Text style={{ fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: Spacing.sm, lineHeight: 19 }}>{r.comment}</Text> : null}
+                {Array.isArray(r.photos) && r.photos.length > 0 && (
+                  <View style={{ flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.sm, flexWrap: "wrap" }}>
+                    {r.photos.slice(0, 4).map((url: string, i: number) => (
+                      <Image key={i} source={{ uri: url }} style={styles.reviewPhoto} />
+                    ))}
+                  </View>
+                )}
 
                 {/* Report review — available to everyone */}
                 <TouchableOpacity
@@ -584,6 +624,12 @@ const makeStyles = () => StyleSheet.create({
   label: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textSecondary, marginTop: Spacing.sm },
   input: { backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: FontSize.sm, color: Colors.text },
   submitBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: Colors.purple, borderRadius: BorderRadius.lg, padding: Spacing.md, marginTop: Spacing.md },
+  photoAddBtn: {
+    width: 56, height: 56, borderRadius: BorderRadius.sm,
+    borderWidth: 1, borderStyle: "dashed", borderColor: Colors.borderMedium,
+    backgroundColor: Colors.bgCard, alignItems: "center", justifyContent: "center", gap: 2,
+  },
+  reviewPhoto: { width: 64, height: 64, borderRadius: BorderRadius.sm, backgroundColor: Colors.bgCard },
   reviewCard: { backgroundColor: "Colors.glass", borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm },
   avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.purpleDim, justifyContent: "center", alignItems: "center" },
   replyBox: { marginTop: Spacing.sm, backgroundColor: "rgba(6,182,212,0.05)", borderWidth: 1, borderColor: "Colors.cyanDim", borderRadius: BorderRadius.md, padding: Spacing.md },

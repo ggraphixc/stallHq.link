@@ -185,6 +185,20 @@ function ReviewCard({
           {review.comment && (
             <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: "0.75rem" }}>{review.comment}</p>
           )}
+          {review.photos && review.photos.length > 0 && (
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
+              {review.photos.map((url: string, i: number) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={url}
+                    alt={`Review photo ${i + 1}`}
+                    loading="lazy"
+                    style={{ width: "4.5rem", height: "4.5rem", objectFit: "cover", borderRadius: "0.5rem", border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}
+                  />
+                </a>
+              ))}
+            </div>
+          )}
         </>
       )}
 
