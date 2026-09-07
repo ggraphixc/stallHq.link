@@ -353,14 +353,23 @@ function AITab({ settings, updateSetting, showAIKey, setShowAIKey }: { settings:
             <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Provider</label>
             <select className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", background: "var(--bg-primary)", boxSizing: "border-box" }} value={settings.ai_provider || "openrouter"} onChange={(e) => updateSetting("ai_provider", e.target.value)}>
               <option value="openrouter">OpenRouter</option>
-              <option value="opencodezen">OpenCode Zen</option>
+              <option value="google">Google Gemini</option>
               <option value="openai">OpenAI</option>
               <option value="custom">Custom</option>
             </select>
+            {settings.ai_provider === "google" && (
+              <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                Get a free API key at{" "}
+                <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{ color: "var(--glow-blue)", textDecoration: "underline" }}>
+                  aistudio.google.com/apikey
+                </a>
+                {" "}. Free tier: 15 RPM, 1M tokens/day.
+              </p>
+            )}
           </div>
           <div>
             <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Model</label>
-            <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.ai_model || ""} onChange={(e) => updateSetting("ai_model", e.target.value)} placeholder={settings.ai_provider === "openrouter" ? "google/gemini-2.0-flash-exp:free" : settings.ai_provider === "opencodezen" ? "mimo-v2.5-free" : "model-name"} />
+            <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.ai_model || ""} onChange={(e) => updateSetting("ai_model", e.target.value)}               placeholder={settings.ai_provider === "openrouter" ? "google/gemini-2.0-flash-exp:free" : settings.ai_provider === "google" ? "gemini-2.0-flash" : "model-name"} />
           </div>
           <div>
             <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>API Key</label>
@@ -371,10 +380,10 @@ function AITab({ settings, updateSetting, showAIKey, setShowAIKey }: { settings:
               </button>
             </div>
           </div>
-          {(settings.ai_provider === "custom" || settings.ai_provider === "opencodezen") && (
+          {(settings.ai_provider === "custom") && (
             <div>
               <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Base URL</label>
-              <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.ai_base_url || ""} onChange={(e) => updateSetting("ai_base_url", e.target.value)} placeholder={settings.ai_provider === "opencodezen" ? "https://opencode.ai/zen/v1" : "https://api.example.com/v1"} />
+              <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.ai_base_url || ""} onChange={(e) => updateSetting("ai_base_url", e.target.value)} placeholder="https://api.example.com/v1" />
               <p style={{ fontSize: "0.625rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>/chat/completions appended automatically</p>
             </div>
           )}

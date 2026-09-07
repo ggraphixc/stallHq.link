@@ -2,18 +2,18 @@ import { NextRequest } from "next/server";
 import { createClient as createServiceClient, SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Shared AI provider helpers — used by /api/ai/generate-description,
+ * Shared AI provider helpers — used by /api/ai, /api/ai/generate-description,
  * /api/ai/bulk-descriptions, and /api/ai/assistant.
  *
- * The AI provider (OpenRouter / OpenAI / custom), model and API key are all
- * configured by the platform admin in Admin → Settings → AI and stored in
- * platform_settings. Nothing is hardcoded here.
+ * Supported providers: OpenRouter, OpenAI, Google Gemini, Custom.
+ * The AI provider, model and API key are configured by the platform admin
+ * in Admin → Settings → AI and stored in platform_settings.
  */
 
 export const PROVIDER_URLS: Record<string, string> = {
   openrouter: "https://openrouter.ai/api/v1/chat/completions",
-  opencodezen: "",
   openai: "https://api.openai.com/v1/chat/completions",
+  google: "https://generativelanguage.googleapis.com/v1beta",
   custom: "",
 };
 
@@ -94,8 +94,12 @@ export function resolveProvider(settings: Record<string, any>): AiProviderConfig
   if (!baseUrl) {
     throw new Error("AI_NO_BASE_URL");
   }
-  if (!baseUrl.endsWith("/chat/completions")) {
-    baseUrl = baseUrl.replace(/\/+$/, "") + "/chat/completions";
+
+  // Google Gemini uses a different URL structure — don't append /chat/completions
+  if (provider !== "google") {
+    if (!baseUrl.endsWith("/chat/completions")) {
+      baseUrl = baseUrl.replace(/\/+$/, "") + "/chat/completions";
+    }
   }
 
   return { provider, model, apiKey, baseUrl };
@@ -127,14 +131,85 @@ function providerError(status: number): { message: string; status: number } {
 }
 
 /**
+ * Call Google Gemini API (generative language format).
+ */
+async function callGoogleGemini(
+  config: AiProviderConfig,
+  messages: Array<{ role: string; content: any }>,
+  maxTokens: number
+): Promise<string> {
+  // Convert OpenAI-style messages to Gemini format
+  const contents = messages
+    .filter((m) => m.role !== "system")
+    .map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: typeof m.content === "string" ? m.content : JSON.stringify(m.content) }],
+    }));
+
+  // Extract system instruction if present
+  const systemMsg = messages.find((m) => m.role === "system");
+  const systemInstruction = systemMsg
+    ? { parts: [{ text: typeof systemMsg.content === "string" ? systemMsg.content : JSON.stringify(systemMsg.content) }] }
+    : undefined;
+
+  const url = `${config.baseUrl}/models/${config.model}:generateContent?key=${config.apiKey}`;
+
+  const body: Record<string, any> = {
+    contents,
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      temperature: 0.7,
+    },
+  };
+  if (systemInstruction) {
+    body.systemInstruction = systemInstruction;
+  }
+
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }, 30000);
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      throw new Error("AI request timed out. The service may be slow — try again.");
+    }
+    throw new Error("Could not connect to Google Gemini. Check your network.");
+  }
+
+  if (!response.ok) {
+    const { message, status } = providerError(response.status);
+    console.error("Google Gemini error:", response.status, (await response.text().catch(() => "")).slice(0, 200));
+    throw Object.assign(new Error(message), { status });
+  }
+
+  const data = await response.json();
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+  if (!content) {
+    console.error("Google Gemini empty response:", JSON.stringify(data).slice(0, 1000));
+    throw new Error("AI returned an empty response. Try again.");
+  }
+  return content;
+}
+
+/**
  * Call the configured chat-completions provider. Returns the text content,
  * throws Error with descriptive message on failure.
+ * Supports OpenRouter, OpenAI, Google Gemini, and custom OpenAI-compatible APIs.
  */
 export async function callAiProvider(
   config: AiProviderConfig,
   messages: Array<{ role: string; content: any }>,
   maxTokens = 700
 ): Promise<string> {
+  // Route to Google Gemini if configured
+  if (config.provider === "google") {
+    return callGoogleGemini(config, messages, maxTokens);
+  }
+
+  // OpenAI-compatible providers (OpenRouter, OpenAI, custom)
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${config.apiKey}`,
