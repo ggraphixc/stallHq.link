@@ -369,7 +369,14 @@ function AITab({ settings, updateSetting, showAIKey, setShowAIKey }: { settings:
           </div>
           <div>
             <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>Model</label>
-            <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.ai_model || ""} onChange={(e) => updateSetting("ai_model", e.target.value)}               placeholder={settings.ai_provider === "openrouter" ? "google/gemini-2.0-flash-exp:free" : settings.ai_provider === "google" ? "gemini-2.5-flash (recommended) or gemini-3.5-flash" : "model-name"} />
+            {settings.ai_provider === "google" ? (
+              <select className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", background: "var(--bg-primary)", boxSizing: "border-box" }} value={settings.ai_model || "gemini-2.5-flash"} onChange={(e) => updateSetting("ai_model", e.target.value)}>
+                <option value="gemini-2.5-flash">gemini-2.5-flash (cheap, 250 req/day free)</option>
+                <option value="gemini-3.5-flash">gemini-3.5-flash (smarter, 6x cost over free tier)</option>
+              </select>
+            ) : (
+              <input className="ambient-input" style={{ width: "100%", padding: "0.625rem 0.875rem", fontSize: "0.8125rem", borderRadius: "0.5rem", boxSizing: "border-box" }} value={settings.ai_model || ""} onChange={(e) => updateSetting("ai_model", e.target.value)} placeholder={settings.ai_provider === "openrouter" ? "google/gemini-2.0-flash-exp:free" : "model-name"} />
+            )}
           </div>
           <div>
             <label style={{ fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.375rem" }}>API Key</label>
