@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, Store, Users, ShoppingCart, Crown,
-  Activity, MessageCircle, Shield, ArrowLeft, Menu, X,
+  MessageCircle, Shield, ArrowLeft, Menu, X,
   LifeBuoy, Send, Settings, Mail, Sparkles, ShieldCheck
 } from "lucide-react";
 import { useState } from "react";
@@ -23,7 +23,6 @@ const NAV_ITEMS = [
   { href: "/admin/communications", label: "Communications", icon: Send },
   { href: "/admin/emails", label: "Email Templates", icon: Mail },
   { href: "/admin/settings", label: "Settings", icon: Settings },
-  { href: "/admin/system", label: "System", icon: Activity },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
