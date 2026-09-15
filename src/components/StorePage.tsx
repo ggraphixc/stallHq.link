@@ -546,6 +546,24 @@ export function StorePage({ store, products, aiAssistantEnabled }: StorePageProp
                 Contact
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <a
+                  href={`/chat?store=${store.id}`}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "0.75rem",
+                    padding: "0.75rem", borderRadius: "0.5rem",
+                    background: "rgba(168,133,247,0.06)", border: "1px solid rgba(168,133,247,0.15)",
+                    textDecoration: "none", transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(168,133,247,0.12)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(168,133,247,0.06)"; }}
+                >
+                  <MessageCircle size={18} style={{ color: "var(--glow-purple)", flexShrink: 0 }} />
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-primary)" }}>Message Store</p>
+                    <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Chat directly with the vendor</p>
+                  </div>
+                  <ChevronRight size={14} style={{ marginLeft: "auto", color: "var(--text-muted)" }} />
+                </a>
                 {hasWhatsApp(store.whatsapp_number) && (
                   <a
                     href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi, good day ${store.name} 👋`)}`}

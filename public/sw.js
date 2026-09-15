@@ -1,67 +1,89 @@
+/* ─── StallHQ Service Worker ──────────────────────────────────────────── */
+/* Offline product browsing + background sync for orders                   */
+
 const CACHE_NAME = "stallhq-v1";
+const STATIC_CACHE = "stallhq-static-v1";
+
 const STATIC_ASSETS = [
   "/",
+  "/explore",
   "/offline",
 ];
 
+// Install: cache static assets
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS))
   );
   self.skipWaiting();
 });
 
+// Activate: clean old caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.filter((k) => k !== CACHE_NAME && k !== STATIC_CACHE).map((k) => caches.delete(k))
+      )
+    )
   );
   self.clients.claim();
 });
 
+// Fetch: network-first for API, cache-first for static, stale-while-revalidate for store pages
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  if (
-    event.request.url.includes("/api/") ||
-    event.request.url.includes("/auth/")
-  ) {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-GET and chrome-extension
+  if (request.method !== "GET" || url.protocol === "chrome-extension:") return;
+
+  // API calls: network only (never cache auth/API responses)
+  if (url.pathname.startsWith("/api/")) {
+    event.respondWith(
+      fetch(request).catch(() => {
+        return new Response(JSON.stringify({ error: "Offline" }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        });
+      })
+    );
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        event.waitUntil(
-          fetch(event.request).then((response) => {
-            if (response.ok) {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, response);
-              });
-            }
-          }).catch(() => {})
-        );
-        return cachedResponse;
-      }
+  // Store pages (/[slug]): stale-while-revalidate
+  if (url.pathname.match(/^\/[^/]+$/) && url.pathname !== "/offline") {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(request);
+        const fetchPromise = fetch(request)
+          .then((response) => {
+            if (response.ok) cache.put(request, response.clone());
+            return response;
+          })
+          .catch(() => cached);
 
-      return fetch(event.request)
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // Static assets & pages: cache-first
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request)
         .then((response) => {
-          if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
+          if (response.ok && url.origin === self.location.origin) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
         })
         .catch(() => {
-          if (event.request.mode === "navigate") {
+          // Fallback to offline page for navigation
+          if (request.mode === "navigate") {
             return caches.match("/offline");
           }
           return new Response("Offline", { status: 503 });
@@ -70,52 +92,18 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// Push notification handler
-self.addEventListener("push", (event) => {
-  if (!event.data) return;
-
-  let data;
-  try {
-    data = event.data.json();
-  } catch {
-    data = { title: "stallHq", body: event.data.text() };
+// Background sync for queued orders
+self.addEventListener("sync", (event) => {
+  if (event.tag === "stallhq-order-queue") {
+    event.waitUntil(syncQueuedOrders());
   }
-
-  const options = {
-    body: data.body || "New notification from stallHq",
-    icon: "/icon-192.png",
-    badge: "/badge-72.png",
-    vibrate: [100, 50, 100],
-    data: data.data || {},
-    actions: data.actions || [],
-    tag: data.tag || "stallhq-notification",
-    renotify: true,
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title || "stallHq", options)
-  );
 });
 
-// Notification click handler
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-
-  const url = event.notification.data?.url || "/";
-
-  event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
-      // Focus existing window if open
-      for (const client of windowClients) {
-        if (client.url.includes(self.location.origin) && "focus" in client) {
-          client.navigate(url);
-          return client.focus();
-        }
-      }
-      // Open new window
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
-    })
-  );
-});
+async function syncQueuedOrders() {
+  // The actual sync is handled by the React app when it detects online status.
+  // This just ensures the SW doesn't block.
+  const clients = await self.clients.matchAll();
+  clients.forEach((client) => {
+    client.postMessage({ type: "SYNC_ORDERS" });
+  });
+}

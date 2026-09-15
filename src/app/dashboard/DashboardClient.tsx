@@ -42,6 +42,7 @@ import {
   FileWarning,
   MousePointerClick,
   MessageSquare,
+  MessageCircle,
 } from "lucide-react";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -309,6 +310,7 @@ export function DashboardClient({
                 { icon: Palette, label: "Theme", onClick: () => setShowTheme(true) },
                 { icon: Sparkles, label: "Promo Cards", href: "/dashboard/promo" },
                 { icon: MessageSquare, label: "Reviews", href: "/dashboard/reviews" },
+                { icon: MessageCircle, label: "Messages", href: "/chat" },
               ].map(({ icon: Icon, label, onClick, href }) => (
                 href ? (
                   <a key={label} href={href} style={iconBtn} className="icon-button" title={label}>
@@ -385,6 +387,7 @@ export function DashboardClient({
                       { icon: Upload, label: "Batch Upload", onClick: () => { setShowBatchUpload(true); setShowMobileMenu(false); } },
                       { icon: Sparkles, label: "Promo Cards", href: "/dashboard/promo" },
                       { icon: MessageSquare, label: "Reviews", href: "/dashboard/reviews" },
+                      { icon: MessageCircle, label: "Messages", href: "/chat" },
                       { icon: CreditCard, label: "Billing", href: "/dashboard/billing" },
                       { icon: FileWarning, label: "Reports", href: "/dashboard/reports" },
                       { icon: LifeBuoy, label: "Support", onClick: () => { window.location.href = "/dashboard/support"; } },

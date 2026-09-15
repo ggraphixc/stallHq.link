@@ -10,6 +10,8 @@ import {
 } from "../lib/theme";
 import { AlertProvider } from "../components/ui/CustomAlert";
 import { useAuth } from "../lib/auth";
+import { NetworkStatus } from "../components/NetworkStatus";
+import { initNetworkListener } from "../lib/offlineCache";
 
 function ThemeBridge() {
   const scheme = useColorScheme();
@@ -19,6 +21,7 @@ function ThemeBridge() {
   }, [scheme]);
   useEffect(() => {
     initTheme();
+    initNetworkListener();
   }, []);
   return <StatusBar style={getIsDark() ? "light" : "dark"} />;
 }
@@ -48,6 +51,7 @@ export default function RootLayout() {
         <CartProvider>
           <AlertProvider>
             <ThemeBridge />
+            <NetworkStatus />
             <Stack
               screenOptions={{
                 headerShown: false,

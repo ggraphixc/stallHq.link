@@ -19,7 +19,7 @@ import {
 } from "lucide-react-native";
 import { AssistantChat } from "../../../components/AssistantChat";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { WEB_API_URL } from "../../../lib/auth";
+import { WEB_API_URL, useAuth } from "../../../lib/auth";
 import { useCart } from "../../../lib/cart";
 import { ProductFavoriteButton } from "../../../components/ProductFavoriteButton";
 
@@ -419,6 +419,7 @@ export default function StoreDetailScreen() {
   const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { session } = useAuth();
   const [store, setStore] = useState<Store | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -573,6 +574,17 @@ export default function StoreDetailScreen() {
                 <Text style={[styles.chipText, { color: Colors.green }]}>WhatsApp</Text>
               </TouchableOpacity>
             ) : null}
+            <TouchableOpacity
+              style={[styles.chip, { borderColor: "rgba(168,133,247,0.3)" }]}
+              onPress={() => {
+                if (!session?.user) { router.push("/(auth)/login"); return; }
+                router.push({ pathname: "/(customer)/chat", params: { storeId: store.id } });
+              }}
+              activeOpacity={0.7}
+            >
+              <MessageCircle size={13} color={Colors.purple} />
+              <Text style={[styles.chipText, { color: Colors.purple }]}>Message</Text>
+            </TouchableOpacity>
             {store.instagram_handle ? (
               <TouchableOpacity style={[styles.chip, { borderColor: "rgba(225,48,108,0.3)" }]} onPress={openInstagram} activeOpacity={0.7}>
                 <Camera size={13} color={Colors.purple} />

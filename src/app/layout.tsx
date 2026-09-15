@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { AlertProvider } from "@/contexts/AlertContext";
 import { DynamicBranding } from "@/components/DynamicBranding";
 import CookieConsent from "@/components/CookieConsent";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import {
   generateOrganizationSchema,
   generateWebSiteSchema,
@@ -137,6 +138,7 @@ export default function RootLayout({
       </head>
       <body>
         <DynamicBranding />
+        <ServiceWorkerRegistration />
         <AlertProvider>{children}</AlertProvider>
         <CookieConsent />
         <script
