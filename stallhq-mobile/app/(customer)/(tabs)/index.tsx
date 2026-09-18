@@ -12,6 +12,8 @@ import { useAuth } from "../../../lib/auth";
 import { BrandLogo } from "../../../components/BrandLogo";
 import { StoreFavoriteButton } from "../../../components/StoreFavoriteButton";
 import { NotificationBell } from "../../../components/NotificationBell";
+import { TrendingProducts } from "../../../components/TrendingProducts";
+import { VoiceSearchButton } from "../../../components/VoiceSearchButton";
 import { useCart } from "../../../lib/cart";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -104,6 +106,10 @@ export default function ExploreScreen() {
             value={search}
             onChangeText={setSearch}
           />
+          <VoiceSearchButton
+            onResult={(text) => setSearch(text)}
+            onError={(err) => console.warn("[voice]", err)}
+          />
         </View>
       </View>
 
@@ -123,6 +129,9 @@ export default function ExploreScreen() {
           );
         })}
       </View>
+
+      {/* Trending Products (only when not searching or filtering) */}
+      {!search && !selectedCategory && <TrendingProducts limit={8} days={7} />}
 
       {/* Store List */}
       <FlatList

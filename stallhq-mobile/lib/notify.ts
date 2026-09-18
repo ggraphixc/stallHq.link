@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "./supabase";
+import { WEB_API_URL } from "./auth";
 
 let Notifications: typeof import("expo-notifications") | null = null;
 
@@ -68,6 +69,20 @@ export async function registerForPushNotifications(): Promise<string | null> {
           { onConflict: "token" }
         );
         console.log("[notify] token saved to Supabase for user:", user.id.slice(0, 12) + "…");
+
+        // Also register with the web API for cross-platform push delivery
+        try {
+          await fetch(`${WEB_API_URL}/api/push/register`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-access-token": (await supabase.auth.getSession()).data.session?.access_token || "",
+            },
+            body: JSON.stringify({ token: pushToken, platform: Platform.OS }),
+          });
+        } catch (webRegErr) {
+          console.warn("[notify] web API registration failed (non-critical):", webRegErr);
+        }
       } catch (upsertErr) {
         console.warn("[notify] failed to upsert push token:", upsertErr);
       }

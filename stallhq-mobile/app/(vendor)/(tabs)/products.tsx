@@ -12,6 +12,8 @@ import { NotificationBell } from "../../../components/NotificationBell";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput, labelStyle } from "../../../lib/theme";
 import { Plus, Search, Package, Sparkles, Lock } from "lucide-react-native";
 import { WEB_API_URL } from "../../../lib/config";
+import { ProductPerformance } from "../../../components/ProductPerformance";
+import { CsvExportButton } from "../../../components/CsvExportButton";
 
 export default function ProductsScreen() {
   const styles = useThemeStyles(makeStyles);
@@ -134,6 +136,16 @@ export default function ProductsScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Product Performance */}
+      {store && (
+        <View style={{ paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm }}>
+          <ProductPerformance storeId={store.id} limit={5} />
+          <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: Spacing.sm }}>
+            <CsvExportButton storeId={store.id} period={30} />
+          </View>
+        </View>
+      )}
 
       <View style={styles.searchRow}>
         <View style={styles.searchContainer}>

@@ -11,7 +11,7 @@ import { useAuth } from "../../lib/auth";
 import { BrandLoader } from "../../components/BrandLoader";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput, labelStyle } from "../../lib/theme";
-import { ArrowLeft, Save, Lock, Trash2, Eye, EyeOff, Store as StoreIcon, Clock } from "lucide-react-native";
+import { ArrowLeft, Save, Lock, Trash2, Eye, EyeOff, Store as StoreIcon, Clock, Bell } from "lucide-react-native";
 
 const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 const DAY_LABELS: Record<string, string> = {
@@ -185,6 +185,20 @@ export default function SettingsScreen() {
           </View>
 
           <ThemeToggle />
+
+          {/* Notification Preferences Link */}
+          <TouchableOpacity
+            style={styles.identityCard}
+            onPress={() => router.push("/(vendor)/notification-preferences")}
+          >
+            <View style={[styles.avatar, { backgroundColor: Colors.purple }]}>
+              <Bell size={22} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.storeName}>Notification Preferences</Text>
+              <Text style={styles.storeSlug}>Manage push & in-app alerts</Text>
+            </View>
+          </TouchableOpacity>
 
           {/* Store identity preview */}
           <View style={styles.identityCard}>

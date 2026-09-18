@@ -4,6 +4,7 @@ import { createClient as createAuthClient } from "@/lib/supabase/api";
 import { sendOrderNotification } from "@/lib/email";
 import { sendPushToUsers } from "@/lib/push";
 import { orderRateLimit, addRateLimitHeaders } from "@/lib/rateLimit";
+import { checkMilestones } from "@/lib/milestones";
 
 export async function GET(request: NextRequest) {
   try {
@@ -126,6 +127,9 @@ export async function POST(request: NextRequest) {
         body: `${body.customer_name || "A customer"} ordered ${itemCount} item${itemCount === 1 ? "" : "s"} — ₦${Number(body.total || 0).toLocaleString()}`,
         data: { screen: "orders" },
       }).catch(() => {});
+
+      // Check milestones (non-blocking)
+      checkMilestones({ storeId: body.store_id, userId: store.user_id }).catch(() => {});
     }
 
     return addRateLimitHeaders(NextResponse.json(order, { status: 201 }), rl.headers);

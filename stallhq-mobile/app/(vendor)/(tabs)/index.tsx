@@ -15,6 +15,8 @@ import { useAuth } from "../../../lib/auth";
 import { supabase, Order } from "../../../lib/supabase";
 import { NotificationBell } from "../../../components/NotificationBell";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
+import { GuidedTour, hasSeenTour } from "../../../components/GuidedTour";
+import { RevenueTracker } from "../../../components/RevenueTracker";
 import {
   Link,
   Users,
@@ -117,6 +119,14 @@ export default function VendorDashboard() {
     orders: number[];
   } | null>(null);
   const [liveVisitors, setLiveVisitors] = useState<number | null>(null);
+  const [showTour, setShowTour] = useState(false);
+
+  // Check if guided tour should be shown
+  useEffect(() => {
+    hasSeenTour().then((seen) => {
+      if (!seen) setShowTour(true);
+    });
+  }, []);
 
   // ── Data load (used by mount + pull-to-refresh) ──
   const loadData = async () => {
@@ -324,6 +334,9 @@ export default function VendorDashboard() {
           </StatCard>
         </View>
 
+        {/* ── Revenue Tracker ── */}
+        {store && <RevenueTracker storeId={store.id} />}
+
         {/* ── Trial urgency banner ─────── */}
         {showUrgentBanner && (
           <View style={styles.urgentCard}>
@@ -525,6 +538,9 @@ export default function VendorDashboard() {
           )}
         </View>
       </ScrollView>
+
+      {/* ── Guided Tour ── */}
+      <GuidedTour visible={showTour} onComplete={() => setShowTour(false)} />
     </SafeAreaView>
   );
 }

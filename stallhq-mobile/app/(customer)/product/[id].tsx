@@ -16,6 +16,10 @@ import { ArrowLeft, Package, MessageCircle, Star, Send, Flag, ChevronRight, Penc
 import { WEB_API_URL } from "../../../lib/auth";
 import { useCart } from "../../../lib/cart";
 import { ProductFavoriteButton } from "../../../components/ProductFavoriteButton";
+import { PriceAlertButton } from "../../../components/PriceAlertButton";
+import { StockAlertButton } from "../../../components/StockAlertButton";
+import { ShareCard } from "../../../components/ShareCard";
+import { RelatedProducts } from "../../../components/RelatedProducts";
 
 const REASONS = [
   { value: "fake", label: "Fake or counterfeit" },
@@ -328,8 +332,8 @@ export default function ProductDetailScreen() {
             </TouchableOpacity>
           ) : null}
 
-          {/* Order + Cart */}
-          <View style={{ flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.xl }}>
+          {/* Order + Cart + Alerts + Share */}
+          <View style={{ flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.xl, flexWrap: "wrap" }}>
             <TouchableOpacity
               style={styles.cartBtn}
               onPress={() => {
@@ -348,10 +352,34 @@ export default function ProductDetailScreen() {
             ) : null}
           </View>
 
+          {/* Alert + Share Row */}
+          <View style={{ flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.sm, alignItems: "center" }}>
+            <PriceAlertButton productId={product.id} productName={product.name} />
+            {!product.in_stock && (
+              <StockAlertButton productId={product.id} productName={product.name} />
+            )}
+            <View style={{ flex: 1 }} />
+            <ShareCard
+              title={product.name}
+              description={product.description || `Check out ${product.name} on stallHq`}
+              slug={product.store?.slug || ""}
+              productId={product.id}
+            />
+          </View>
+
           {/* Report */}
           <TouchableOpacity style={styles.reportBtn} onPress={() => { setReportOpen(true); setReported(false); setReason(""); setDetails(""); }}>
             <Flag size={13} color={Colors.textMuted} /><Text style={styles.reportText}>Report product</Text>
           </TouchableOpacity>
+
+          {/* Related Products */}
+          {product.store_id && (
+            <RelatedProducts
+              productId={product.id}
+              storeId={product.store_id}
+              category={product.category}
+            />
+          )}
 
           {/* Reviews */}
           <View style={{ marginTop: Spacing.xl }}>
