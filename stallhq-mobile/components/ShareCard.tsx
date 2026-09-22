@@ -5,9 +5,11 @@ import {
   StyleSheet,
   Pressable,
   Share,
+  Clipboard,
+  Linking,
 } from "react-native";
 import { Colors, FontSize, Spacing, BorderRadius } from "../lib/theme";
-import { Share2, MessageCircle, Camera } from "lucide-react-native";
+import { Share2, MessageCircle } from "lucide-react-native";
 import { WEB_API_URL } from "../lib/auth";
 
 interface Props {
@@ -44,15 +46,13 @@ export function ShareCard({ title, description, slug, productId, price, imageUrl
     );
     const url = `https://wa.me/?text=${text}`;
     try {
-      const Linking = require("expo-linking");
       await Linking.openURL(url);
     } catch {}
   }
 
   async function shareInstagram() {
     try {
-      const Clipboard = require("expo-clipboard");
-      await Clipboard.setStringAsync(
+      Clipboard.setString(
         `🛍️ ${title}${price ? `\n💰 ₦${price.toLocaleString()}` : ""}\n🏪 ${displayName}\n${productUrl}`
       );
     } catch {}
