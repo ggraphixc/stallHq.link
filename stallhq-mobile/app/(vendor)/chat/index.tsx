@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, FlatList, RefreshControl,
+  View, Text, TextInput, TouchableOpacity, FlatList, RefreshControl, Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -34,14 +34,16 @@ export default function VendorChatListScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_APP_URL || "https://hqlink.vercel.app"}/api/chat`);
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_APP_URL || "https://hqlink.vercel.app"}/api/chat?vendor_id=${authStore?.user_id}`
+      );
       if (res.ok) {
         const data = await res.json();
         setConversations(data);
       }
     } catch {}
     setLoading(false);
-  }, []);
+  }, [authStore?.user_id]);
 
   useEffect(() => { load(); }, [load]);
 

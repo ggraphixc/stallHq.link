@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, FlatList, RefreshControl,
+  View, Text, TextInput, TouchableOpacity, FlatList, RefreshControl, Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase } from "../../../lib/supabase";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
+import { useAuth } from "../../../lib/auth";
 import { BrandLoader } from "../../../components/BrandLoader";
 import { MessageCircle, Search, Store } from "lucide-react-native";
 
@@ -24,6 +25,7 @@ interface Conversation {
 export default function CustomerChatListScreen() {
   const styles = useThemeStyles(makeStyles);
   const router = useRouter();
+  const { session } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -31,11 +33,13 @@ export default function CustomerChatListScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_APP_URL || "https://hqlink.vercel.app"}/api/chat`);
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_APP_URL || "https://hqlink.vercel.app"}/api/chat?customer_id=${session?.user?.id}`
+      );
       if (res.ok) setConversations(await res.json());
     } catch {}
     setLoading(false);
-  }, []);
+  }, [session?.user?.id]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -150,9 +154,6 @@ export default function CustomerChatListScreen() {
     </SafeAreaView>
   );
 }
-
-// Need Image for logo
-import { Image } from "react-native";
 
 const makeStyles = () => {
   const s = useThemeStyles(() => ({

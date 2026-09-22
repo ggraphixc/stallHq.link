@@ -68,8 +68,15 @@ export async function GET(req: NextRequest) {
       .select("*, store:stores(id, name, slug, logo_url)")
       .order("last_message_at", { ascending: false, nullsFirst: false });
 
+    const vendorId = searchParams.get("vendor_id");
+    const customerId = searchParams.get("customer_id");
+
     if (user.id === (process.env.ADMIN_USER_ID || "").split(",")[0]?.trim()) {
       // Admin sees all conversations
+    } else if (vendorId) {
+      query = query.eq("vendor_id", vendorId);
+    } else if (customerId) {
+      query = query.eq("customer_id", customerId);
     } else {
       query = query.or(`customer_id.eq.${user.id},vendor_id.eq.${user.id}`);
     }
