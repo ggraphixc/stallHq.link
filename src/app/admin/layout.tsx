@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { href: "/admin/promo", label: "Promo Cards", icon: Sparkles },
   { href: "/admin/support", label: "Support", icon: LifeBuoy },
   { href: "/admin/communications", label: "Communications", icon: Send },
+  { href: "/admin/chat", label: "Chat Control", icon: MessageCircle },
   { href: "/admin/emails", label: "Email Templates", icon: Mail },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];

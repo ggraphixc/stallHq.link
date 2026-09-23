@@ -7,11 +7,24 @@ const admin = createServiceClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+async function resolveUser(req: NextRequest): Promise<{ id: string } | null> {
+  const token = req.headers.get("x-access-token");
+  if (token) {
+    const { data, error } = await admin.auth.getUser(token);
+    if (!error && data.user) return data.user;
+  }
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    if (data.user) return data.user;
+  } catch {}
+  return null;
+}
+
 // GET /api/chat — list conversations for the current user
 export async function GET(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await resolveUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
@@ -106,20 +119,15 @@ export async function GET(req: NextRequest) {
 // POST /api/chat — create conversation or send message
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await resolveUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const { conversationId, storeId, content } = body;
 
-    if (!content?.trim()) {
-      return NextResponse.json({ error: "Message content required" }, { status: 400 });
-    }
-
     let convId = conversationId;
 
-    // Create new conversation
+    // Create/find conversation for a store (allows starting chat without first message)
     if (!convId && storeId) {
       // Get store vendor
       const { data: store, error: storeErr } = await admin
@@ -159,6 +167,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Creating conversation only (no message yet) — return early
+    if (!content?.trim()) {
+      return NextResponse.json({ conversationId: convId, conversation: conv });
+    }
+
     const senderRole = conv.customer_id === user.id ? "customer" : "vendor";
 
     // Insert message
@@ -174,6 +187,28 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (msgErr) throw msgErr;
+
+    // Bump last_message + unread for the recipient
+    const isCustomerSender = conv.customer_id === user.id;
+    const recipientField = isCustomerSender ? "unread_vendor" : "unread_customer";
+    const { data: convFull } = await admin
+      .from("conversations")
+      .select("unread_customer, unread_vendor")
+      .eq("id", convId)
+      .single();
+    const currentUnread =
+      recipientField === "unread_vendor"
+        ? ((convFull as { unread_vendor?: number } | null)?.unread_vendor || 0)
+        : ((convFull as { unread_customer?: number } | null)?.unread_customer || 0);
+    const nextUnread = currentUnread + 1;
+    await admin
+      .from("conversations")
+      .update({
+        last_message: content.trim().slice(0, 200),
+        last_message_at: new Date().toISOString(),
+        [recipientField]: nextUnread,
+      })
+      .eq("id", convId);
 
     return NextResponse.json({ message: msg, conversationId: convId });
   } catch (err) {

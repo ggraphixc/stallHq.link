@@ -31,6 +31,7 @@ export default function CustomerChatThreadScreen() {
   const router = useRouter();
   const { id: conversationId } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
+  const accessToken = session?.access_token;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
@@ -38,12 +39,16 @@ export default function CustomerChatThreadScreen() {
   const [storeName, setStoreName] = useState("Store");
   const flatListRef = useRef<FlatList>(null);
   const userId = session?.user?.id;
+  const authHeaders: Record<string, string> = accessToken
+    ? { "x-access-token": accessToken }
+    : {};
 
   const load = useCallback(async () => {
     if (!conversationId) return;
     try {
       const res = await fetch(
-        `${process.env.EXPO_PUBLIC_APP_URL || "https://hqlink.vercel.app"}/api/chat?id=${conversationId}`
+        `${process.env.EXPO_PUBLIC_APP_URL || "https://hqlink.vercel.app"}/api/chat?id=${conversationId}`,
+        { headers: authHeaders }
       );
       if (res.ok) {
         const data: ConversationData = await res.json();
@@ -103,7 +108,7 @@ export default function CustomerChatThreadScreen() {
         `${process.env.EXPO_PUBLIC_APP_URL || "https://hqlink.vercel.app"}/api/chat`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({ conversationId, content }),
         }
       );

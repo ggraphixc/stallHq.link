@@ -26,24 +26,28 @@ function ThemeBridge() {
   return <StatusBar style={getIsDark() ? "light" : "dark"} />;
 }
 
-export default function RootLayout() {
-  useThemeVersion();
-
-  // Register for push notifications AFTER auth has hydrated.
-  // AuthProvider.setLoading becomes false once session is resolved, so we
-  // subscribe to that and only boot push registration when a real session exists.
+/** Must be a child of AuthProvider so useAuth() receives a real session. */
+function PushBridge() {
   const { loading: authLoading, user: authUser } = useAuth();
   useEffect(() => {
     if (authLoading) return;
+    let cancelled = false;
     (async () => {
       try {
         const { setupPushRegistration, onNotificationReceived, onNotificationTapped } = await import("../lib/notify");
+        if (cancelled) return;
         setupPushRegistration();
         onNotificationReceived(() => {});
         onNotificationTapped();
       } catch {}
     })();
+    return () => { cancelled = true; };
   }, [authLoading, authUser?.id]);
+  return null;
+}
+
+export default function RootLayout() {
+  useThemeVersion();
 
   return (
     <SafeAreaProvider>
@@ -51,6 +55,7 @@ export default function RootLayout() {
         <CartProvider>
           <AlertProvider>
             <ThemeBridge />
+            <PushBridge />
             <NetworkStatus />
             <Stack
               screenOptions={{

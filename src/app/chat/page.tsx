@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { useSearchParams } from "next/navigation";
 import {
   MessageCircle, Send, ArrowLeft, Store, User, Search,
   CheckCheck, Check, Circle, Users, Globe,
@@ -38,6 +39,22 @@ interface Conversation {
 }
 
 export default function ChatPage() {
+  return (
+    <Suspense
+      fallback={
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", color: "var(--text-muted)" }}>
+          Loading messages…
+        </div>
+      }
+    >
+      <ChatPageInner />
+    </Suspense>
+  );
+}
+
+function ChatPageInner() {
+  const searchParams = useSearchParams();
+  const storeParam = searchParams.get("store");
   const [userId, setUserId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConv, setActiveConv] = useState<Conversation | null>(null);
@@ -48,6 +65,7 @@ export default function ChatPage() {
   const [search, setSearch] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const openedStoreRef = useRef<string | null>(null);
 
   // Get current user
   useEffect(() => {
@@ -76,6 +94,50 @@ export default function ChatPage() {
   useEffect(() => {
     if (userId) loadConversations();
   }, [userId, loadConversations]);
+
+  // /chat?store=<id> — create/find conversation and open it
+  const openConversation = useCallback(async (conv: Conversation) => {
+    setActiveConv(conv);
+    setMessages([]);
+    try {
+      const res = await fetch(`/api/chat?id=${conv.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.messages || []);
+        setActiveConv(data);
+      }
+    } catch {}
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, []);
+
+  useEffect(() => {
+    if (!userId || !storeParam || openedStoreRef.current === storeParam) return;
+    openedStoreRef.current = storeParam;
+    (async () => {
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ storeId: storeParam }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.conversationId) return;
+        const existing = conversations.find((c) => c.id === data.conversationId);
+        if (existing) {
+          await openConversation(existing);
+        } else {
+          await loadConversations();
+          const created = await fetch(`/api/chat?id=${data.conversationId}`);
+          if (created.ok) {
+            const full = await created.json();
+            setMessages(full.messages || []);
+            setActiveConv(full);
+          }
+        }
+      } catch {}
+    })();
+  }, [userId, storeParam, conversations, loadConversations, openConversation]);
 
   // Real-time subscription for messages
   useEffect(() => {
@@ -123,20 +185,8 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Open a conversation
-  const openConversation = async (conv: Conversation) => {
-    setActiveConv(conv);
-    setMessages([]);
-    try {
-      const res = await fetch(`/api/chat?id=${conv.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data.messages || []);
-        setActiveConv(data);
-      }
-    } catch {}
-    setTimeout(() => inputRef.current?.focus(), 100);
-  };
+  // Open a conversation (wrapper kept for list onClick; real work in openConversation above)
+  const openFromList = (conv: Conversation) => { void openConversation(conv); };
 
   // Send message
   const sendMessage = async () => {
@@ -262,7 +312,7 @@ export default function ChatPage() {
             return (
               <div
                 key={conv.id}
-                onClick={() => openConversation(conv)}
+                onClick={() => openFromList(conv)}
                 style={{
                   padding: "0.875rem 1.25rem", cursor: "pointer",
                   background: isActive ? "rgba(168,133,247,0.08)" : "transparent",

@@ -3,10 +3,10 @@ import {
   View, Text, TextInput, TouchableOpacity, FlatList, RefreshControl, Image, StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase } from "../../../lib/supabase";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
-import { useAuth } from "../../../lib/auth";
+import { useAuth, WEB_API_URL } from "../../../lib/auth";
 import { BrandLoader } from "../../../components/BrandLoader";
 import { MessageCircle, Search, Store, Globe } from "lucide-react-native";
 
@@ -26,20 +26,48 @@ export default function CustomerChatListScreen() {
   const styles = useThemeStyles(makeStyles);
   const router = useRouter();
   const { session } = useAuth();
+  const { storeId } = useLocalSearchParams<{ storeId?: string }>();
+  const accessToken = session?.access_token;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
 
+  const authHeaders: Record<string, string> = accessToken
+    ? { "x-access-token": accessToken }
+    : {};
+
+  // Store page Message chip → create/find conversation and jump into it
+  useEffect(() => {
+    if (!storeId || !accessToken) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${WEB_API_URL}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders },
+          body: JSON.stringify({ storeId }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data.conversationId) {
+          router.replace(`/(customer)/chat/${data.conversationId}`);
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [storeId, accessToken]);
+
   const load = useCallback(async () => {
     try {
       const res = await fetch(
-        `${process.env.EXPO_PUBLIC_APP_URL || "https://hqlink.vercel.app"}/api/chat?customer_id=${session?.user?.id}`
+        `${WEB_API_URL}/api/chat?customer_id=${session?.user?.id}`,
+        { headers: authHeaders }
       );
       if (res.ok) setConversations(await res.json());
     } catch {}
     setLoading(false);
-  }, [session?.user?.id]);
+  }, [session?.user?.id, accessToken]);
 
   useEffect(() => { load(); }, [load]);
 

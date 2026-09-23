@@ -91,10 +91,29 @@ export async function GET(request: NextRequest) {
             .limit(50)
         : { data: [] };
 
+      const isAdminIds = (process.env.ADMIN_USER_ID || "")
+        .split(",").map((s) => s.trim()).filter(Boolean);
+      const isPlatformAdmin = !!user && isAdminIds.includes(user.id);
+      const canManage =
+        isPlatformAdmin || member?.role === "admin" || member?.role === "moderator";
+
+      // purpose column may not exist yet — infer for default rooms
+      let purpose = (room as any).purpose as string | undefined;
+      if (!purpose) {
+        if (room.id === "00000000-0000-0000-0000-000000000002" || /support/i.test(room.name)) {
+          purpose = "support";
+        } else if (room.id === "00000000-0000-0000-0000-000000000003" || /announce/i.test(room.name)) {
+          purpose = "announcements";
+        } else {
+          purpose = "general";
+        }
+      }
+
       return NextResponse.json({
-        room,
+        room: { ...room, purpose },
         member: !!member,
         role: member?.role || "member",
+        can_manage: canManage,
         messages: messages || [],
         unread_count: unread,
         member_count: memberCount || 0,
@@ -153,8 +172,20 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        let purpose = room.purpose as string | undefined;
+        if (!purpose) {
+          if (room.id === "00000000-0000-0000-0000-000000000002" || /support/i.test(room.name)) {
+            purpose = "support";
+          } else if (room.id === "00000000-0000-0000-0000-000000000003" || /announce/i.test(room.name)) {
+            purpose = "announcements";
+          } else {
+            purpose = "general";
+          }
+        }
+
         return {
           ...room,
+          purpose,
           is_member: isMember,
           role,
           unread_count: unread,
@@ -225,15 +256,18 @@ export async function POST(request: NextRequest) {
 
 /**
  * PATCH /api/chat/global
- * Join (or leave) a public room.
- * Body: { room_id, action: "join" | "leave" }
+ * Actions:
+ *  - { room_id, action: "join" | "leave" } — membership (any signed-in user on public rooms)
+ *  - { room_id, action: "settings", name?, description?, purpose?, type?, is_active? } — room settings
+ *    Gated to room admin/moderator or platform ADMIN_USER_ID.
  */
 export async function PATCH(request: NextRequest) {
   try {
     const user = await resolveUser(request);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { room_id, action } = await request.json();
+    const body = await request.json();
+    const { room_id, action } = body;
     if (!room_id) return NextResponse.json({ error: "room_id required" }, { status: 400 });
 
     const { data: room } = await admin
@@ -244,6 +278,53 @@ export async function PATCH(request: NextRequest) {
 
     if (!room || !room.is_active) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
+    }
+
+    if (action === "settings") {
+      const isAdminIds = (process.env.ADMIN_USER_ID || "")
+        .split(",").map((s) => s.trim()).filter(Boolean);
+      const isPlatformAdmin = isAdminIds.includes(user.id);
+
+      const { data: memberRow } = await admin
+        .from("room_members")
+        .select("role")
+        .eq("room_id", room_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const canEdit =
+        isPlatformAdmin || memberRow?.role === "admin" || memberRow?.role === "moderator";
+      if (!canEdit) {
+        return NextResponse.json({ error: "Room settings require admin/moderator role" }, { status: 403 });
+      }
+
+      const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (typeof body.name === "string" && body.name.trim()) patch.name = body.name.trim().slice(0, 80);
+      if (typeof body.description === "string") patch.description = body.description.trim().slice(0, 500) || null;
+      if (["general", "support", "announcements"].includes(body.purpose)) patch.purpose = body.purpose;
+      if (["public", "private", "admin"].includes(body.type)) {
+        if (!isPlatformAdmin && body.type !== room.type) {
+          return NextResponse.json({ error: "Only platform admins can change room visibility" }, { status: 403 });
+        }
+        patch.type = body.type;
+      }
+      if (typeof body.is_active === "boolean") {
+        if (!isPlatformAdmin) {
+          return NextResponse.json({ error: "Only platform admins can archive rooms" }, { status: 403 });
+        }
+        patch.is_active = body.is_active;
+      }
+
+      let update = admin.from("chat_rooms").update(patch).eq("id", room_id);
+      const { data: updated, error: updErr } = await update.select().single();
+      if (updErr) {
+        // purpose column may not exist yet
+        delete patch.purpose;
+        const retry = await admin.from("chat_rooms").update(patch).eq("id", room_id).select().single();
+        if (retry.error) throw retry.error;
+        return NextResponse.json({ ...retry.data, ...(patch.purpose ? { purpose: patch.purpose } : {}) });
+      }
+      return NextResponse.json(updated);
     }
 
     if (action === "leave") {

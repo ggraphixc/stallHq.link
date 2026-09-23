@@ -6,6 +6,7 @@ export type Room = {
   name: string;
   description: string | null;
   type: string;
+  purpose?: string;
   is_active: boolean;
   created_by: string | null;
   created_at: string;
@@ -33,6 +34,7 @@ export type RoomDetail = {
   room: Room;
   member: boolean;
   role: string;
+  can_manage?: boolean;
   messages: RoomMessage[];
   unread_count: number;
   member_count: number;
@@ -149,6 +151,25 @@ export async function createRoom(
       method: "POST",
       headers,
       body: JSON.stringify({ name, description, type: "public" }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/** Update room settings. Requires room admin/moderator or platform admin. */
+export async function updateRoomSettings(
+  roomId: string,
+  patch: { name?: string; description?: string; purpose?: string; type?: string; is_active?: boolean }
+): Promise<Room | null> {
+  try {
+    const headers = await authHeaders();
+    const res = await fetch(`${WEB_API_URL}/api/chat/global/rooms`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ room_id: roomId, action: "settings", ...patch }),
     });
     if (!res.ok) return null;
     return await res.json();

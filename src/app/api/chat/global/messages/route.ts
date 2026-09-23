@@ -100,12 +100,24 @@ export async function GET(request: NextRequest) {
       .from("room_messages")
       .select("*")
       .eq("room_id", roomId)
+      .eq("is_deleted", false)
       .order("created_at", { ascending: false });
 
     if (before) query = query.lt("created_at", before);
     query = query.limit(limit);
 
-    const { data: messages } = await query;
+    let { data: messages } = await query;
+    if (!messages) {
+      // is_deleted column may not exist yet — retry without filter
+      let fallback = admin
+        .from("room_messages")
+        .select("*")
+        .eq("room_id", roomId)
+        .order("created_at", { ascending: false });
+      if (before) fallback = fallback.lt("created_at", before);
+      const retried = await fallback.limit(limit);
+      messages = retried.data;
+    }
     const ordered = (messages || []).slice().reverse();
 
     // Mark read for signed-in users
@@ -141,24 +153,74 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "room_id and content required" }, { status: 400 });
     }
 
-    const { data: room } = await admin
+    let roomQuery = await admin
       .from("chat_rooms")
-      .select("id, type, is_active")
+      .select("id, type, is_active, name")
       .eq("id", room_id)
       .single();
+
+    let room = roomQuery.data as any;
+    if (roomQuery.error && /purpose/.test(roomQuery.error.message || "")) {
+      room = null;
+    }
+    if (!room) {
+      // retry without optional columns if select failed for another reason
+      const retry = await admin
+        .from("chat_rooms")
+        .select("id, type, is_active, name")
+        .eq("id", room_id)
+        .single();
+      room = retry.data;
+    }
+
+    // Try to read purpose if the column exists
+    if (room) {
+      const purposeRes = await admin
+        .from("chat_rooms")
+        .select("purpose")
+        .eq("id", room_id)
+        .maybeSingle();
+      if (!purposeRes.error && purposeRes.data) {
+        room.purpose = (purposeRes.data as any).purpose;
+      }
+    }
 
     if (!room || !room.is_active) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
-    const { data: member } = await admin
+    // Purpose restrictions (with fallback when purpose column not yet migrated)
+    let purpose = (room as any).purpose as string | undefined;
+    if (!purpose) {
+      if (room_id === "00000000-0000-0000-0000-000000000002" || /support/i.test((room as any).name || "")) {
+        purpose = "support";
+      } else if (room_id === "00000000-0000-0000-0000-000000000003" || /announce/i.test((room as any).name || "")) {
+        purpose = "announcements";
+      } else {
+        purpose = "general";
+      }
+    }
+    const isAdminIds = (process.env.ADMIN_USER_ID || "")
+      .split(",").map((s) => s.trim()).filter(Boolean);
+    const isPlatformAdmin = isAdminIds.includes(user.id);
+
+    const { data: memberRow } = await admin
       .from("room_members")
-      .select("id")
+      .select("id, role")
       .eq("room_id", room_id)
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!member) {
+    const privileged = isPlatformAdmin || memberRow?.role === "admin" || memberRow?.role === "moderator";
+
+    if (purpose === "announcements" && !privileged) {
+      return NextResponse.json(
+        { error: "Only moderators can post in Announcements" },
+        { status: 403 }
+      );
+    }
+
+    if (!memberRow) {
       if (room.type !== "public") {
         return NextResponse.json({ error: "Not a member" }, { status: 403 });
       }

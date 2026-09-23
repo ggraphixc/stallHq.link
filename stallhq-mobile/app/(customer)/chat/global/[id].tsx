@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform,
-  StyleSheet,
+  StyleSheet, Modal, ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -11,10 +11,11 @@ import { useAuth } from "../../../../lib/auth";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../../lib/theme";
 import { BrandLoader } from "../../../../components/BrandLoader";
 import {
-  Send, ArrowLeft, Users, Globe, Lock, LogIn, LogOut, Info,
+  Send, ArrowLeft, Users, Globe, Lock, LogIn, LogOut, Info, Settings, X, Check,
 } from "lucide-react-native";
 import {
   fetchRoomDetail, fetchRoomMessages, sendRoomMessage, joinRoom, leaveRoom,
+  updateRoomSettings,
   type RoomMessage,
 } from "../../../../lib/globalChat";
 
@@ -71,9 +72,16 @@ export default function GlobalChatThreadScreen() {
   const [sending, setSending] = useState(false);
   const [roomName, setRoomName] = useState("Community");
   const [roomType, setRoomType] = useState("public");
+  const [roomPurpose, setRoomPurpose] = useState("general");
   const [roomDesc, setRoomDesc] = useState<string | null>(null);
   const [memberCount, setMemberCount] = useState(0);
   const [isMember, setIsMember] = useState(false);
+  const [memberRole, setMemberRole] = useState("member");
+  const [canManage, setCanManage] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [savingSettings, setSavingSettings] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const flatListRef = useRef<FlatList<ListItem>>(null);
 
@@ -87,9 +95,12 @@ export default function GlobalChatThreadScreen() {
     }
     setRoomName(detail.room.name);
     setRoomType(detail.room.type);
+    setRoomPurpose((detail.room as any).purpose || "general");
     setRoomDesc(detail.room.description);
     setMemberCount(detail.member_count);
     setIsMember(detail.member);
+    setMemberRole(detail.role || "member");
+    setCanManage(!!detail.can_manage || detail.role === "admin" || detail.role === "moderator");
     setMessages(detail.messages || []);
     setError(null);
     setLoading(false);
@@ -214,6 +225,38 @@ export default function GlobalChatThreadScreen() {
 
   const [av1, av2] = avatarColors(roomId || roomName);
   const canSend = !!session;
+  const canEditSettings = canManage || memberRole === "admin" || memberRole === "moderator";
+  const canPostInRoom =
+    roomPurpose !== "announcements" || canEditSettings;
+  const purposeHint =
+    roomPurpose === "announcements"
+      ? "Only moderators can post announcements here"
+      : roomPurpose === "support"
+        ? "Keep this room for support & reports"
+        : null;
+
+  const openSettings = () => {
+    setEditName(roomName);
+    setEditDesc(roomDesc || "");
+    setSettingsOpen(true);
+  };
+
+  const saveSettings = async () => {
+    if (!roomId || !editName.trim()) return;
+    setSavingSettings(true);
+    const updated = await updateRoomSettings(roomId, {
+      name: editName.trim(),
+      description: editDesc,
+      purpose: roomPurpose,
+    });
+    setSavingSettings(false);
+    if (updated) {
+      setRoomName(updated.name);
+      setRoomDesc(updated.description);
+      setSettingsOpen(false);
+      load();
+    }
+  };
 
   const renderItem = ({ item }: { item: ListItem }) => {
     if (item.kind === "day") {
@@ -286,6 +329,11 @@ export default function GlobalChatThreadScreen() {
             <LogOut size={14} color={Colors.textMuted} />
           </TouchableOpacity>
         )}
+        {userId && canEditSettings && (
+          <TouchableOpacity style={styles.leaveBtn} onPress={openSettings} hitSlop={8}>
+            <Settings size={14} color={Colors.purple} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {roomDesc ? (
@@ -320,7 +368,7 @@ export default function GlobalChatThreadScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={0}
       >
-        {canSend ? (
+        {canSend && canPostInRoom ? (
           <View style={styles.inputBar}>
             <TextInput
               style={styles.input}
@@ -339,6 +387,10 @@ export default function GlobalChatThreadScreen() {
               <Send size={18} color={input.trim() ? "#fff" : Colors.textMuted} />
             </TouchableOpacity>
           </View>
+        ) : canSend && !canPostInRoom ? (
+          <View style={styles.signInBar}>
+            <Text style={styles.signInText}>{purposeHint || "Read-only room"}</Text>
+          </View>
         ) : (
           <View style={styles.signInBar}>
             <Text style={styles.signInText}>Sign in to join the conversation</Text>
@@ -352,6 +404,67 @@ export default function GlobalChatThreadScreen() {
           </View>
         )}
       </KeyboardAvoidingView>
+
+      {/* Room settings modal — admin/moderator only */}
+      <Modal visible={settingsOpen} animationType="slide" transparent onRequestClose={() => setSettingsOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Room settings</Text>
+              <TouchableOpacity onPress={() => setSettingsOpen(false)} hitSlop={8}>
+                <X size={20} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ maxHeight: 420 }}>
+              <Text style={styles.fieldLabel}>Name</Text>
+              <TextInput
+                style={styles.fieldInput}
+                value={editName}
+                onChangeText={setEditName}
+                maxLength={80}
+                placeholderTextColor={Colors.textMuted}
+              />
+              <Text style={styles.fieldLabel}>Description</Text>
+              <TextInput
+                style={[styles.fieldInput, { minHeight: 64 }]}
+                value={editDesc}
+                onChangeText={setEditDesc}
+                multiline
+                maxLength={500}
+                placeholder="What is this room for?"
+                placeholderTextColor={Colors.textMuted}
+              />
+              <Text style={styles.fieldLabel}>Purpose</Text>
+              <View style={styles.purposeRow}>
+                {(["general", "support", "announcements"] as const).map((p) => (
+                  <TouchableOpacity
+                    key={p}
+                    style={[styles.purposeChip, roomPurpose === p && styles.purposeChipOn]}
+                    onPress={() => setRoomPurpose(p)}
+                    activeOpacity={0.7}
+                  >
+                    {roomPurpose === p && <Check size={12} color={Colors.purple} />}
+                    <Text style={[styles.purposeChipText, roomPurpose === p && { color: Colors.purple }]}>
+                      {p[0].toUpperCase() + p.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.purposeHelp}>
+                General = free chat · Support = help/reports · Announcements = moderator posts only
+              </Text>
+            </ScrollView>
+            <TouchableOpacity
+              style={[styles.saveBtn, savingSettings && { opacity: 0.5 }]}
+              onPress={saveSettings}
+              disabled={savingSettings || !editName.trim()}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.saveBtnText}>{savingSettings ? "Saving…" : "Save settings"}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -548,4 +661,48 @@ const makeStyles = () => StyleSheet.create({
     backgroundColor: Colors.purple,
   },
   retryText: { color: "#fff", fontWeight: "700" },
+  modalBackdrop: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "flex-end",
+  },
+  modalCard: {
+    backgroundColor: Colors.bgCard,
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    padding: Spacing.lg, paddingBottom: Spacing.xxl,
+    borderTopWidth: 1, borderColor: Colors.borderSubtle,
+  },
+  modalHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    marginBottom: Spacing.md,
+  },
+  modalTitle: { fontSize: FontSize.lg, fontWeight: "800", color: Colors.text },
+  fieldLabel: {
+    fontSize: FontSize.xs, fontWeight: "700", color: Colors.textMuted,
+    marginBottom: 6, marginTop: Spacing.sm, textTransform: "uppercase",
+  },
+  fieldInput: {
+    backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.md, padding: Spacing.md,
+    fontSize: FontSize.sm, color: Colors.text,
+  },
+  purposeRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
+  purposeChip: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md, borderWidth: 1,
+    borderColor: Colors.borderSubtle, backgroundColor: Colors.bgSecondary,
+  },
+  purposeChipOn: {
+    borderColor: Colors.borderGlow, backgroundColor: Colors.purpleDim,
+  },
+  purposeChipText: { fontSize: FontSize.xs, fontWeight: "600", color: Colors.textSecondary },
+  purposeHelp: {
+    fontSize: 11, color: Colors.textMuted, marginTop: 8, lineHeight: 15,
+  },
+  saveBtn: {
+    marginTop: Spacing.lg, paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg, backgroundColor: Colors.purple,
+    alignItems: "center",
+  },
+  saveBtnText: { color: "#fff", fontWeight: "700", fontSize: FontSize.sm },
 });

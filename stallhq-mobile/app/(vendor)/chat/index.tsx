@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase } from "../../../lib/supabase";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
-import { useAuth } from "../../../lib/auth";
+import { useAuth, WEB_API_URL } from "../../../lib/auth";
 import { BrandLoader } from "../../../components/BrandLoader";
 import { MessageCircle, Search, User, Globe } from "lucide-react-native";
 
@@ -26,16 +26,22 @@ interface Conversation {
 export default function VendorChatListScreen() {
   const styles = useThemeStyles(makeStyles);
   const router = useRouter();
-  const { store: authStore } = useAuth();
+  const { store: authStore, session } = useAuth();
+  const accessToken = session?.access_token;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
 
+  const authHeaders: Record<string, string> = accessToken
+    ? { "x-access-token": accessToken }
+    : {};
+
   const load = useCallback(async () => {
     try {
       const res = await fetch(
-        `${process.env.EXPO_PUBLIC_APP_URL || "https://hqlink.vercel.app"}/api/chat?vendor_id=${authStore?.user_id}`
+        `${WEB_API_URL}/api/chat?vendor_id=${authStore?.user_id}`,
+        { headers: authHeaders }
       );
       if (res.ok) {
         const data = await res.json();
@@ -43,7 +49,7 @@ export default function VendorChatListScreen() {
       }
     } catch {}
     setLoading(false);
-  }, [authStore?.user_id]);
+  }, [authStore?.user_id, accessToken]);
 
   useEffect(() => { load(); }, [load]);
 
