@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Image,
-  Linking, TextInput, Modal,
+  Linking, TextInput, Modal, Dimensions,
 } from "react-native";
 import { alert } from "../../../lib/alert";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -37,6 +37,8 @@ const REVIEW_REPORT_REASONS = [
   { value: "irrelevant", label: "Wrong product/store" },
   { value: "other", label: "Something else" },
 ];
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 function Stars({ value, size = 14, onSelect }: { value: number; size?: number; onSelect?: (v: number) => void }) {
   return (
@@ -276,34 +278,40 @@ export default function ProductDetailScreen() {
           {product && <ProductFavoriteButton productId={product.id} storeId={product.store_id} />}
         </View>
 
-        {/* Gallery */}
-        <View style={styles.galleryContainer}>
-          {images.length > 0 ? (
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={(e) => {
-                setActiveImageIndex(Math.round(e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width));
-              }}
-            >
-              {images.map((uri, idx) => (
-                <Image key={idx} source={{ uri }} style={styles.heroImage} />
-              ))}
-            </ScrollView>
-          ) : (
-            <View style={[styles.heroImage, { justifyContent: "center", alignItems: "center", backgroundColor: Colors.bgSecondary }]}>
-              <Package size={60} color={Colors.textMuted} />
-            </View>
-          )}
-          {images.length > 1 && (
-            <View style={styles.dotsContainer}>
-              {images.map((_, idx) => (
-                <View key={idx} style={[styles.dot, idx === activeImageIndex && styles.dotActive]} />
-              ))}
-            </View>
-          )}
-        </View>
+          {/* Gallery */}
+          <View style={styles.galleryContainer}>
+            {images.length > 0 ? (
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(e) => {
+                  setActiveImageIndex(Math.round(e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width));
+                }}
+              >
+                {images.map((uri, idx) => (
+                  <Image
+                    key={idx}
+                    source={{ uri }}
+                    style={styles.heroImage}
+                    resizeMode="cover"
+                    onError={() => {}}
+                  />
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={[styles.heroImage, { justifyContent: "center", alignItems: "center", backgroundColor: Colors.bgSecondary }]}>
+                <Package size={60} color={Colors.textMuted} />
+              </View>
+            )}
+            {images.length > 1 && (
+              <View style={styles.dotsContainer}>
+                {images.map((_, idx) => (
+                  <View key={idx} style={[styles.dot, idx === activeImageIndex && styles.dotActive]} />
+                ))}
+              </View>
+            )}
+          </View>
 
         <View style={styles.content}>
           <View style={styles.titleRow}>
@@ -364,6 +372,9 @@ export default function ProductDetailScreen() {
               description={product.description || `Check out ${product.name} on stallHq`}
               slug={product.store?.slug || ""}
               productId={product.id}
+              price={product.price}
+              imageUrl={product.image_url}
+              storeName={product.store?.name}
             />
           </View>
 
@@ -623,7 +634,7 @@ const makeStyles = () => StyleSheet.create({
   topRow: { padding: Spacing.lg, paddingBottom: Spacing.sm },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
   backText: { fontSize: FontSize.md, color: Colors.purple },
-  heroImage: { width: "100%", height: 280 },
+  heroImage: { width: SCREEN_WIDTH, height: 280 },
   galleryContainer: { position: "relative" },
   dotsContainer: { flexDirection: "row", justifyContent: "center", gap: 6, position: "absolute", bottom: 12, left: 0, right: 0 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.3)" },

@@ -41,7 +41,7 @@ export function RelatedProducts({ productId, storeId, category, limit = 6 }: Pro
           <Pressable
             key={p.id}
             style={styles.card}
-            onPress={() => router.push(`/product/${p.id}`)}
+            onPress={() => router.push({ pathname: "/(customer)/product/[id]", params: { id: p.id } })}
           >
             <Image
               source={{ uri: p.images?.[0] || "https://via.placeholder.com/150" }}

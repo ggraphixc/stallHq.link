@@ -4,8 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
   MessageCircle, Send, ArrowLeft, Store, User, Search,
-  CheckCheck, Check, Circle,
+  CheckCheck, Check, Circle, Users, Globe,
 } from "lucide-react";
+import Link from "next/link";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -218,6 +219,18 @@ export default function ChatPage() {
                 </span>
               )}
             </div>
+            <Link
+              href="/community"
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                fontSize: "0.75rem", fontWeight: 700, color: "var(--glow-purple)",
+                textDecoration: "none", padding: "0.375rem 0.75rem",
+                borderRadius: 999, border: "1px solid var(--border-glow)",
+                background: "rgba(168,85,247,0.08)",
+              }}
+            >
+              <Users size={13} /> Community
+            </Link>
           </div>
           <div style={{ position: "relative" }}>
             <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />

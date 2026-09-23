@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, FlatList, RefreshControl, Image,
+  View, Text, TextInput, TouchableOpacity, FlatList, RefreshControl, Image, StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -8,7 +8,7 @@ import { supabase } from "../../../lib/supabase";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
 import { useAuth } from "../../../lib/auth";
 import { BrandLoader } from "../../../components/BrandLoader";
-import { MessageCircle, Search, User } from "lucide-react-native";
+import { MessageCircle, Search, User, Globe } from "lucide-react-native";
 
 interface Conversation {
   id: string;
@@ -101,6 +101,14 @@ export default function VendorChatListScreen() {
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Messages</Text>
+        <TouchableOpacity
+          style={styles.globalBtn}
+          onPress={() => router.push("/(customer)/chat/global")}
+          activeOpacity={0.7}
+        >
+          <Globe size={14} color={Colors.purple} />
+          <Text style={styles.globalBtnText}>Community</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchWrap}>
@@ -168,46 +176,50 @@ export default function VendorChatListScreen() {
   );
 }
 
-const makeStyles = () => {
-  const s = useThemeStyles(() => ({
-    container: { flex: 1, backgroundColor: Colors.bg },
-    header: {
-      flexDirection: "row" as const, alignItems: "center" as const,
-      padding: Spacing.lg, paddingBottom: Spacing.sm,
-      backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
-    },
-    backBtn: { padding: Spacing.xs },
-    backText: { fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.purple },
-    title: { fontSize: FontSize.xl, fontWeight: "700" as const, color: Colors.text, marginHorizontal: Spacing.md },
-    searchWrap: { padding: Spacing.lg, paddingBottom: Spacing.sm },
-    searchInput: {
-      backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
-      borderRadius: BorderRadius.md, padding: Spacing.md, paddingLeft: 36,
-      fontSize: FontSize.sm, color: Colors.text,
-    },
-    empty: { flex: 1, alignItems: "center" as const, justifyContent: "center" as const, gap: Spacing.sm },
-    emptyTitle: { fontSize: FontSize.lg, fontWeight: "600" as const, color: Colors.textSecondary },
-    emptySub: { fontSize: FontSize.sm, color: Colors.textMuted },
-    convItem: {
-      flexDirection: "row" as const, alignItems: "center" as const,
-      padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
-    },
-    avatar: {
-      width: 44, height: 44, borderRadius: 22,
-      backgroundColor: Colors.bgSecondary, alignItems: "center" as const, justifyContent: "center" as const,
-      marginRight: Spacing.md,
-    },
-    convInfo: { flex: 1 },
-    convTopRow: { flexDirection: "row" as const, justifyContent: "space-between" as const, alignItems: "center" as const },
-    convName: { fontSize: FontSize.md, fontWeight: "500" as const, color: Colors.text, flex: 1 },
-    convTime: { fontSize: FontSize.xs, color: Colors.textMuted, marginLeft: Spacing.sm },
-    convBottomRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: Spacing.xs, marginTop: 4 },
-    unreadBadge: {
-      minWidth: 20, height: 20, borderRadius: 10, backgroundColor: Colors.purple,
-      alignItems: "center" as const, justifyContent: "center" as const, paddingHorizontal: 6,
-    },
-    unreadText: { fontSize: 10, fontWeight: "700" as const, color: "#fff" },
-    convPreview: { fontSize: FontSize.sm, color: Colors.textMuted, flex: 1 },
-  }));
-  return s;
-};
+const makeStyles = () => StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.bg },
+  header: {
+    flexDirection: "row", alignItems: "center",
+    padding: Spacing.lg, paddingBottom: Spacing.sm,
+    backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
+  },
+  backBtn: { padding: Spacing.xs },
+  backText: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.purple },
+  title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginHorizontal: Spacing.md, flex: 1 },
+  globalBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+    backgroundColor: Colors.purpleDim, borderWidth: 1, borderColor: Colors.borderGlow,
+    borderRadius: BorderRadius.md,
+  },
+  globalBtnText: { fontSize: FontSize.xs, fontWeight: "700", color: Colors.purple },
+  searchWrap: { padding: Spacing.lg, paddingBottom: Spacing.sm },
+  searchInput: {
+    backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.md, padding: Spacing.md, paddingLeft: 36,
+    fontSize: FontSize.sm, color: Colors.text,
+  },
+  empty: { flex: 1, alignItems: "center", justifyContent: "center", gap: Spacing.sm },
+  emptyTitle: { fontSize: FontSize.lg, fontWeight: "600", color: Colors.textSecondary },
+  emptySub: { fontSize: FontSize.sm, color: Colors.textMuted },
+  convItem: {
+    flexDirection: "row", alignItems: "center",
+    padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
+  },
+  avatar: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: Colors.bgSecondary, alignItems: "center", justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  convInfo: { flex: 1 },
+  convTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  convName: { fontSize: FontSize.md, fontWeight: "500", color: Colors.text, flex: 1 },
+  convTime: { fontSize: FontSize.xs, color: Colors.textMuted, marginLeft: Spacing.sm },
+  convBottomRow: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, marginTop: 4 },
+  unreadBadge: {
+    minWidth: 20, height: 20, borderRadius: 10, backgroundColor: Colors.purple,
+    alignItems: "center", justifyContent: "center", paddingHorizontal: 6,
+  },
+  unreadText: { fontSize: 10, fontWeight: "700", color: "#fff" },
+  convPreview: { fontSize: FontSize.sm, color: Colors.textMuted, flex: 1 },
+});

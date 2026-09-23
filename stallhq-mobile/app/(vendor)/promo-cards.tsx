@@ -171,42 +171,39 @@ export default function PromoCardsScreen() {
   );
 }
 
-const makeStyles = () => {
-  const s = useThemeStyles(() => ({
-    container: { flex: 1, backgroundColor: Colors.bg },
-    header: {
-      flexDirection: "row" as const, alignItems: "center" as const, padding: Spacing.lg, paddingBottom: Spacing.sm,
-      backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
-    },
-    backBtn: { padding: Spacing.xs },
-    backText: { fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.purple },
-    title: { fontSize: FontSize.xl, fontWeight: "700" as const, color: Colors.text, marginHorizontal: Spacing.md },
-    scroll: { padding: Spacing.lg, paddingTop: 0 },
-    empty: { alignItems: "center" as const, padding: Spacing.xxxl * 2, gap: Spacing.sm },
-    emptyTitle: { fontSize: FontSize.lg, fontWeight: "600" as const, color: Colors.textSecondary },
-    emptySub: { fontSize: FontSize.sm, color: Colors.textMuted },
-    card: {
-      backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
-      borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
-    },
-    cardHeader: { flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "space-between" as const, marginBottom: Spacing.sm },
-    productName: { fontSize: FontSize.md, fontWeight: "600" as const, color: Colors.text, flex: 1, marginRight: Spacing.sm },
-    storeName: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
-    statusBadge: {
-      paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.md,
-      alignSelf: "flex-start" as const, flexShrink: 1,
-    },
-    statusText: { fontSize: FontSize.xs, fontWeight: "600" as const, textTransform: "capitalize" as const },
-    productThumb: {
-      width: "100%" as any, height: 100, borderRadius: BorderRadius.md,
-      backgroundColor: Colors.bgSecondary, alignItems: "center" as const, justifyContent: "center" as const,
-      marginBottom: Spacing.md,
-    },
-    cardMeta: { paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
-    metaRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: Spacing.md, marginBottom: Spacing.xs },
-    metaItem: { flex: 1 },
-    metaLabel: { fontSize: FontSize.xs, color: Colors.textMuted, textTransform: "uppercase" as const, letterSpacing: 0.05, marginBottom: 2 },
-    metaValue: { fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.text },
-  }));
-  return s;
-};
+const makeStyles = () => StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.bg },
+  header: {
+    flexDirection: "row", alignItems: "center", padding: Spacing.lg, paddingBottom: Spacing.sm,
+    backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
+  },
+  backBtn: { padding: Spacing.xs },
+  backText: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.purple },
+  title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text, marginHorizontal: Spacing.md },
+  scroll: { padding: Spacing.lg, paddingTop: 0 },
+  empty: { alignItems: "center", padding: Spacing.xxxl * 2, gap: Spacing.sm },
+  emptyTitle: { fontSize: FontSize.lg, fontWeight: "600", color: Colors.textSecondary },
+  emptySub: { fontSize: FontSize.sm, color: Colors.textMuted },
+  card: {
+    backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
+  },
+  cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.sm },
+  productName: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text, flex: 1, marginRight: Spacing.sm },
+  storeName: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  statusBadge: {
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.md,
+    alignSelf: "flex-start", flexShrink: 1,
+  },
+  statusText: { fontSize: FontSize.xs, fontWeight: "600", textTransform: "capitalize" },
+  productThumb: {
+    width: "100%" as any, height: 100, borderRadius: BorderRadius.md,
+    backgroundColor: Colors.bgSecondary, alignItems: "center", justifyContent: "center",
+    marginBottom: Spacing.md,
+  },
+  cardMeta: { paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: Spacing.md, marginBottom: Spacing.xs },
+  metaItem: { flex: 1 },
+  metaLabel: { fontSize: FontSize.xs, color: Colors.textMuted, textTransform: "uppercase", letterSpacing: 0.05, marginBottom: 2 },
+  metaValue: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.text },
+});

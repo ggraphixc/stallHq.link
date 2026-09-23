@@ -208,6 +208,12 @@ export function ExplorerPage({ stores, categories }: ExplorerPageProps) {
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <NotificationBell />
             <Link
+              href="/community"
+              style={{ fontSize: "0.75rem", color: "var(--text-secondary)", textDecoration: "none" }}
+            >
+              Community
+            </Link>
+            <Link
               href="/auth/login"
               style={{ fontSize: "0.75rem", color: "var(--text-secondary)", textDecoration: "none" }}
             >

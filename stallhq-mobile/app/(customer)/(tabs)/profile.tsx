@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../../lib/auth";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../lib/theme";
-import { Store, Globe, Mail, FileText, Shield, LogOut, ChevronRight, User, Sparkles, LogIn, Package, Clock, Bell, Heart } from "lucide-react-native";
+import { Store, Globe, Mail, FileText, Shield, LogOut, ChevronRight, User, Sparkles, LogIn, Package, Clock, Bell, Heart, MessageCircle } from "lucide-react-native";
 import { NotificationBell } from "../../../components/NotificationBell";
 import { ThemeToggle } from "../../../components/ThemeToggle";
 
@@ -18,6 +18,7 @@ export default function ProfileScreen() {
   const menuItems = [
     { icon: <Package size={18} color={Colors.green} />, title: "My Orders", subtitle: "View order history & tracking", onPress: () => router.push("/(customer)/(tabs)/orders") },
     { icon: <Heart size={18} color={Colors.red} />, title: "Favorites", subtitle: "Saved stores and products", onPress: () => router.push("/(customer)/(tabs)/favorites") },
+    { icon: <MessageCircle size={18} color={Colors.cyan} />, title: "Messages", subtitle: "Chats with stores & Community rooms", onPress: () => router.push("/(customer)/chat") },
     { icon: <Bell size={18} color={Colors.purple} />, title: "Notifications", subtitle: "Manage push & in-app alerts", onPress: () => router.push("/(customer)/notification-preferences") },
     { icon: <Mail size={18} color={Colors.amber} />, title: "Email Preferences", subtitle: "Manage notification emails", onPress: () => router.push("/(customer)/email-preferences") },
     { icon: <Globe size={18} color={Colors.cyan} />, title: "stallhq.com", subtitle: "Visit our website", onPress: () => Linking.openURL("https://hqlink.vercel.app") },

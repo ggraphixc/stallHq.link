@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform,
+  View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -198,57 +198,54 @@ export default function VendorChatThreadScreen() {
   );
 }
 
-const makeStyles = () => {
-  const s = useThemeStyles(() => ({
-    container: { flex: 1, backgroundColor: Colors.bg },
-    header: {
-      flexDirection: "row" as const, alignItems: "center" as const,
-      padding: Spacing.lg, paddingBottom: Spacing.sm,
-      backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
-    },
-    backBtn: { padding: Spacing.xs, marginRight: Spacing.sm },
-    headerInfo: { flex: 1 },
-    headerName: { fontSize: FontSize.md, fontWeight: "700" as const, color: Colors.text },
-    headerSub: { fontSize: FontSize.xs, color: Colors.textMuted },
-    messagesList: { padding: Spacing.lg, paddingBottom: Spacing.sm, flexGrow: 1 },
-    bubbleRow: { marginBottom: Spacing.sm, alignItems: "flex-start" as const },
-    bubbleRowMine: { alignItems: "flex-end" as const },
-    bubble: {
-      maxWidth: "78%" as any, padding: Spacing.md,
-      borderRadius: BorderRadius.lg,
-    },
-    bubbleMine: {
-      backgroundColor: Colors.purple,
-      borderBottomRightRadius: 4,
-    },
-    bubbleTheirs: {
-      backgroundColor: Colors.bgSecondary,
-      borderWidth: 1, borderColor: Colors.borderSubtle,
-      borderBottomLeftRadius: 4,
-    },
-    bubbleText: { fontSize: FontSize.sm, color: Colors.text, lineHeight: 20 },
-    bubbleTextMine: { color: "#fff" },
-    bubbleMeta: {
-      flexDirection: "row" as const, alignItems: "center" as const,
-      gap: 4, marginTop: 4,
-    },
-    bubbleTime: { fontSize: 10, color: Colors.textMuted },
-    bubbleTimeMine: { color: "rgba(255,255,255,0.5)" },
-    inputBar: {
-      flexDirection: "row" as const, alignItems: "flex-end" as const,
-      padding: Spacing.md, paddingBottom: Spacing.lg,
-      backgroundColor: Colors.bgCard, borderTopWidth: 1, borderTopColor: Colors.borderSubtle,
-      gap: Spacing.sm,
-    },
-    textInput: {
-      flex: 1, backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
-      borderRadius: BorderRadius.lg, padding: Spacing.md, fontSize: FontSize.sm,
-      color: Colors.text, maxHeight: 100, minHeight: 42,
-    },
-    sendBtn: {
-      width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.purple,
-      alignItems: "center" as const, justifyContent: "center" as const,
-    },
-  }));
-  return s;
-};
+const makeStyles = () => StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.bg },
+  header: {
+    flexDirection: "row", alignItems: "center",
+    padding: Spacing.lg, paddingBottom: Spacing.sm,
+    backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
+  },
+  backBtn: { padding: Spacing.xs, marginRight: Spacing.sm },
+  headerInfo: { flex: 1 },
+  headerName: { fontSize: FontSize.md, fontWeight: "700", color: Colors.text },
+  headerSub: { fontSize: FontSize.xs, color: Colors.textMuted },
+  messagesList: { padding: Spacing.lg, paddingBottom: Spacing.sm, flexGrow: 1 },
+  bubbleRow: { marginBottom: Spacing.sm, alignItems: "flex-start" },
+  bubbleRowMine: { alignItems: "flex-end" },
+  bubble: {
+    maxWidth: "78%" as any, padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+  },
+  bubbleMine: {
+    backgroundColor: Colors.purple,
+    borderBottomRightRadius: 4,
+  },
+  bubbleTheirs: {
+    backgroundColor: Colors.bgSecondary,
+    borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderBottomLeftRadius: 4,
+  },
+  bubbleText: { fontSize: FontSize.sm, color: Colors.text, lineHeight: 20 },
+  bubbleTextMine: { color: "#fff" },
+  bubbleMeta: {
+    flexDirection: "row", alignItems: "center",
+    gap: 4, marginTop: 4,
+  },
+  bubbleTime: { fontSize: 10, color: Colors.textMuted },
+  bubbleTimeMine: { color: "rgba(255,255,255,0.5)" },
+  inputBar: {
+    flexDirection: "row", alignItems: "flex-end",
+    padding: Spacing.md, paddingBottom: Spacing.lg,
+    backgroundColor: Colors.bgCard, borderTopWidth: 1, borderTopColor: Colors.borderSubtle,
+    gap: Spacing.sm,
+  },
+  textInput: {
+    flex: 1, backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.lg, padding: Spacing.md, fontSize: FontSize.sm,
+    color: Colors.text, maxHeight: 100, minHeight: 42,
+  },
+  sendBtn: {
+    width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.purple,
+    alignItems: "center", justifyContent: "center",
+  },
+});

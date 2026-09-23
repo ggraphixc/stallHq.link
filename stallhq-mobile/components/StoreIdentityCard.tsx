@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity, Linking } from "react-native";
+import { View, Text, Image, TouchableOpacity, Linking, StyleSheet } from "react-native";
 import { Store as StoreIcon, Clock, MessageCircle, Link as LinkIcon, Mail } from "lucide-react-native";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../lib/theme";
 import type { Store } from "../lib/supabase";
@@ -117,60 +117,57 @@ export function StoreIdentityCard({ store, editable, onEdit }: StoreIdentityCard
   );
 }
 
-const makeStyles = () => {
-  const s = useThemeStyles(() => ({
-    card: {
-      backgroundColor: Colors.bgCard,
-      borderWidth: 1,
-      borderColor: Colors.borderSubtle,
-      borderRadius: BorderRadius.xl,
-      padding: Spacing.lg,
-      marginBottom: Spacing.md,
-    },
-    logo: { width: 56, height: 56, borderRadius: BorderRadius.md },
-    logoPlaceholder: {
-      width: 56, height: 56, borderRadius: BorderRadius.md,
-      backgroundColor: Colors.bgSecondary, alignItems: "center" as const, justifyContent: "center" as const,
-    },
-    name: { fontSize: FontSize.xl, fontWeight: "700" as const, color: Colors.text },
-    slug: { fontSize: FontSize.sm, color: Colors.textMuted },
-    description: { fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: Spacing.xs, lineHeight: 20 },
-    editBtn: {
-      marginLeft: Spacing.sm,
-      paddingHorizontal: Spacing.md,
-      paddingVertical: Spacing.xs + 2,
-      borderRadius: BorderRadius.md,
-      backgroundColor: Colors.purpleDim,
-      borderWidth: 1,
-      borderColor: Colors.borderGlow,
-      alignItems: "center" as const,
-    },
-    editText: { fontSize: FontSize.xs, fontWeight: "700" as const, color: Colors.purple },
-    contactRow: { flexDirection: "row" as const, gap: Spacing.sm, marginTop: Spacing.md },
-    contactChip: {
-      flexDirection: "row" as const, alignItems: "center" as const, gap: 5,
-      paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
-      borderRadius: BorderRadius.md, backgroundColor: Colors.bgSecondary,
-      borderWidth: 1, borderColor: Colors.borderSubtle,
-    },
-    contactText: { fontSize: FontSize.xs, fontWeight: "600" as const },
-    row: { flexDirection: "row" as const, alignItems: "center" as const, marginTop: Spacing.md },
-    rowLabel: { fontSize: FontSize.xs, color: Colors.textMuted, textTransform: "uppercase" as const, letterSpacing: 0.05, marginBottom: 2 },
-    rowValue: { fontSize: FontSize.sm, fontWeight: "600" as const, color: Colors.text },
-    rowMuted: { fontSize: FontSize.sm, color: Colors.textMuted },
-    hoursBadge: {
-      flexDirection: "row" as const, alignItems: "center" as const, gap: 5,
-      marginTop: Spacing.xs, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
-      borderRadius: BorderRadius.md, backgroundColor: Colors.greenDim,
-      borderWidth: 1, borderColor: "rgba(16,185,129,0.15)",
-    },
-    hoursBadgeClosed: {
-      flexDirection: "row" as const, alignItems: "center" as const, gap: 5,
-      marginTop: Spacing.xs, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
-      borderRadius: BorderRadius.md, backgroundColor: Colors.redDim,
-      borderWidth: 1, borderColor: "rgba(239,68,68,0.15)",
-    },
-    hoursText: { fontSize: FontSize.xs, fontWeight: "600" as const },
-  }));
-  return s;
-};
+const makeStyles = () => StyleSheet.create({
+  card: {
+    backgroundColor: Colors.bgCard,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  logo: { width: 56, height: 56, borderRadius: BorderRadius.md },
+  logoPlaceholder: {
+    width: 56, height: 56, borderRadius: BorderRadius.md,
+    backgroundColor: Colors.bgSecondary, alignItems: "center", justifyContent: "center",
+  },
+  name: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
+  slug: { fontSize: FontSize.sm, color: Colors.textMuted },
+  description: { fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: Spacing.xs, lineHeight: 20 },
+  editBtn: {
+    marginLeft: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.purpleDim,
+    borderWidth: 1,
+    borderColor: Colors.borderGlow,
+    alignItems: "center",
+  },
+  editText: { fontSize: FontSize.xs, fontWeight: "700", color: Colors.purple },
+  contactRow: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.md },
+  contactChip: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md, backgroundColor: Colors.bgSecondary,
+    borderWidth: 1, borderColor: Colors.borderSubtle,
+  },
+  contactText: { fontSize: FontSize.xs, fontWeight: "600" },
+  row: { flexDirection: "row", alignItems: "center", marginTop: Spacing.md },
+  rowLabel: { fontSize: FontSize.xs, color: Colors.textMuted, textTransform: "uppercase", letterSpacing: 0.05, marginBottom: 2 },
+  rowValue: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.text },
+  rowMuted: { fontSize: FontSize.sm, color: Colors.textMuted },
+  hoursBadge: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    marginTop: Spacing.xs, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md, backgroundColor: Colors.greenDim,
+    borderWidth: 1, borderColor: "rgba(16,185,129,0.15)",
+  },
+  hoursBadgeClosed: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    marginTop: Spacing.xs, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md, backgroundColor: Colors.redDim,
+    borderWidth: 1, borderColor: "rgba(239,68,68,0.15)",
+  },
+  hoursText: { fontSize: FontSize.xs, fontWeight: "600" },
+});

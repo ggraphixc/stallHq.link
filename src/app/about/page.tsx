@@ -56,6 +56,16 @@ const ABOUT_FAQS = [
       "AEO stands for Answer Engine Optimization. It's the practice of structuring your product and store data so that AI search engines like ChatGPT, Perplexity, and Google AI Overviews can accurately describe your products to potential customers. Every stallHq store automatically includes structured data (Schema.org) that makes it AEO-ready, meaning AI assistants can recommend your products when users ask questions like 'where can I buy X in Lagos?'",
   },
   {
+    question: "Is there a community chat?",
+    answer:
+      "Yes. stallHq has a free public Community space for buyers, sellers, and visitors to talk, ask questions, and discover stores. Open it at hqlink.vercel.app/community on the web, or from the Messages screen in the stallHq Android app. Anyone can browse; signing in lets you join rooms and send messages.",
+  },
+  {
+    question: "Is there a mobile app?",
+    answer:
+      "Yes. stallHq ships as a native Android app (stallhq-mobile). Vendors and buyers can manage orders, message stores, join community chat rooms, and track sales on the go — with the same account as the web dashboard.",
+  },
+  {
     question: "What is GEO and how does stallHq use it?",
     answer:
       "GEO stands for Geographic Optimization. stallHq stores include geographic metadata (coordinates, city, state, country) in their structured data, making them discoverable by location-based searches. When someone searches for 'fashion vendor in Lekki' or 'phone accessories Abuja', GEO-optimized stores are more likely to appear in results.",
@@ -94,7 +104,8 @@ export default function AboutPage() {
           <p style={{ fontSize: "1.05rem", color: "var(--text-secondary)", marginBottom: "2rem", lineHeight: 1.7 }}>
             stallHq is a digital storefront platform built for vendors in Nigeria and across Africa.
             We give WhatsApp and Instagram sellers a professional online store — with a custom URL, product catalog,
-            and one-click ordering — at zero hosting cost.
+            and one-click ordering — at zero hosting cost. Manage everything from the web dashboard or the stallHq
+            Android app, and join the free public Community to connect with buyers and other sellers.
           </p>
 
           <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginTop: "2.5rem", marginBottom: "0.75rem" }}>
@@ -118,6 +129,8 @@ export default function AboutPage() {
             <li><strong>AI-powered descriptions</strong> — Generate professional product descriptions in seconds.</li>
             <li><strong>SEO & AEO ready</strong> — Structured data makes your products findable by AI search engines.</li>
             <li><strong>GEO optimized</strong> — Geographic metadata helps local customers find your store.</li>
+            <li><strong>Community chat</strong> — Free public rooms for buyers, sellers, and visitors to talk and discover stores.</li>
+            <li><strong>Android app</strong> — Run your store, messages, and orders from the stallHq mobile app.</li>
           </ul>
 
           <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginTop: "2.5rem", marginBottom: "0.75rem" }}>

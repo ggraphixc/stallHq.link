@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase, Store } from "../../../lib/supabase";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../../lib/theme";
-import { Search, Store as StoreIcon, ShoppingCart } from "lucide-react-native";
+import { Search, Store as StoreIcon, ShoppingCart, MessageCircle } from "lucide-react-native";
 import { useAuth } from "../../../lib/auth";
 import { BrandLogo } from "../../../components/BrandLogo";
 import { StoreFavoriteButton } from "../../../components/StoreFavoriteButton";
@@ -78,6 +78,13 @@ export default function ExploreScreen() {
             <Text style={styles.title}>stallHq</Text>
           </View>
           <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.cartBtn}
+              onPress={() => router.push("/(customer)/chat")}
+              activeOpacity={0.7}
+            >
+              <MessageCircle size={18} color={Colors.textSecondary} />
+            </TouchableOpacity>
             <NotificationBell />
             <TouchableOpacity
               style={styles.cartBtn}

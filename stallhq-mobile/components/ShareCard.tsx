@@ -32,11 +32,13 @@ export function ShareCard({ title, description, slug, productId, price, imageUrl
 
   async function shareNative() {
     try {
-      await Share.share({
+      const shareContent: any = {
         message: `Check out "${title}"${price ? ` for ₦${price.toLocaleString()}` : ""} on ${displayName}!\n\n${productUrl}`,
-        url: productUrl,
         title,
-      });
+      };
+      if (imageUrl) shareContent.url = imageUrl;
+      else shareContent.url = productUrl;
+      await Share.share(shareContent);
     } catch {}
   }
 

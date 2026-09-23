@@ -144,58 +144,55 @@ export default function CustomerProfileScreen() {
   );
 }
 
-const makeStyles = () => {
-  const s = useThemeStyles(() => ({
-    container: { flex: 1, backgroundColor: Colors.bg },
-    header: {
-      padding: Spacing.lg, paddingBottom: Spacing.sm,
-      backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
-    },
-    headerRow: { flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "space-between" as const },
-    title: { fontSize: FontSize.xl, fontWeight: "700" as const, color: Colors.text },
-    scroll: { paddingBottom: 40 },
-    accountCard: {
-      flexDirection: "row" as const, alignItems: "center" as const,
-      backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
-      borderRadius: BorderRadius.lg, padding: Spacing.lg, marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
-    },
-    guestCard: {
-      flexDirection: "row" as const, alignItems: "center" as const,
-      backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
-      borderRadius: BorderRadius.lg, padding: Spacing.lg, marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
-    },
-    avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.purple, justifyContent: "center" as const, alignItems: "center" as const, marginRight: Spacing.lg },
-    email: { fontSize: FontSize.md, fontWeight: "600" as const, color: Colors.text },
-    accountLabel: { fontSize: FontSize.sm, color: Colors.textMuted },
-    accountActions: { flexDirection: "row" as const, gap: Spacing.sm, paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg },
-    accountBtnPrimary: {
-      flex: 1, flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "center" as const, gap: 6,
-      backgroundColor: Colors.purple, borderRadius: BorderRadius.lg, paddingVertical: Spacing.md,
-    },
-    accountBtnTextLight: { color: "#fff", fontSize: FontSize.sm, fontWeight: "700" as const },
-    accountBtnSecondary: {
-      flex: 1, alignItems: "center" as const, justifyContent: "center" as const,
-      backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
-      borderRadius: BorderRadius.lg, paddingVertical: Spacing.md,
-    },
-    accountBtnText: { color: Colors.text, fontSize: FontSize.sm, fontWeight: "600" as const },
-    menu: { paddingHorizontal: Spacing.lg },
-    menuItem: {
-      flexDirection: "row" as const, alignItems: "center" as const,
-      backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
-      borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
-    },
-    menuIcon: { width: 36, height: 36, borderRadius: BorderRadius.md, backgroundColor: Colors.bgSecondary, justifyContent: "center" as const, alignItems: "center" as const, marginRight: Spacing.lg },
-    menuInfo: { flex: 1 },
-    menuTitle: { fontSize: FontSize.md, fontWeight: "600" as const, color: Colors.text },
-    menuSubtitle: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 2 },
-    signOutBtn: {
-      flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "center" as const, gap: 8,
-      marginHorizontal: Spacing.lg, marginTop: Spacing.lg, padding: Spacing.lg,
-      borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.red,
-    },
-    signOutText: { color: Colors.red, fontSize: FontSize.md, fontWeight: "600" as const },
-    version: { fontSize: FontSize.xs, color: Colors.textMuted, textAlign: "center" as const, marginTop: Spacing.lg },
-  }));
-  return s;
-};
+const makeStyles = () => StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.bg },
+  header: {
+    padding: Spacing.lg, paddingBottom: Spacing.sm,
+    backgroundColor: Colors.bgCard, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
+  },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
+  scroll: { paddingBottom: 40 },
+  accountCard: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.lg, padding: Spacing.lg, marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
+  },
+  guestCard: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.lg, padding: Spacing.lg, marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
+  },
+  avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.purple, justifyContent: "center", alignItems: "center", marginRight: Spacing.lg },
+  email: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },
+  accountLabel: { fontSize: FontSize.sm, color: Colors.textMuted },
+  accountActions: { flexDirection: "row", gap: Spacing.sm, paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg },
+  accountBtnPrimary: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    backgroundColor: Colors.purple, borderRadius: BorderRadius.lg, paddingVertical: Spacing.md,
+  },
+  accountBtnTextLight: { color: "#fff", fontSize: FontSize.sm, fontWeight: "700" },
+  accountBtnSecondary: {
+    flex: 1, alignItems: "center", justifyContent: "center",
+    backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.lg, paddingVertical: Spacing.md,
+  },
+  accountBtnText: { color: Colors.text, fontSize: FontSize.sm, fontWeight: "600" },
+  menu: { paddingHorizontal: Spacing.lg },
+  menuItem: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "rgba(19,19,29,0.6)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.sm,
+  },
+  menuIcon: { width: 36, height: 36, borderRadius: BorderRadius.md, backgroundColor: Colors.bgSecondary, justifyContent: "center", alignItems: "center", marginRight: Spacing.lg },
+  menuInfo: { flex: 1 },
+  menuTitle: { fontSize: FontSize.md, fontWeight: "600", color: Colors.text },
+  menuSubtitle: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 2 },
+  signOutBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    marginHorizontal: Spacing.lg, marginTop: Spacing.lg, padding: Spacing.lg,
+    borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.red,
+  },
+  signOutText: { color: Colors.red, fontSize: FontSize.md, fontWeight: "600" },
+  version: { fontSize: FontSize.xs, color: Colors.textMuted, textAlign: "center", marginTop: Spacing.lg },
+});

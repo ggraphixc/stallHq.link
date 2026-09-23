@@ -135,6 +135,12 @@ export function CustomerDashboard({ user, orders, existingStore }: CustomerDashb
             <Link href="/explore" style={{ fontSize: "0.75rem", color: "var(--text-muted)", textDecoration: "none", padding: "0.5rem" }}>
               Browse Stores
             </Link>
+            <Link href="/community" style={{ fontSize: "0.75rem", color: "var(--text-muted)", textDecoration: "none", padding: "0.5rem" }}>
+              Community
+            </Link>
+            <Link href="/chat" style={{ fontSize: "0.75rem", color: "var(--text-muted)", textDecoration: "none", padding: "0.5rem" }}>
+              Messages
+            </Link>
             <Link href="/favorites" style={{ position: "relative", fontSize: "0.75rem", color: "var(--text-muted)", textDecoration: "none", padding: "0.5rem" }}>
               <Heart size={16} />
               {favCount > 0 && (

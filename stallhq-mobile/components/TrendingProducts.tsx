@@ -42,7 +42,7 @@ export function TrendingProducts({ limit = 8, days = 7 }: Props) {
           <Pressable
             key={p.id}
             style={styles.card}
-            onPress={() => router.push(`/product/${p.id}`)}
+            onPress={() => router.push({ pathname: "/(customer)/product/[id]", params: { id: p.id } })}
           >
             <View style={styles.rankBadge}>
               <Text style={styles.rankText}>#{i + 1}</Text>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Store, ShoppingCart, BarChart3, QrCode, Zap, Shield, ArrowRight, Check, Star, Menu, X } from "lucide-react";
+import { Store, ShoppingCart, BarChart3, QrCode, Zap, Shield, ArrowRight, Check, Star, Menu, X, MessageCircle, Smartphone } from "lucide-react";
 import { PLANS, formatNaira } from "@/lib/subscription";
 import { useBranding } from "@/hooks/useBranding";
 import { AppDownloadBadges } from "@/components/AppDownloadBadges";
@@ -73,6 +73,8 @@ const features = [
   { icon: QrCode, title: "QR Code for Offline Sales", desc: "Print your QR code on packaging, business cards, or shop displays. Customers scan it and your store opens instantly." },
   { icon: Zap, title: "No Coding, No Hosting", desc: "Create your store, add products with photos and prices, and you're live. No developers, no servers, no monthly hosting bills." },
   { icon: Shield, title: "Verified Vendor Badge", desc: "Build trust with customers. Your store gets a verified badge that shows you're a real, trusted seller." },
+  { icon: MessageCircle, title: "Community Chat Rooms", desc: "A free public space for buyers, sellers, and visitors to talk, get help, and discover stores — right inside the app and on the web." },
+  { icon: Smartphone, title: "Native Android App", desc: "Manage orders, chat with buyers, and track sales on the go with the stallHq app — same account as the web." },
 ];
 
 const steps = [
@@ -126,6 +128,9 @@ export default function Home() {
               <Link href="/explore" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", textDecoration: "none", padding: "0.5rem" }}>
                 Explore
               </Link>
+              <Link href="/community" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", textDecoration: "none", padding: "0.5rem" }}>
+                Community
+              </Link>
               <Link href="/auth/login" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", textDecoration: "none", padding: "0.5rem" }}>
                 Login
               </Link>
@@ -149,6 +154,9 @@ export default function Home() {
             <div className="show-mobile-only" style={{ borderTop: "1px solid var(--border-subtle)", padding: "0.75rem 1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               <Link href="/explore" onClick={() => setMenuOpen(false)} style={{ fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none", padding: "0.75rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
                 Explore Stores
+              </Link>
+              <Link href="/community" onClick={() => setMenuOpen(false)} style={{ fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none", padding: "0.75rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                Community Chat
               </Link>
               <Link href="/auth/login" onClick={() => setMenuOpen(false)} style={{ fontSize: "0.875rem", color: "var(--text-secondary)", textDecoration: "none", padding: "0.75rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
                 Login
@@ -363,6 +371,29 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Community CTA */}
+        <section style={{ ...sectionStyle, paddingTop: "3rem", paddingBottom: "3rem" }}>
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem", borderRadius: 16, border: "1px solid var(--border-glow)", background: "rgba(168,85,247,0.06)", padding: "2.5rem 1.5rem", maxWidth: 640, margin: "0 auto" }}>
+            <div style={{ width: "2.75rem", height: "2.75rem", borderRadius: "0.75rem", background: "linear-gradient(135deg, rgba(168,133,247,0.2), rgba(6,182,212,0.12))", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <MessageCircle size={20} style={{ color: "var(--glow-purple)" }} />
+            </div>
+            <h2 style={{ fontSize: "clamp(1.25rem, 3.5vw, 1.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
+              Join the <span className="text-gradient">Community</span>
+            </h2>
+            <p style={{ fontSize: 14, color: "var(--text-secondary)", maxWidth: 420, lineHeight: 1.6 }}>
+              A free public chat space for buyers, sellers, and visitors — ask questions, share deals, and discover stores in real time. Works on web and in the app.
+            </p>
+            <div style={{ display: "flex", gap: 10, paddingTop: 4, flexWrap: "wrap", justifyContent: "center" }}>
+              <Link href="/community" className="glow-button" style={{ fontSize: 13, padding: "12px 24px", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                Open Community <ArrowRight size={14} />
+              </Link>
+              <Link href="/chat" className="glow-button-secondary" style={{ fontSize: 13, padding: "12px 24px" }}>
+                My Messages
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* CTA */}
         <section style={{ maxWidth: 560, margin: "0 auto", padding: "5rem 1.5rem" }}>
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, borderRadius: 16, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.02)", padding: "3rem 2rem" }}>
@@ -399,6 +430,8 @@ export default function Home() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
                 <p style={{ fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.25rem" }}>Product</p>
                 <Link href="/explore" style={{ color: "inherit", textDecoration: "none" }}>Explore Stores</Link>
+                <Link href="/community" style={{ color: "inherit", textDecoration: "none" }}>Community Chat</Link>
+                <Link href="/chat" style={{ color: "inherit", textDecoration: "none" }}>Messages</Link>
                 <Link href="/auth/signup" style={{ color: "inherit", textDecoration: "none" }}>Create Store</Link>
                 <Link href="/upgrade" style={{ color: "inherit", textDecoration: "none" }}>Pricing</Link>
                 <Link href="/favorites" style={{ color: "inherit", textDecoration: "none" }}>My Favorites</Link>

@@ -28,12 +28,6 @@
       "expo-font",
       "expo-sharing",
       [
-        "expo-updates",
-        {
-          "url": "https://u.expo.dev/e7290b84-fabd-4bc4-904a-9c2dcf422129"
-        }
-      ],
-      [
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
@@ -60,7 +54,8 @@
         {
           "photosPermission": "Allow stallHq to access your photos so you can add images to your reviews."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "extra": {
       "router": {},
@@ -68,11 +63,6 @@
         "projectId": "e7290b84-fabd-4bc4-904a-9c2dcf422129"
       }
     },
-    "owner": "ggraphixc",
-    "updates": {
-      "url": "https://u.expo.dev/e7290b84-fabd-4bc4-904a-9c2dcf422129",
-      "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 300
-    }
+    "owner": "ggraphixc"
   }
 }
