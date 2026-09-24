@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/api";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { sendPushToUsers } from "@/lib/push";
 
 const admin = createServiceClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-async function resolveUser(req: NextRequest): Promise<{ id: string } | null> {
+async function resolveUser(req: NextRequest): Promise<{ id: string; email?: string | null; user_metadata?: Record<string, unknown> | null } | null> {
   const token = req.headers.get("x-access-token");
   if (token) {
     const { data, error } = await admin.auth.getUser(token);
@@ -32,12 +33,20 @@ export async function GET(req: NextRequest) {
 
     // Single conversation with messages
     if (conversationId) {
-      const { data: conv, error: convErr } = await admin
-        .from("conversations")
-        .select("*, store:stores(id, name, slug, logo_url)")
-        .eq("id", conversationId)
-        .single();
+      const [convResult, msgResult] = await Promise.all([
+        admin
+          .from("conversations")
+          .select("*, store:stores(id, name, slug, logo_url)")
+          .eq("id", conversationId)
+          .single(),
+        admin
+          .from("messages")
+          .select("*")
+          .eq("conversation_id", conversationId)
+          .order("created_at", { ascending: true }),
+      ]);
 
+      const { data: conv, error: convErr } = convResult;
       if (convErr || !conv) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
       // Only participants can view
@@ -45,31 +54,30 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-      const { data: messages, error: msgErr } = await admin
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
-
+      const { data: messages, error: msgErr } = msgResult;
       if (msgErr) throw msgErr;
 
       // Mark as read for the current user
       if (conv.customer_id === user.id && conv.unread_customer > 0) {
-        await admin.from("conversations").update({ unread_customer: 0 }).eq("id", conversationId);
-        await admin
-          .from("messages")
-          .update({ read_at: new Date().toISOString() })
-          .eq("conversation_id", conversationId)
-          .is("read_at", null)
-          .neq("sender_id", user.id);
+        await Promise.all([
+          admin.from("conversations").update({ unread_customer: 0 }).eq("id", conversationId),
+          admin
+            .from("messages")
+            .update({ read_at: new Date().toISOString() })
+            .eq("conversation_id", conversationId)
+            .is("read_at", null)
+            .neq("sender_id", user.id),
+        ]);
       } else if (conv.vendor_id === user.id && conv.unread_vendor > 0) {
-        await admin.from("conversations").update({ unread_vendor: 0 }).eq("id", conversationId);
-        await admin
-          .from("messages")
-          .update({ read_at: new Date().toISOString() })
-          .eq("conversation_id", conversationId)
-          .is("read_at", null)
-          .neq("sender_id", user.id);
+        await Promise.all([
+          admin.from("conversations").update({ unread_vendor: 0 }).eq("id", conversationId),
+          admin
+            .from("messages")
+            .update({ read_at: new Date().toISOString() })
+            .eq("conversation_id", conversationId)
+            .is("read_at", null)
+            .neq("sender_id", user.id),
+        ]);
       }
 
       return NextResponse.json({ ...conv, messages: messages || [] });
@@ -83,12 +91,15 @@ export async function GET(req: NextRequest) {
 
     const vendorId = searchParams.get("vendor_id");
     const customerId = searchParams.get("customer_id");
+    const adminIds = (process.env.ADMIN_USER_ID || "")
+      .split(",").map((s) => s.trim()).filter(Boolean);
+    const isAdmin = adminIds.includes(user.id);
 
-    if (user.id === (process.env.ADMIN_USER_ID || "").split(",")[0]?.trim()) {
+    if (isAdmin) {
       // Admin sees all conversations
-    } else if (vendorId) {
+    } else if (vendorId && vendorId === user.id) {
       query = query.eq("vendor_id", vendorId);
-    } else if (customerId) {
+    } else if (customerId && customerId === user.id) {
       query = query.eq("customer_id", customerId);
     } else {
       query = query.or(`customer_id.eq.${user.id},vendor_id.eq.${user.id}`);
@@ -97,16 +108,25 @@ export async function GET(req: NextRequest) {
     const { data: convs, error } = await query;
     if (error) throw error;
 
-    // Attach customer info for vendor view
-    const enriched = await Promise.all(
-      (convs || []).map(async (c) => {
-        if (c.customer_id === user.id) return c; // Customer already knows their own info
-        const { data: cust } = await admin.auth.admin.getUserById(c.customer_id);
-        return {
-          ...c,
-          customer_email: cust?.user?.email || "Unknown",
-        };
+    // Attach customer info for vendor view (deduped, parallel lookups)
+    const rows = convs || [];
+    const customerIds = new Set<string>();
+    for (const c of rows) {
+      if (c.customer_id !== user.id) customerIds.add(c.customer_id);
+    }
+    const emailById = new Map<string, string>();
+    await Promise.all(
+      [...customerIds].map(async (id) => {
+        try {
+          const { data: cust } = await admin.auth.admin.getUserById(id);
+          emailById.set(id, cust?.user?.email || "Unknown");
+        } catch {
+          emailById.set(id, "Unknown");
+        }
       })
+    );
+    const enriched = rows.map((c) =>
+      c.customer_id === user.id ? c : { ...c, customer_email: emailById.get(c.customer_id) || "Unknown" }
     );
 
     return NextResponse.json(enriched);
@@ -138,18 +158,55 @@ export async function POST(req: NextRequest) {
 
       if (storeErr || !store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
 
-      // Upsert conversation
-      const { data: conv, error: convErr } = await admin
+      // Find existing conversation first (no unique constraint on
+      // (customer_id, store_id), so upsert with onConflict would throw)
+      const { data: existing, error: findErr } = await admin
         .from("conversations")
-        .upsert(
-          { customer_id: user.id, store_id: storeId, vendor_id: store.user_id },
-          { onConflict: "customer_id,store_id" }
-        )
-        .select()
-        .single();
+        .select("id")
+        .eq("customer_id", user.id)
+        .eq("store_id", storeId)
+        .limit(1)
+        .maybeSingle();
 
-      if (convErr) throw convErr;
-      convId = conv.id;
+      if (findErr) throw findErr;
+
+      let conversationId: string;
+      if (existing) {
+        conversationId = existing.id;
+      } else {
+        const { data: created, error: insertErr } = await admin
+          .from("conversations")
+          .insert({ customer_id: user.id, store_id: storeId, vendor_id: store.user_id })
+          .select("id")
+          .single();
+
+        if (insertErr) {
+          // Unique-violation race: another request inserted between our
+          // select and insert — re-select the winner.
+          const isUniqueViolation =
+            (insertErr as { code?: string }).code === "23505" ||
+            /duplicate/i.test(insertErr.message || "");
+          if (isUniqueViolation) {
+            const { data: raced, error: raceErr } = await admin
+              .from("conversations")
+              .select("id")
+              .eq("customer_id", user.id)
+              .eq("store_id", storeId)
+              .limit(1)
+              .maybeSingle();
+            if (raceErr || !raced) throw raceErr || insertErr;
+            conversationId = raced.id;
+          } else {
+            throw insertErr;
+          }
+        } else if (!created) {
+          throw new Error("Failed to create conversation");
+        } else {
+          conversationId = created.id;
+        }
+      }
+
+      convId = conversationId;
     }
 
     if (!convId) {
@@ -209,6 +266,21 @@ export async function POST(req: NextRequest) {
         [recipientField]: nextUnread,
       })
       .eq("id", convId);
+
+    // Fire-and-forget push to the other participant (never blocks the send)
+    const otherParticipantId = isCustomerSender ? conv.vendor_id : conv.customer_id;
+    if (otherParticipantId && otherParticipantId !== user.id) {
+      const senderName =
+        (typeof user.user_metadata?.name === "string" && user.user_metadata.name) ||
+        (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name) ||
+        user.email ||
+        "";
+      void sendPushToUsers([otherParticipantId], {
+        title: senderName || "New message",
+        body: content.trim().slice(0, 120),
+        data: { screen: "chat", conversationId: convId },
+      }).catch(console.error);
+    }
 
     return NextResponse.json({ message: msg, conversationId: convId });
   } catch (err) {

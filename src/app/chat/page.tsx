@@ -1,13 +1,21 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@supabase/supabase-js";
 import { useSearchParams } from "next/navigation";
 import {
   MessageCircle, Send, ArrowLeft, Store, User, Search,
-  CheckCheck, Check, Circle, Users, Globe,
+  CheckCheck, Check, Users,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  upsertRealtimeMessage,
+  mergeUpdatedMessage,
+  mergeServerMessages,
+  reconcileSentMessage,
+  toggleReactionList,
+} from "@/components/chat/messageMerge";
+import { MessageActions, ReactionPills } from "@/components/chat/MessageActions";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,6 +30,7 @@ interface Message {
   content: string;
   read_at: string | null;
   created_at: string;
+  reactions?: Record<string, string[]>;
 }
 
 interface Conversation {
@@ -63,9 +72,12 @@ function ChatPageInner() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [search, setSearch] = useState("");
+  const [rtStatus, setRtStatus] = useState<string>("connecting");
+  const [openMsgId, setOpenMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const openedStoreRef = useRef<string | null>(null);
+  const dmChannelRef = useRef<RealtimeChannel | null>(null);
 
   // Get current user
   useEffect(() => {
@@ -139,28 +151,97 @@ function ChatPageInner() {
     })();
   }, [userId, storeParam, conversations, loadConversations, openConversation]);
 
-  // Real-time subscription for messages
+  // Real-time subscription for messages + read receipts, with auto-resubscribe
   useEffect(() => {
     if (!activeConv) return;
 
-    const channel = supabase
-      .channel(`chat-${activeConv.id}`)
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-        filter: `conversation_id=eq.${activeConv.id}`,
-      }, (payload) => {
-        const msg = payload.new as Message;
-        setMessages((prev) => {
-          if (prev.find((m) => m.id === msg.id)) return prev;
-          return [...prev, msg];
-        });
-      })
-      .subscribe();
+    let cancelled = false;
+    let retries = 0;
+    let channel: RealtimeChannel | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
-    return () => { supabase.removeChannel(channel); };
+    const connect = () => {
+      if (cancelled) return;
+      setRtStatus("connecting");
+      channel = supabase
+        .channel(`chat-${activeConv.id}`)
+        .on("postgres_changes", {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${activeConv.id}`,
+        }, (payload) => {
+          const msg = payload.new as Message;
+          setMessages((prev) => upsertRealtimeMessage(prev, msg));
+        })
+        .on("postgres_changes", {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${activeConv.id}`,
+        }, (payload) => {
+          const msg = payload.new as Message;
+          setMessages((prev) => mergeUpdatedMessage(prev, msg));
+        })
+        .on("broadcast", { event: "dm-react" }, ({ payload }) => {
+          const p = payload as { messageId?: string; emoji?: string; userId?: string };
+          if (!p.messageId || !p.emoji || !p.userId) return;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === p.messageId
+                ? { ...m, reactions: toggleReactionList(m.reactions, p.emoji!, p.userId!) }
+                : m
+            )
+          );
+        })
+        .subscribe((status) => {
+          if (cancelled) return;
+          setRtStatus(status);
+          if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
+            retries = 0;
+          } else if (
+            status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
+            status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT ||
+            status === REALTIME_SUBSCRIBE_STATES.CLOSED
+          ) {
+            if (channel) {
+              supabase.removeChannel(channel);
+              channel = null;
+            }
+            if (dmChannelRef.current) dmChannelRef.current = null;
+            const delay = Math.min(1000 * 2 ** retries, 15000);
+            retries += 1;
+            timer = setTimeout(connect, delay);
+          }
+        });
+      dmChannelRef.current = channel;
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      if (channel) supabase.removeChannel(channel);
+      dmChannelRef.current = null;
+    };
   }, [activeConv?.id]);
+
+  // Poll fallback when realtime is down (connecting/error/closed)
+  useEffect(() => {
+    if (!activeConv || rtStatus === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) return;
+    const id = activeConv.id;
+    const iv = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/chat?id=${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setMessages((prev) => mergeServerMessages(prev, data.messages || []));
+        }
+      } catch {}
+    }, 10000);
+    return () => clearInterval(iv);
+  }, [activeConv?.id, rtStatus]);
 
   // Real-time subscription for conversation list updates
   useEffect(() => {
@@ -185,8 +266,24 @@ function ChatPageInner() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Open a conversation (wrapper kept for list onClick; real work in openConversation above)
-  const openFromList = (conv: Conversation) => { void openConversation(conv); };
+  // Toggle an ephemeral DM reaction over the conversation channel
+  const toggleDmReaction = (messageId: string, emoji: string) => {
+    if (!userId) return;
+    const channel = dmChannelRef.current;
+    if (channel && rtStatus === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
+      void channel.send({
+        type: "broadcast",
+        event: "dm-react",
+        payload: { messageId, emoji, userId },
+      });
+    }
+    // self: false — apply locally; peers apply from the broadcast
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId ? { ...m, reactions: toggleReactionList(m.reactions, emoji, userId) } : m
+      )
+    );
+  };
 
   // Send message
   const sendMessage = async () => {
@@ -215,8 +312,7 @@ function ChatPageInner() {
       });
       if (!res.ok) throw new Error("Failed");
       const { message } = await res.json();
-      // Replace optimistic with real message
-      setMessages((prev) => prev.map((m) => m.id === optimistic.id ? message : m));
+      setMessages((prev) => reconcileSentMessage(prev, optimistic.id, message));
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       setNewMessage(content);
@@ -235,12 +331,31 @@ function ChatPageInner() {
     );
   });
 
-  const isVendor = userId && conversations.some((c) => c.vendor_id === userId);
+  const [isVendor, setIsVendor] = useState(false);
   const unreadTotal = conversations.reduce((sum, c) => {
     if (c.customer_id === userId) return sum + c.unread_customer;
     if (c.vendor_id === userId) return sum + c.unread_vendor;
     return sum;
   }, 0);
+
+  useEffect(() => {
+    if (!userId || !supabase) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("stores")
+          .select("id")
+          .eq("user_id", userId)
+          .limit(1)
+          .maybeSingle();
+        if (!cancelled) setIsVendor(!!data);
+      } catch {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   if (!userId) {
     return (
@@ -251,13 +366,9 @@ function ChatPageInner() {
   }
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "var(--bg-primary)", overflow: "hidden" }}>
+    <div className="chat-shell">
       {/* Conversation List */}
-      <div style={{
-        width: 360, flexShrink: 0, borderRight: "1px solid var(--border-subtle)",
-        display: "flex", flexDirection: "column",
-        ...(activeConv ? { display: "none" } : {}),
-      }}>
+      <div className={`chat-list${activeConv ? " chat-list-hidden" : ""}`}>
         {/* Header */}
         <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
@@ -312,7 +423,7 @@ function ChatPageInner() {
             return (
               <div
                 key={conv.id}
-                onClick={() => openFromList(conv)}
+                onClick={() => { void openConversation(conv); }}
                 style={{
                   padding: "0.875rem 1.25rem", cursor: "pointer",
                   background: isActive ? "rgba(168,133,247,0.08)" : "transparent",
@@ -372,22 +483,13 @@ function ChatPageInner() {
       </div>
 
       {/* Message Thread */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <div className={`chat-thread-pane${activeConv ? "" : " chat-pane-empty"}`}>
         {activeConv ? (
           <>
             {/* Chat Header */}
-            <div style={{
-              padding: "0.75rem 1.25rem", borderBottom: "1px solid var(--border-subtle)",
-              display: "flex", alignItems: "center", gap: "0.75rem",
-              background: "var(--bg-secondary)",
-            }}>
+            <div className="chat-header-glass">
               <button
                 onClick={() => setActiveConv(null)}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 32, height: 32, borderRadius: 8, border: "none",
-                  background: "transparent", color: "var(--glow-purple)", cursor: "pointer",
-                }}
                 className="chat-back-btn"
               >
                 <ArrowLeft size={18} />
@@ -413,30 +515,39 @@ function ChatPageInner() {
             </div>
 
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <div className="chat-scroll">
               {messages.map((msg) => {
                 const isMine = msg.sender_id === userId;
                 return (
-                  <div key={msg.id} style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start" }}>
-                    <div style={{
-                      maxWidth: "70%", padding: "0.625rem 0.875rem",
-                      borderRadius: isMine ? "0.875rem 0.875rem 0.25rem 0.875rem" : "0.875rem 0.875rem 0.875rem 0.25rem",
-                      background: isMine ? "var(--glow-purple)" : "var(--bg-secondary)",
-                      color: isMine ? "#fff" : "var(--text-primary)",
-                      border: isMine ? "none" : "1px solid var(--border-subtle)",
-                    }}>
-                      <div style={{ fontSize: "0.8125rem", lineHeight: 1.5, wordBreak: "break-word" }}>{msg.content}</div>
-                      <div style={{
-                        fontSize: "0.5625rem", marginTop: 4, display: "flex", alignItems: "center", gap: 3,
-                        color: isMine ? "rgba(255,255,255,0.6)" : "var(--text-muted)", justifyContent: isMine ? "flex-end" : "flex-start",
-                      }}>
-                        {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  <div
+                    key={msg.id}
+                    className={`chat-row${isMine ? " chat-row-mine" : ""}`}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setOpenMsgId((prev) => (prev === msg.id ? null : msg.id));
+                    }}
+                  >
+                    <div className={`chat-bubble${isMine ? " chat-bubble-mine" : ""}`}>
+                      <ReactionPills
+                        reactions={msg.reactions}
+                        userId={userId}
+                        onToggle={(emoji) => toggleDmReaction(msg.id, emoji)}
+                      />
+                      <div className="chat-bubble-text">{msg.content}</div>
+                      <div className={`chat-bubble-meta${isMine ? " chat-bubble-meta-mine" : ""}`}>
+                        <span>
+                          {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
                         {isMine && (msg.read_at ? (
-                          <CheckCheck size={12} />
+                          <CheckCheck size={12} className="chat-read-tick" />
                         ) : (
                           <Check size={12} />
                         ))}
                       </div>
+                      <MessageActions
+                        open={openMsgId === msg.id}
+                        onReact={(emoji) => toggleDmReaction(msg.id, emoji)}
+                      />
                     </div>
                   </div>
                 );
@@ -445,11 +556,8 @@ function ChatPageInner() {
             </div>
 
             {/* Input */}
-            <div style={{
-              padding: "0.75rem 1.25rem", borderTop: "1px solid var(--border-subtle)",
-              background: "var(--bg-secondary)",
-            }}>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-end" }}>
+            <div className="chat-composer">
+              <div className="chat-composer-row">
                 <textarea
                   ref={inputRef}
                   className="ambient-input"
@@ -472,14 +580,7 @@ function ChatPageInner() {
                 <button
                   onClick={sendMessage}
                   disabled={!newMessage.trim() || sending}
-                  style={{
-                    width: 42, height: 42, borderRadius: "50%", border: "none",
-                    background: newMessage.trim() ? "var(--glow-purple)" : "var(--bg-primary)",
-                    color: newMessage.trim() ? "#fff" : "var(--text-muted)",
-                    cursor: newMessage.trim() ? "pointer" : "default",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0, transition: "all 0.15s",
-                  }}
+                  className={`chat-send${newMessage.trim() && !sending ? " chat-send-ready" : ""}`}
                 >
                   <Send size={16} />
                 </button>
@@ -488,10 +589,7 @@ function ChatPageInner() {
           </>
         ) : (
           /* Empty state */
-          <div style={{
-            flex: 1, display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", color: "var(--text-muted)",
-          }}>
+          <div className="chat-empty">
             <MessageCircle size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
             <p style={{ fontSize: "1rem", fontWeight: 600 }}>Select a conversation</p>
             <p style={{ fontSize: "0.8125rem", marginTop: 4 }}>
@@ -500,15 +598,6 @@ function ChatPageInner() {
           </div>
         )}
       </div>
-
-      <style jsx global>{`
-        @media (max-width: 768px) {
-          .chat-back-btn { display: flex !important; }
-        }
-        @media (min-width: 769px) {
-          .chat-back-btn { display: none !important; }
-        }
-      `}</style>
     </div>
   );
 }

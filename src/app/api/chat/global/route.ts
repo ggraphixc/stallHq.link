@@ -43,16 +43,52 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Room not found" }, { status: 404 });
       }
 
-      let member = null;
-      if (user) {
-        const { data } = await admin
+      const memberPromise = user
+        ? admin
+            .from("room_members")
+            .select("*")
+            .eq("room_id", roomId)
+            .eq("user_id", user.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null, ...({} as object) });
+
+      const notifPromise = user
+        ? admin
+            .from("room_notifications")
+            .select("unread_count")
+            .eq("room_id", roomId)
+            .eq("user_id", user.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null, ...({} as object) });
+
+      const messagesPromise = admin
+        .from("room_messages")
+        .select("*")
+        .eq("room_id", roomId)
+        .order("created_at", { ascending: true })
+        .limit(100);
+
+      const [memberRes, notifRes, messagesRes, memberCountRes, sendersRes] = await Promise.all([
+        memberPromise,
+        notifPromise,
+        messagesPromise,
+        admin
           .from("room_members")
-          .select("*")
-          .eq("room_id", roomId)
-          .eq("user_id", user.id)
-          .maybeSingle();
-        member = data;
-      }
+          .select("id", { count: "exact", head: true })
+          .eq("room_id", roomId),
+        user
+          ? admin
+              .from("room_members")
+              .select("user_id")
+              .eq("room_id", roomId)
+              .limit(50)
+          : Promise.resolve({ data: [], error: null, ...({} as object) }),
+      ]);
+
+      const member = (memberRes as { data: { role?: string } | null }).data;
+      const unread =
+        ((notifRes as { data: { unread_count?: number } | null }).data?.unread_count as number) || 0;
+      const messages = (messagesRes as { data: unknown[] | null }).data || [];
 
       // Private/admin rooms require membership; public is open to everyone
       if (room.type !== "public" && !member) {
@@ -60,36 +96,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Not a member" }, { status: 403 });
       }
 
-      const { data: messages } = await admin
-        .from("room_messages")
-        .select("*")
-        .eq("room_id", roomId)
-        .order("created_at", { ascending: true })
-        .limit(100);
-
-      const { count: memberCount } = await admin
-        .from("room_members")
-        .select("id", { count: "exact", head: true })
-        .eq("room_id", roomId);
-
-      let unread = 0;
-      if (user) {
-        const { data: notif } = await admin
-          .from("room_notifications")
-          .select("unread_count")
-          .eq("room_id", roomId)
-          .eq("user_id", user.id)
-          .maybeSingle();
-        unread = notif?.unread_count || 0;
-      }
-
-      const { data: senders } = user
-        ? await admin
-            .from("room_members")
-            .select("user_id")
-            .eq("room_id", roomId)
-            .limit(50)
-        : { data: [] };
+      const memberCount = memberCountRes.count || 0;
+      const senders = (sendersRes as { data: { user_id: string }[] | null }).data || [];
 
       const isAdminIds = (process.env.ADMIN_USER_ID || "")
         .split(",").map((s) => s.trim()).filter(Boolean);
@@ -118,7 +126,7 @@ export async function GET(request: NextRequest) {
         unread_count: unread,
         member_count: memberCount || 0,
         can_send: !!user && (room.type === "public" || !!member),
-        sender_ids: (senders || []).map((s: any) => s.user_id),
+        sender_ids: senders.map((s) => s.user_id),
       });
     }
 
@@ -132,9 +140,41 @@ export async function GET(request: NextRequest) {
     if (!user) query = query.eq("type", "public");
 
     const { data: rooms } = await query;
+    const roomList = rooms || [];
+
+    // Batch membership + unread for the signed-in user (2 queries, not 2N)
+    const roomIds = roomList.map((r) => r.id);
+    let memberMap = new Map<string, string>();
+    let unreadMap = new Map<string, number>();
+    if (user && roomIds.length) {
+      const [membersRes, notifsRes] = await Promise.all([
+        admin
+          .from("room_members")
+          .select("room_id, role")
+          .eq("user_id", user.id)
+          .in("room_id", roomIds),
+        admin
+          .from("room_notifications")
+          .select("room_id, unread_count")
+          .eq("user_id", user.id)
+          .in("room_id", roomIds),
+      ]);
+      memberMap = new Map(
+        ((membersRes.data || []) as { room_id: string; role: string }[]).map((m) => [
+          m.room_id,
+          m.role,
+        ])
+      );
+      unreadMap = new Map(
+        ((notifsRes.data || []) as { room_id: string; unread_count: number | null }[]).map((n) => [
+          n.room_id,
+          n.unread_count || 0,
+        ])
+      );
+    }
 
     const enriched = await Promise.all(
-      (rooms || []).map(async (room: any) => {
+      roomList.map(async (room: any) => {
         const [{ count: memberCount }, { data: lastMsg }] = await Promise.all([
           admin
             .from("room_members")
@@ -149,28 +189,9 @@ export async function GET(request: NextRequest) {
             .maybeSingle(),
         ]);
 
-        let isMember = false;
-        let role = "member";
-        let unread = 0;
-        if (user) {
-          const { data: member } = await admin
-            .from("room_members")
-            .select("role")
-            .eq("room_id", room.id)
-            .eq("user_id", user.id)
-            .maybeSingle();
-          isMember = !!member;
-          role = member?.role || "member";
-          if (isMember) {
-            const { data: notif } = await admin
-              .from("room_notifications")
-              .select("unread_count")
-              .eq("room_id", room.id)
-              .eq("user_id", user.id)
-              .maybeSingle();
-            unread = notif?.unread_count || 0;
-          }
-        }
+        const role = memberMap.get(room.id);
+        const isMember = !!role;
+        const unread = unreadMap.get(room.id) || 0;
 
         let purpose = room.purpose as string | undefined;
         if (!purpose) {
@@ -187,7 +208,7 @@ export async function GET(request: NextRequest) {
           ...room,
           purpose,
           is_member: isMember,
-          role,
+          role: role || "member",
           unread_count: unread,
           members: { count: memberCount || 0 },
           member_count: memberCount || 0,

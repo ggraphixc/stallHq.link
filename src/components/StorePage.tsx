@@ -31,6 +31,7 @@ import {
   ShieldCheck,
   LayoutDashboard,
   MessageSquare,
+  User,
 } from "lucide-react";
 
 interface StorePageProps {
@@ -546,6 +547,28 @@ export function StorePage({ store, products, aiAssistantEnabled }: StorePageProp
                 Contact
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {store.user_id && (
+                  <a
+                    href={`/profile/${store.user_id}`}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "0.75rem",
+                      padding: "0.75rem", borderRadius: "0.5rem",
+                      background: "var(--bg-card)",
+                      border: "1px solid var(--border-subtle)",
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "var(--bg-card-hover)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "var(--bg-card)"; }}
+                  >
+                    <User size={18} style={{ color: "var(--glow-cyan)", flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-primary)" }}>Vendor profile</p>
+                      <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Meet the person behind this store</p>
+                    </div>
+                    <ChevronRight size={14} style={{ marginLeft: "auto", color: "var(--text-muted)" }} />
+                  </a>
+                )}
                 <a
                   href={`/chat?store=${store.id}`}
                   style={{

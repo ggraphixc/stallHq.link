@@ -47,13 +47,25 @@ export async function updateSession(request: NextRequest) {
       request.nextUrl.pathname === "/explore" ||
       request.nextUrl.pathname === "/favorites" ||
       request.nextUrl.pathname === "/account" ||
-      request.nextUrl.pathname === "/offline";
+      request.nextUrl.pathname === "/offline" ||
+      request.nextUrl.pathname === "/profile" ||
+      request.nextUrl.pathname.startsWith("/profile/");
     
     // Store pages are public: /{slug} and /{slug}/product/{id}
+    // Reserved first-segments are never store slugs.
+    const RESERVED = new Set([
+      "api", "auth", "admin", "dashboard", "chat", "community", "explore",
+      "favorites", "account", "offline", "profile", "demo-store", "offline",
+      "settings", "support", "orders", "products", "legal", "sitemap.xml",
+      "robots.txt", "favicon.ico", "_next",
+    ]);
     const pathParts = request.nextUrl.pathname.split("/").filter(Boolean);
-    const isStorePage = pathParts.length === 1 || 
-      (pathParts.length === 3 && pathParts[1] === "product");
-    
+    const isStorePage =
+      pathParts.length > 0 &&
+      !RESERVED.has(pathParts[0].toLowerCase()) &&
+      (pathParts.length === 1 ||
+        (pathParts.length === 3 && pathParts[1] === "product"));
+
     const needsAuth = !isAuthRoute && !isApiRoute && !isPublicPage && !isStorePage;
 
     if (!user && needsAuth) {

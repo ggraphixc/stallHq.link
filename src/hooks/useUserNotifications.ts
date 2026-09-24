@@ -21,11 +21,12 @@ export function useUserNotifications(userId?: string) {
     if (!userId) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/notify/user?user_id=${userId}`);
+      const res = await fetch(`/api/notify/user`);
       if (res.ok) {
         const data = await res.json();
-        setNotifications(data);
-        setUnreadCount(data.filter((n: UserNotification) => !n.read).length);
+        const list = Array.isArray(data) ? data : data?.notifications || [];
+        setNotifications(list);
+        setUnreadCount(list.filter((n: UserNotification) => !n.read).length);
       }
     } catch {}
     setLoading(false);
@@ -55,7 +56,7 @@ export function useUserNotifications(userId?: string) {
       await fetch(`/api/notify/user`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, read_all: true }),
+        body: JSON.stringify({ read_all: true }),
       });
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);

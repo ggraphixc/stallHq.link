@@ -33,9 +33,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { token, platform = "web" } = body;
+    const token = typeof body.token === "string" ? body.token.trim() : null;
+    const platform = ["ios", "android", "web"].includes(body.platform)
+      ? body.platform
+      : "web";
 
-    if (!token || typeof token !== "string" || token.length < 10) {
+    if (!token || token.length < 10) {
       return NextResponse.json({ error: "Invalid push token" }, { status: 400 });
     }
 

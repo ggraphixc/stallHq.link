@@ -2,11 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@supabase/supabase-js";
 import {
   MessageCircle, Send, Users, Globe, Lock, Plus, Search, ArrowLeft,
   Sparkles, LogIn, X,
 } from "lucide-react";
+import {
+  upsertRealtimeMessage,
+  mergeUpdatedMessage,
+  mergeServerMessages,
+  reconcileSentMessage,
+  toggleReactionInMetadata,
+} from "@/components/chat/messageMerge";
+import { MessageActions, ReactionPills } from "@/components/chat/MessageActions";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,12 +34,25 @@ interface Room {
   last_message_at?: string | null;
 }
 
+interface ReplyTo {
+  id: string;
+  content: string;
+  sender_id?: string;
+}
+
+interface RoomMetadata {
+  reply_to?: ReplyTo;
+  reactions?: Record<string, string[]>;
+}
+
 interface RoomMessage {
   id: string;
   room_id: string;
   sender_id: string;
   content: string;
   created_at: string;
+  metadata?: RoomMetadata | null;
+  is_deleted?: boolean;
 }
 
 const GRADIENTS: [string, string][] = [
@@ -93,6 +114,9 @@ export default function CommunityPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [rtStatus, setRtStatus] = useState<string>("connecting");
+  const [openMsgId, setOpenMsgId] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<ReplyTo | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -127,6 +151,8 @@ export default function CommunityPage() {
   const openRoom = async (room: Room) => {
     setActiveRoom(room);
     setMessages([]);
+    setOpenMsgId(null);
+    setReplyTo(null);
     try {
       if (userId && !room.is_member && room.type === "public") {
         await fetch("/api/chat/global/rooms", {
@@ -146,44 +172,130 @@ export default function CommunityPage() {
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
   };
 
+  // Realtime: inserts + updates (reactions/replies), with auto-resubscribe
   useEffect(() => {
     if (!activeRoom) return;
-    const channel = supabase
-      .channel(`web-global-${activeRoom.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "room_messages",
-          filter: `room_id=eq.${activeRoom.id}`,
-        },
-        (payload) => {
-          const msg = payload.new as RoomMessage;
-          setMessages((prev) => (prev.find((m) => m.id === msg.id) ? prev : [...prev, msg]));
-        }
-      )
-      .subscribe();
+
+    let cancelled = false;
+    let retries = 0;
+    let channel: RealtimeChannel | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const connect = () => {
+      if (cancelled) return;
+      setRtStatus("connecting");
+      channel = supabase
+        .channel(`web-global-${activeRoom.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "room_messages",
+            filter: `room_id=eq.${activeRoom.id}`,
+          },
+          (payload) => {
+            const msg = payload.new as RoomMessage;
+            setMessages((prev) => upsertRealtimeMessage(prev, msg));
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "room_messages",
+            filter: `room_id=eq.${activeRoom.id}`,
+          },
+          (payload) => {
+            const msg = payload.new as RoomMessage;
+            if (msg.is_deleted) {
+              setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+            } else {
+              setMessages((prev) => mergeUpdatedMessage(prev, msg));
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (cancelled) return;
+          setRtStatus(status);
+          if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
+            retries = 0;
+          } else if (
+            status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
+            status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT ||
+            status === REALTIME_SUBSCRIBE_STATES.CLOSED
+          ) {
+            if (channel) {
+              supabase.removeChannel(channel);
+              channel = null;
+            }
+            const delay = Math.min(1000 * 2 ** retries, 15000);
+            retries += 1;
+            timer = setTimeout(connect, delay);
+          }
+        });
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [activeRoom?.id]);
+
+  // Poll fallback only while realtime is down
+  useEffect(() => {
+    if (!activeRoom || rtStatus === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) return;
+    const roomId = activeRoom.id;
     const poll = setInterval(async () => {
       try {
-        const res = await fetch(`/api/chat/global/messages?room_id=${activeRoom.id}&limit=80`, {
+        const res = await fetch(`/api/chat/global/messages?room_id=${roomId}&limit=80`, {
           headers: await headers(),
         });
         if (res.ok) {
           const data = await res.json();
-          setMessages(data.messages || []);
+          setMessages((prev) => mergeServerMessages(prev, data.messages || []));
         }
       } catch {}
     }, 5000);
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(poll);
-    };
-  }, [activeRoom?.id]);
+    return () => clearInterval(poll);
+  }, [activeRoom?.id, rtStatus]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
+
+  const toggleReaction = async (msg: RoomMessage, emoji: string) => {
+    if (!userId) {
+      window.location.href = "/auth/login?next=/community";
+      return;
+    }
+    const prevMeta = msg.metadata ?? null;
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === msg.id ? { ...m, metadata: toggleReactionInMetadata(m.metadata, emoji, userId) } : m
+      )
+    );
+    try {
+      const res = await fetch("/api/chat/global/messages", {
+        method: "POST",
+        headers: await headers(),
+        body: JSON.stringify({ action: "react", message_id: msg.id, emoji }),
+      });
+      if (!res.ok) throw new Error("react failed");
+      const data = await res.json();
+      if (data.message) {
+        setMessages((prev) => mergeUpdatedMessage(prev, data.message as RoomMessage));
+      }
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === msg.id ? { ...m, metadata: prevMeta } : m))
+      );
+    }
+  };
 
   const sendMessage = async () => {
     const content = input.trim();
@@ -193,21 +305,39 @@ export default function CommunityPage() {
       return;
     }
     setSending(true);
+    const replySnapshot = replyTo;
     setInput("");
+    setReplyTo(null);
+
+    const optimistic: RoomMessage = {
+      id: `temp-${Date.now()}`,
+      room_id: activeRoom.id,
+      sender_id: userId,
+      content,
+      created_at: new Date().toISOString(),
+      metadata: replySnapshot ? { reply_to: replySnapshot } : undefined,
+    };
+    setMessages((prev) => [...prev, optimistic]);
+
     try {
       const res = await fetch("/api/chat/global/messages", {
         method: "POST",
         headers: await headers(),
-        body: JSON.stringify({ room_id: activeRoom.id, content }),
+        body: JSON.stringify({
+          room_id: activeRoom.id,
+          content,
+          ...(replySnapshot ? { reply_to: replySnapshot } : {}),
+        }),
       });
-      if (res.ok) {
-        const { message } = await res.json();
-        if (message) {
-          setMessages((prev) => (prev.find((m) => m.id === message.id) ? prev : [...prev, message]));
-        }
+      if (!res.ok) throw new Error("Failed");
+      const { message } = await res.json();
+      if (message) {
+        setMessages((prev) => reconcileSentMessage(prev, optimistic.id, message as RoomMessage));
       }
     } catch {
+      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       setInput(content);
+      setReplyTo(replySnapshot);
     }
     setSending(false);
   };
@@ -248,6 +378,7 @@ export default function CommunityPage() {
     let lastSender = "";
     let lastAt = 0;
     for (const msg of messages) {
+      if (msg.is_deleted) continue;
       const day = dayLabel(msg.created_at);
       if (day !== lastDay) {
         out.push({ kind: "day", id: `d-${msg.id}`, label: day });
@@ -280,12 +411,8 @@ export default function CommunityPage() {
   if (activeRoom) {
     const [c1, c2] = grad(activeRoom.id);
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg-primary)", overflow: "hidden" }}>
-        <div style={{
-          display: "flex", alignItems: "center", gap: "0.75rem",
-          padding: "0.75rem 1.25rem", borderBottom: "1px solid var(--border-subtle)",
-          background: "var(--bg-secondary)",
-        }}>
+      <div className="chat-thread">
+        <div className="chat-header-glass">
           <button
             onClick={() => setActiveRoom(null)}
             style={{
@@ -325,7 +452,7 @@ export default function CommunityPage() {
           </div>
         )}
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        <div className="chat-scroll">
           {items.length === 0 ? (
             <div style={{
               flex: 1, display: "flex", flexDirection: "column",
@@ -350,8 +477,16 @@ export default function CommunityPage() {
               }
               const mine = item.msg.sender_id === userId;
               const [m1, m2] = grad(item.msg.sender_id || "?");
+              const reply = item.msg.metadata?.reply_to;
               return (
-                <div key={item.id} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start", gap: 8, alignItems: "flex-end" }}>
+                <div
+                  key={item.id}
+                  style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start", gap: 8, alignItems: "flex-end" }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setOpenMsgId((prev) => (prev === item.msg.id ? null : item.msg.id));
+                  }}
+                >
                   {!mine && (
                     <div style={{
                       width: 28, height: 28, borderRadius: 9,
@@ -364,19 +499,38 @@ export default function CommunityPage() {
                   )}
                   <div style={{ maxWidth: "70%", display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start" }}>
                     {item.showName && !mine && (
-                      <span style={{ fontSize: "0.625rem", color: "var(--text-muted)", marginBottom: 3, marginLeft: 4, fontWeight: 600 }}>
+                      <span className="chat-sender-name">
                         User_{item.msg.sender_id.slice(0, 4)}
                       </span>
                     )}
-                    <div style={{
-                      padding: "0.5rem 0.75rem",
-                      borderRadius: mine ? "1rem 1rem 0.25rem 1rem" : "1rem 1rem 1rem 0.25rem",
-                      background: mine ? "var(--glow-purple)" : "var(--bg-card)",
-                      color: mine ? "#fff" : "var(--text-primary)",
-                      border: mine ? "none" : "1px solid var(--border-subtle)",
-                      fontSize: "0.8125rem", lineHeight: 1.5, wordBreak: "break-word",
-                    }}>
-                      {item.msg.content}
+                    <div className={`chat-bubble chat-bubble-card${mine ? " chat-bubble-mine" : ""}`}>
+                      {reply && (
+                        <div className="chat-reply-quote">
+                          <span className="chat-reply-quote-name">
+                            {reply.sender_id ? `User_${reply.sender_id.slice(0, 4)}` : "Message"}
+                          </span>
+                          <span className="chat-reply-quote-text">{reply.content}</span>
+                        </div>
+                      )}
+                      <div className="chat-bubble-text">{item.msg.content}</div>
+                      <ReactionPills
+                        reactions={item.msg.metadata?.reactions}
+                        userId={userId}
+                        onToggle={userId ? (emoji) => toggleReaction(item.msg, emoji) : undefined}
+                      />
+                      {userId && (
+                        <MessageActions
+                          open={openMsgId === item.msg.id}
+                          onReact={(emoji) => toggleReaction(item.msg, emoji)}
+                          onReply={() =>
+                            setReplyTo({
+                              id: item.msg.id,
+                              content: item.msg.content,
+                              sender_id: item.msg.sender_id,
+                            })
+                          }
+                        />
+                      )}
                     </div>
                     <span style={{
                       fontSize: "0.5625rem", marginTop: 3, color: "var(--text-muted)",
@@ -393,60 +547,66 @@ export default function CommunityPage() {
         </div>
 
         {userId ? (
-          <div style={{
-            display: "flex", gap: "0.5rem", alignItems: "flex-end",
-            padding: "0.75rem 1.25rem", borderTop: "1px solid var(--border-subtle)",
-            background: "var(--bg-secondary)",
-          }}>
-            <textarea
-              className="ambient-input"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-              placeholder={`Message ${activeRoom.name}...`}
-              rows={1}
-              style={{
-                flex: 1, resize: "none", fontSize: "0.8125rem",
-                padding: "0.625rem 0.875rem", borderRadius: "0.75rem",
-                maxHeight: 120, minHeight: 42, lineHeight: 1.4,
-              }}
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim() || sending}
-              style={{
-                width: 42, height: 42, borderRadius: "50%", border: "none",
-                background: input.trim() ? "var(--glow-purple)" : "var(--bg-primary)",
-                color: input.trim() ? "#fff" : "var(--text-muted)",
-                cursor: input.trim() ? "pointer" : "default",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}
-              aria-label="Send message"
-            >
-              <Send size={16} />
-            </button>
+          <div className="chat-composer">
+            {replyTo && (
+              <div className="chat-reply-preview">
+                <div className="chat-reply-preview-text">
+                  <span className="chat-reply-preview-label">
+                    Replying to {replyTo.sender_id ? `User_${replyTo.sender_id.slice(0, 4)}` : "message"}
+                  </span>
+                  <span className="chat-reply-preview-content">{replyTo.content}</span>
+                </div>
+                <button
+                  className="chat-reply-preview-close"
+                  onClick={() => setReplyTo(null)}
+                  aria-label="Cancel reply"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            <div className="chat-composer-row">
+              <textarea
+                className="ambient-input"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                placeholder={`Message ${activeRoom.name}...`}
+                rows={1}
+                style={{
+                  flex: 1, resize: "none", fontSize: "0.8125rem",
+                  padding: "0.625rem 0.875rem", borderRadius: "0.75rem",
+                  maxHeight: 120, minHeight: 42, lineHeight: 1.4,
+                }}
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!input.trim() || sending}
+                className={`chat-send${input.trim() && !sending ? " chat-send-ready" : ""}`}
+                aria-label="Send message"
+              >
+                <Send size={16} />
+              </button>
+            </div>
           </div>
         ) : (
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
-            padding: "0.75rem 1.25rem", borderTop: "1px solid var(--border-subtle)",
-            background: "var(--bg-secondary)",
-          }}>
-            <span style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
-              Sign in to join the conversation
-            </span>
-            <Link href="/auth/login?next=/community" className="glow-button" style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "0.5rem 1rem",
-              fontSize: "0.8125rem", textDecoration: "none",
-            }}>
-              <LogIn size={14} /> Sign in
-            </Link>
+          <div className="chat-composer">
+            <div className="chat-composer-bar">
+              <span style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
+                Sign in to join the conversation
+              </span>
+              <Link href="/auth/login?next=/community" className="glow-button" style={{
+                display: "flex", alignItems: "center", gap: 6, padding: "0.5rem 1rem",
+                fontSize: "0.8125rem", textDecoration: "none",
+              }}>
+                <LogIn size={14} /> Sign in
+              </Link>
+            </div>
           </div>
         )}
       </div>

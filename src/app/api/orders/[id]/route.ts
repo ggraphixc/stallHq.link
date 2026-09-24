@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/api";
 import { sendStatusUpdateEmail } from "@/lib/email";
+import { sendOrderStatusPush } from "@/lib/push";
 
 export async function PATCH(
   request: NextRequest,
@@ -31,7 +32,7 @@ export async function PATCH(
     // Verify user owns this order's store
     const { data: order } = await authSupabase
       .from("orders")
-      .select("id, stores(user_id)")
+      .select("id, status, customer_id, customer_email, stores(user_id)")
       .eq("id", id)
       .single();
 
@@ -43,6 +44,8 @@ export async function PATCH(
     if (!storeData || storeData.user_id !== user.id) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
+
+    const statusChanged = order.status !== body.status;
 
     const { data: updatedOrder, error: updateError } = await authSupabase
       .from("orders")
@@ -64,6 +67,18 @@ export async function PATCH(
         items: updatedOrder.items,
         total: updatedOrder.total,
       }).catch(() => {});
+    }
+
+    // Fire-and-forget customer push — only when status actually changed
+    if (statusChanged) {
+      const store = updatedOrder.stores as { name?: string } | null;
+      void sendOrderStatusPush({
+        customerId: updatedOrder.customer_id || null,
+        customerEmail: updatedOrder.customer_email || null,
+        orderId: updatedOrder.id,
+        status: body.status,
+        storeName: store?.name || null,
+      }).catch(console.error);
     }
 
     return NextResponse.json(updatedOrder);

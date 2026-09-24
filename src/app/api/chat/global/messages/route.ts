@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient as createCookieClient } from "@/lib/supabase/api";
+import { sendRoomMessagePush } from "@/lib/push";
 
 const admin = createServiceClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-async function resolveUser(request: NextRequest): Promise<{ id: string } | null> {
+async function resolveUser(request: NextRequest): Promise<{ id: string; email?: string | null; user_metadata?: Record<string, unknown> | null } | null> {
   const token = request.headers.get("x-access-token");
   if (token) {
     const { data, error } = await admin.auth.getUser(token);
@@ -21,44 +22,107 @@ async function resolveUser(request: NextRequest): Promise<{ id: string } | null>
   return null;
 }
 
+const REACTION_EMOJIS = new Set(["👍", "❤️"]);
+
 async function ensurePublicMembership(roomId: string, userId: string) {
+  const [memberRes, notifRes] = await Promise.all([
+    admin
+      .from("room_members")
+      .select("id")
+      .eq("room_id", roomId)
+      .eq("user_id", userId)
+      .maybeSingle(),
+    admin
+      .from("room_notifications")
+      .select("id")
+      .eq("room_id", roomId)
+      .eq("user_id", userId)
+      .maybeSingle(),
+  ]);
+
+  const writes: PromiseLike<unknown>[] = [];
+  if (!memberRes.data) {
+    writes.push(
+      admin.from("room_members").insert({
+        room_id: roomId,
+        user_id: userId,
+        role: "member",
+      })
+    );
+  }
+  if (!notifRes.data) {
+    writes.push(
+      admin.from("room_notifications").insert({
+        room_id: roomId,
+        user_id: userId,
+      })
+    );
+  }
+  if (writes.length) await Promise.all(writes);
+
+  return true;
+}
+
+async function handleReaction(user: { id: string }, body: Record<string, unknown>): Promise<NextResponse> {
+  const message_id = typeof body.message_id === "string" ? body.message_id : "";
+  const emoji = typeof body.emoji === "string" ? body.emoji : "";
+  if (!message_id || !REACTION_EMOJIS.has(emoji)) {
+    return NextResponse.json(
+      { error: "message_id and a supported emoji required" },
+      { status: 400 }
+    );
+  }
+
+  const { data: msg, error: msgErr } = await admin
+    .from("room_messages")
+    .select("id, room_id, metadata, is_deleted")
+    .eq("id", message_id)
+    .single();
+  if (msgErr || !msg || (msg as { is_deleted?: boolean }).is_deleted) {
+    return NextResponse.json({ error: "Message not found" }, { status: 404 });
+  }
+  const roomId = (msg as { room_id: string }).room_id;
+
   const { data: room } = await admin
     .from("chat_rooms")
     .select("type")
     .eq("id", roomId)
     .single();
-  if (!room || room.type !== "public") return false;
+  if (!room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
 
-  const { data: member } = await admin
-    .from("room_members")
-    .select("id")
-    .eq("room_id", roomId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (!member) {
-    await admin.from("room_members").insert({
-      room_id: roomId,
-      user_id: userId,
-      role: "member",
-    });
+  if (room.type !== "public") {
+    const { data: member } = await admin
+      .from("room_members")
+      .select("id")
+      .eq("room_id", roomId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!member) return NextResponse.json({ error: "Not a member" }, { status: 403 });
   }
 
-  const { data: notif } = await admin
-    .from("room_notifications")
-    .select("id")
-    .eq("room_id", roomId)
-    .eq("user_id", userId)
-    .maybeSingle();
+  const existingMeta =
+    ((msg as { metadata?: Record<string, unknown> | null }).metadata as Record<string, unknown>) || {};
+  const metadata: Record<string, unknown> = { ...existingMeta };
+  const reactions = {
+    ...(((existingMeta.reactions as Record<string, string[]>) || {})),
+  };
+  const list = [...(reactions[emoji] || [])];
+  const at = list.indexOf(user.id);
+  if (at >= 0) list.splice(at, 1);
+  else list.push(user.id);
+  if (list.length) reactions[emoji] = list;
+  else delete reactions[emoji];
+  metadata.reactions = reactions;
 
-  if (!notif) {
-    await admin.from("room_notifications").insert({
-      room_id: roomId,
-      user_id: userId,
-    });
-  }
+  const { data: updated, error: updErr } = await admin
+    .from("room_messages")
+    .update({ metadata })
+    .eq("id", message_id)
+    .select()
+    .single();
+  if (updErr) throw updErr;
 
-  return true;
+  return NextResponse.json({ message: updated });
 }
 
 /**
@@ -106,29 +170,33 @@ export async function GET(request: NextRequest) {
     if (before) query = query.lt("created_at", before);
     query = query.limit(limit);
 
-    let { data: messages } = await query;
-    if (!messages) {
-      // is_deleted column may not exist yet — retry without filter
-      let fallback = admin
-        .from("room_messages")
-        .select("*")
-        .eq("room_id", roomId)
-        .order("created_at", { ascending: false });
-      if (before) fallback = fallback.lt("created_at", before);
-      const retried = await fallback.limit(limit);
-      messages = retried.data;
-    }
-    const ordered = (messages || []).slice().reverse();
+    const messagesPromise = (async () => {
+      let { data: messages } = await query;
+      if (!messages) {
+        let fallback = admin
+          .from("room_messages")
+          .select("*")
+          .eq("room_id", roomId)
+          .order("created_at", { ascending: false });
+        if (before) fallback = fallback.lt("created_at", before);
+        const retried = await fallback.limit(limit);
+        messages = retried.data;
+      }
+      return (messages || []).slice().reverse();
+    })();
 
-    // Mark read for signed-in users
-    if (user) {
-      await ensurePublicMembership(roomId, user.id);
-      await admin
-        .from("room_notifications")
-        .update({ unread_count: 0, last_read_at: new Date().toISOString() })
-        .eq("room_id", roomId)
-        .eq("user_id", user.id);
-    }
+    const readPromise: Promise<unknown> = user
+      ? (async () => {
+          if (room.type === "public") await ensurePublicMembership(roomId, user.id);
+          await admin
+            .from("room_notifications")
+            .update({ unread_count: 0, last_read_at: new Date().toISOString() })
+            .eq("room_id", roomId)
+            .eq("user_id", user.id);
+        })()
+      : Promise.resolve();
+
+    const [ordered] = await Promise.all([messagesPromise, readPromise]);
 
     return NextResponse.json({ messages: ordered, room });
   } catch (err) {
@@ -147,7 +215,12 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    const { room_id, content, message_type } = body;
+
+    if (body.action === "react") {
+      return handleReaction(user, body);
+    }
+
+    const { room_id, content, message_type, reply_to } = body;
 
     if (!room_id || !content?.trim()) {
       return NextResponse.json({ error: "room_id and content required" }, { status: 400 });
@@ -160,18 +233,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     let room = roomQuery.data as any;
-    if (roomQuery.error && /purpose/.test(roomQuery.error.message || "")) {
-      room = null;
-    }
-    if (!room) {
-      // retry without optional columns if select failed for another reason
-      const retry = await admin
-        .from("chat_rooms")
-        .select("id, type, is_active, name")
-        .eq("id", room_id)
-        .single();
-      room = retry.data;
-    }
 
     // Try to read purpose if the column exists
     if (room) {
@@ -228,59 +289,83 @@ export async function POST(request: NextRequest) {
     }
 
     const trimmed = content.trim().slice(0, 2000);
+
+    const metadata: Record<string, unknown> = {};
+    if (reply_to && typeof reply_to === "object") {
+      const rt = reply_to as { id?: unknown; content?: unknown; sender_id?: unknown };
+      if (typeof rt.id === "string" && rt.id && typeof rt.content === "string" && rt.content) {
+        metadata.reply_to = {
+          id: rt.id,
+          content: rt.content.slice(0, 200),
+          ...(typeof rt.sender_id === "string" ? { sender_id: rt.sender_id } : {}),
+        };
+      }
+    }
+
+    const insertRow: Record<string, unknown> = {
+      room_id,
+      sender_id: user.id,
+      content: trimmed,
+      message_type: message_type || "text",
+    };
+    if (Object.keys(metadata).length) insertRow.metadata = metadata;
+
     const { data: msg, error } = await admin
       .from("room_messages")
-      .insert({
-        room_id,
-        sender_id: user.id,
-        content: trimmed,
-        message_type: message_type || "text",
-      })
+      .insert(insertRow)
       .select()
       .single();
 
     if (error) throw error;
 
-    // Bump room updated_at for list ordering
-    await admin
-      .from("chat_rooms")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", room_id);
+    const nowIso = new Date().toISOString();
 
-    // Increment unread for other members
-    const { data: members } = await admin
-      .from("room_members")
-      .select("user_id")
-      .eq("room_id", room_id);
+    const results = await Promise.all([
+      admin
+        .from("chat_rooms")
+        .update({ updated_at: nowIso })
+        .eq("id", room_id),
+      admin.from("room_members").select("user_id").eq("room_id", room_id),
+      admin
+        .from("room_notifications")
+        .select("user_id, unread_count")
+        .eq("room_id", room_id),
+    ]);
+    const membersRes = results[1] as { data: { user_id: string }[] | null };
+    const notifsRes = results[2] as { data: { user_id: string; unread_count: number | null }[] | null };
 
-    if (members?.length) {
-      for (const m of members) {
-        if (m.user_id === user.id) continue;
-        const { data: notif } = await admin
-          .from("room_notifications")
-          .select("unread_count")
-          .eq("room_id", room_id)
-          .eq("user_id", m.user_id)
-          .maybeSingle();
-
-        if (notif) {
-          await admin
-            .from("room_notifications")
-            .update({
-              unread_count: (notif.unread_count || 0) + 1,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("room_id", room_id)
-            .eq("user_id", m.user_id);
-        } else {
-          await admin.from("room_notifications").insert({
-            room_id,
-            user_id: m.user_id,
-            unread_count: 1,
-          });
-        }
+    const others = (membersRes.data || []).filter((m) => m.user_id !== user.id);
+    if (others.length) {
+      const current = new Map<string, number>(
+        (notifsRes.data || []).map((n) => [n.user_id, n.unread_count || 0])
+      );
+      const rows = others.map((m) => ({
+        room_id,
+        user_id: m.user_id,
+        unread_count: (current.get(m.user_id) ?? 0) + 1,
+        updated_at: nowIso,
+      }));
+      const { error: upsertErr } = await admin
+        .from("room_notifications")
+        .upsert(rows, { onConflict: "room_id,user_id" });
+      if (upsertErr) {
+        console.error("[global-chat messages] unread upsert failed:", upsertErr);
       }
     }
+
+    // Fire-and-forget push to room members (sender skipped, muted skipped, 50-token cap)
+    void sendRoomMessagePush({
+      roomId: room_id,
+      roomName: room?.name,
+      senderId: user.id,
+      senderName:
+        (typeof user.user_metadata?.name === "string" && user.user_metadata.name) ||
+        (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name) ||
+        user.email ||
+        null,
+      content: trimmed,
+      memberIds: (membersRes.data || []).map((m) => m.user_id),
+    }).catch(console.error);
 
     return NextResponse.json({ message: msg });
   } catch (err) {

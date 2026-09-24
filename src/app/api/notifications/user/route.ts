@@ -7,21 +7,24 @@ const supabaseAdmin = createClient(
 );
 
 async function resolveUserId(request: NextRequest): Promise<string | null> {
-  // Mobile: x-access-token header
   const authHeader = request.headers.get("x-access-token");
   if (authHeader) {
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(authHeader);
     if (!error && user) return user.id;
   }
 
-  // Fallback: query param or body user_id (legacy web)
-  const { searchParams } = new URL(request.url);
-  return searchParams.get("user_id");
+  const cookieToken = request.cookies.get("sb-access-token")?.value
+    || request.cookies.get("access_token")?.value;
+  if (cookieToken) {
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(cookieToken);
+    if (!error && user) return user.id;
+  }
+  return null;
 }
 
 /**
  * GET /api/notifications/user — List user's notifications.
- * Auth: x-access-token header OR ?user_id= query param.
+ * Auth: x-access-token header or cookie session.
  */
 export async function GET(request: NextRequest) {
   try {
