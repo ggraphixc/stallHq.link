@@ -33,7 +33,16 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>Profile</Text>
-          <NotificationBell />
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.cartBtn}
+              onPress={() => router.push("/(customer)/chat")}
+              activeOpacity={0.7}
+            >
+              <MessageCircle size={18} color={Colors.textSecondary} />
+            </TouchableOpacity>
+            <NotificationBell />
+          </View>
         </View>
       </View>
 
@@ -118,6 +127,12 @@ const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { padding: Spacing.lg, paddingBottom: Spacing.sm },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  cartBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
+    alignItems: "center", justifyContent: "center",
+  },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
   scroll: { paddingBottom: 40 },
   userCard: {

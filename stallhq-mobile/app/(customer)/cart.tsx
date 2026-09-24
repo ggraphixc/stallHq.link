@@ -129,7 +129,15 @@ export default function CartScreen() {
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Cart</Text>
-          <View style={{ width: 60 }} />
+          <View style={styles.topSpacer}>
+            <TouchableOpacity
+              style={styles.chatBtn}
+              onPress={() => router.push("/(customer)/chat")}
+              activeOpacity={0.7}
+            >
+              <MessageCircle size={18} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={styles.emptyState}>
           <ShoppingBag size={48} color={Colors.textMuted} />
@@ -151,9 +159,18 @@ export default function CartScreen() {
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Cart ({items.length})</Text>
-        <TouchableOpacity onPress={clearCart}>
-          <Text style={styles.clearText}>Clear all</Text>
-        </TouchableOpacity>
+        <View style={styles.topActions}>
+          <TouchableOpacity
+            style={styles.chatBtn}
+            onPress={() => router.push("/(customer)/chat")}
+            activeOpacity={0.7}
+          >
+            <MessageCircle size={18} color={Colors.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={clearCart}>
+            <Text style={styles.clearText}>Clear all</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -309,6 +326,13 @@ const makeStyles = () => StyleSheet.create({
   backBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
   backText: { fontSize: FontSize.md, color: Colors.purple },
   headerTitle: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
+  topActions: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  topSpacer: { width: 60, alignItems: "flex-end" },
+  chatBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
+    alignItems: "center", justifyContent: "center",
+  },
   clearText: { fontSize: FontSize.sm, color: Colors.red, fontWeight: "600" },
   scroll: { padding: Spacing.lg, paddingTop: 0 },
   emptyState: {

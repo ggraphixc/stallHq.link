@@ -6,12 +6,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   Pressable,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Colors, FontSize, Spacing, BorderRadius, ambientCard } from "../../lib/theme";
 import { WEB_API_URL } from "../../lib/auth";
 import { supabase } from "../../lib/supabase";
-import { Bell, Check } from "lucide-react-native";
+import { Bell, Check, ArrowLeft } from "lucide-react-native";
 
 interface Notification {
   id: string;
@@ -128,7 +129,11 @@ export default function VendorNotificationsScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Notifications</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <ArrowLeft size={18} color={Colors.purple} />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+        <Text style={[styles.title, { flex: 1, marginHorizontal: Spacing.md }]}>Notifications</Text>
         {unreadCount > 0 && (
           <Pressable onPress={markAllRead} style={styles.markAllBtn}>
             <Check size={14} color={Colors.purple} />
@@ -185,11 +190,12 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: Colors.bg },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     padding: Spacing.lg,
     paddingBottom: Spacing.sm,
   },
+  backBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: Spacing.xs },
+  backText: { fontSize: FontSize.sm, color: Colors.purple, fontWeight: "600" },
   title: { fontSize: FontSize.xxl, fontWeight: "800", color: Colors.text },
   markAllBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   markAllText: { fontSize: FontSize.sm, color: Colors.purple, fontWeight: "600" },

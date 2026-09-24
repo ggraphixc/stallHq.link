@@ -129,7 +129,7 @@ export default function ProductsScreen() {
           <Text style={styles.count}>{products.length} product{products.length !== 1 ? "s" : ""}</Text>
         </View>
         <View style={styles.headerActions}>
-          <NotificationBell />
+          <NotificationBell viewAllHref="/(vendor)/notifications" />
           <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push("/(vendor)/products/new")}>
             <Plus size={16} color="#fff" />
             <Text style={styles.primaryBtnText}>Add</Text>

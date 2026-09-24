@@ -26,6 +26,7 @@ import {
   Inbox,
   Hash,
   Circle,
+  BarChart3,
 } from "lucide-react-native";
 
 const STATUS_FILTERS = ["all", "pending", "confirmed", "shipped", "delivered"] as const;
@@ -117,7 +118,17 @@ export default function OrdersScreen() {
             <Text style={styles.countBadgeText}>{orders.length}</Text>
           </View>
         </View>
-        <NotificationBell />
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => router.push("/(vendor)/(tabs)/analytics")}
+            activeOpacity={0.75}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <BarChart3 size={16} color={Colors.textSecondary} />
+          </TouchableOpacity>
+          <NotificationBell viewAllHref="/(vendor)/notifications" />
+        </View>
       </View>
 
       <FlatList
@@ -255,6 +266,21 @@ const makeStyles = () =>
       fontSize: FontSize.xs,
       fontWeight: "700" as const,
       color: Colors.purple,
+    },
+    headerActions: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: Spacing.xs,
+    },
+    iconBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: BorderRadius.md,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+      backgroundColor: Colors.glass,
+      borderWidth: 1,
+      borderColor: Colors.borderSubtle,
     },
 
     /* ── Filter Chips ───────────────────────────── */

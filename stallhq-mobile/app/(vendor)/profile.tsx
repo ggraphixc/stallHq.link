@@ -7,7 +7,7 @@ import { useRouter } from "expo-router";
 import { BrandLoader } from "../../components/BrandLoader";
 import { StoreIdentityCard } from "../../components/StoreIdentityCard";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../lib/theme";
-import { Clock, Settings, Share2, LogOut } from "lucide-react-native";
+import { Clock, Settings, Share2, LogOut, ArrowLeft } from "lucide-react-native";
 import { supabase, Store } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 
@@ -75,6 +75,10 @@ export default function VendorProfileScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <ArrowLeft size={18} color={Colors.purple} />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>Your Store</Text>
             <Text style={styles.subtitle}>{viewingStore.name}</Text>
@@ -137,12 +141,15 @@ const makeStyles = () => StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    gap: Spacing.md,
     padding: Spacing.lg,
     paddingBottom: Spacing.sm,
     backgroundColor: Colors.bgCard,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderSubtle,
   },
+  backBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: Spacing.xs },
+  backText: { fontSize: FontSize.sm, color: Colors.purple, fontWeight: "600" },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
   subtitle: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 2 },
   card: {

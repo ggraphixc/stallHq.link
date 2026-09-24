@@ -15,7 +15,7 @@ import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../.
 import {
   ArrowLeft, Store as StoreIcon, MessageCircle, Camera, Package, Bot,
   ChevronRight,  Star, Heart, Send, Pencil, Trash2, Reply, X, Flag,
-  ShoppingCart, Plus, Clock, Share2,
+  ShoppingCart, Plus, Clock, Share2, User,
 } from "lucide-react-native";
 import { AssistantChat } from "../../../components/AssistantChat";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -425,6 +425,7 @@ export default function StoreDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [faved, setFaved] = useState(false);
+  const [messageBusy, setMessageBusy] = useState(false);
   const cart = useCart();
 
   // Favorite (store) state — uses server-side store_favorites API
@@ -499,6 +500,34 @@ export default function StoreDetailScreen() {
     }).catch(() => {});
   };
 
+  // Message chip → create/find the DM with this store, then open it.
+  const startChat = async () => {
+    if (!session?.user) { router.push("/(auth)/login"); return; }
+    if (!store || messageBusy) return;
+    setMessageBusy(true);
+    try {
+      const token = session?.access_token;
+      const res = await fetch(`${WEB_API_URL}/api/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}`, "x-access-token": token } : {}),
+        },
+        body: JSON.stringify({ storeId: store.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.conversationId) {
+        alert("Message", data.error || `Could not start chat (${res.status})`);
+        return;
+      }
+      router.push(`/(customer)/chat/${data.conversationId}`);
+    } catch {
+      alert("Message", "Could not start chat. Please try again.");
+    } finally {
+      setMessageBusy(false);
+    }
+  };
+
   if (!store) return <BrandLoader label="Opening store" />;
 
   return (
@@ -510,6 +539,13 @@ export default function StoreDetailScreen() {
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
           <View style={{ flexDirection: "row", gap: Spacing.sm }}>
+            <TouchableOpacity
+              style={styles.shareBtn}
+              onPress={() => router.push("/(customer)/chat")}
+              activeOpacity={0.7}
+            >
+              <MessageCircle size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.shareBtn} onPress={shareStore} activeOpacity={0.7}>
               <Share2 size={18} color={Colors.textMuted} />
             </TouchableOpacity>
@@ -541,6 +577,21 @@ export default function StoreDetailScreen() {
             <ChevronRight size={18} color={Colors.textMuted} />
           </View>
           {store.description && <Text style={styles.description}>{store.description}</Text>}
+
+          {store.user_id && (
+            <TouchableOpacity
+              style={styles.vendorProfileRow}
+              activeOpacity={0.7}
+              onPress={() => router.push({ pathname: "/(customer)/profile/[id]", params: { id: store.user_id } })}
+            >
+              <User size={15} color={Colors.cyan} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.vendorProfileTitle}>Vendor profile</Text>
+                <Text style={styles.vendorProfileSub}>About the person behind this store</Text>
+              </View>
+              <ChevronRight size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )}
 
           {/* Store hours */}
           {store.store_hours?.enabled && (() => {
@@ -575,15 +626,13 @@ export default function StoreDetailScreen() {
               </TouchableOpacity>
             ) : null}
             <TouchableOpacity
-              style={[styles.chip, { borderColor: "rgba(168,133,247,0.3)" }]}
-              onPress={() => {
-                if (!session?.user) { router.push("/(auth)/login"); return; }
-                router.push({ pathname: "/(customer)/chat", params: { storeId: store.id } });
-              }}
+              style={[styles.chip, { borderColor: "rgba(168,133,247,0.3)" }, messageBusy && { opacity: 0.6 }]}
+              onPress={startChat}
+              disabled={messageBusy}
               activeOpacity={0.7}
             >
               <MessageCircle size={13} color={Colors.purple} />
-              <Text style={[styles.chipText, { color: Colors.purple }]}>Message</Text>
+              <Text style={[styles.chipText, { color: Colors.purple }]}>{messageBusy ? "Opening…" : "Message"}</Text>
             </TouchableOpacity>
             {store.instagram_handle ? (
               <TouchableOpacity style={[styles.chip, { borderColor: "rgba(225,48,108,0.3)" }]} onPress={openInstagram} activeOpacity={0.7}>
@@ -671,6 +720,13 @@ const makeStyles = () => StyleSheet.create({
   storeName: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
   storeSlug: { fontSize: FontSize.sm, color: Colors.textMuted },
   description: { fontSize: FontSize.md, color: Colors.textSecondary, lineHeight: 22, marginBottom: Spacing.md },
+  vendorProfileRow: {
+    flexDirection: "row", alignItems: "center", gap: Spacing.md,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderRadius: BorderRadius.lg, padding: Spacing.md, marginBottom: Spacing.md,
+  },
+  vendorProfileTitle: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.text },
+  vendorProfileSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 1 },
   hoursBadge: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: Spacing.md },
   hoursText: { fontSize: FontSize.sm, fontWeight: "600" },
   channels: { flexDirection: "row", gap: Spacing.sm, flexWrap: "wrap" },

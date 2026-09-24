@@ -236,6 +236,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // Best-effort: unregister this device's push token before the session dies.
+    // Only the token-scoped DELETE is used so other devices stay registered.
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (accessToken) {
+        const { getStoredPushToken } = await import("./notify");
+        const pushToken = await getStoredPushToken();
+        if (pushToken) {
+          await Promise.race([
+            fetch(`${WEB_API_URL}/api/push/register?token=${encodeURIComponent(pushToken)}`, {
+              method: "DELETE",
+              headers: { "x-access-token": accessToken },
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 4000)),
+          ]).catch((e) => console.warn("[auth] push unregister skipped:", e?.message || e));
+        }
+      }
+    } catch (e) {
+      console.warn("[auth] push unregister failed (non-critical):", e);
+    }
+
     await supabase.auth.signOut();
     setSession(null);
     setStore(null);

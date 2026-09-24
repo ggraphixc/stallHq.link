@@ -1,6 +1,6 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { Home, Package, ShoppingCart, BarChart3 } from "lucide-react-native";
+import { Home, Package, ShoppingCart, BarChart3, MessageCircle, Globe } from "lucide-react-native";
 import { Colors, FontSize, useThemeVersion } from "../../../lib/theme";
 
 export default function VendorTabsLayout() {
@@ -53,8 +53,28 @@ export default function VendorTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="messages"
+        options={{
+          href: null,
+          title: "Chat",
+          tabBarIcon: ({ color, focused }) => (
+            <MessageCircle size={22} color={focused ? Colors.purple : color} strokeWidth={focused ? 2.5 : 1.8} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="community"
+        options={{
+          title: "Community",
+          tabBarIcon: ({ color, focused }) => (
+            <Globe size={22} color={focused ? Colors.purple : color} strokeWidth={focused ? 2.5 : 1.8} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="analytics"
         options={{
+          href: null,
           title: "Stats",
           tabBarIcon: ({ color, focused }) => (
             <BarChart3 size={22} color={focused ? Colors.purple : color} strokeWidth={focused ? 2.5 : 1.8} />

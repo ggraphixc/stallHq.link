@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, Pressable, Image, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { Colors, FontSize, Spacing, BorderRadius, ambientCard } from "../lib/theme";
+import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientCard } from "../lib/theme";
 import { getTrendingProducts, type RecentlyViewedProduct } from "../lib/recentlyViewed";
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
 }
 
 export function TrendingProducts({ limit = 8, days = 7 }: Props) {
+  const styles = useThemeStyles(makeStyles);
   const [products, setProducts] = useState<RecentlyViewedProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,14 +65,15 @@ export function TrendingProducts({ limit = 8, days = 7 }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+// Horizontal padding comes from the parent container (Explore's list content
+// container) so this row aligns with the store cards around it.
+const makeStyles = () => StyleSheet.create({
   container: {
     marginTop: Spacing.xl,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
     gap: Spacing.sm,
   },
@@ -84,7 +86,6 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.lg,
     gap: Spacing.md,
   },
   card: {

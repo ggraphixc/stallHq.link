@@ -9,6 +9,7 @@ import { BrandLoader } from "../../../components/BrandLoader";
 import { NotificationBell } from "../../../components/NotificationBell";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } from "../../../lib/theme";
 import { Ionicons } from "@expo/vector-icons";
+import { MessageCircle } from "lucide-react-native";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: Colors.amber,
@@ -94,7 +95,16 @@ export default function OrdersScreen() {
       >
         <View style={styles.headerRow}>
           <Text style={styles.title}>My Orders</Text>
-          <NotificationBell />
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.cartBtn}
+              onPress={() => router.push("/(customer)/chat")}
+              activeOpacity={0.7}
+            >
+              <MessageCircle size={18} color={Colors.textSecondary} />
+            </TouchableOpacity>
+            <NotificationBell />
+          </View>
         </View>
 
         {/* Email lookup for guest users */}
@@ -174,6 +184,12 @@ const makeStyles = () => StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   title: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  cartBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
+    alignItems: "center", justifyContent: "center",
+  },
   lookupCard: { backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: BorderRadius.lg, padding: Spacing.xl, marginBottom: Spacing.xl },
   lookupTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.text },
   lookupSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: Spacing.xs, marginBottom: Spacing.lg },

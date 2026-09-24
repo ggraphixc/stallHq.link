@@ -275,7 +275,16 @@ export default function ProductDetailScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <ArrowLeft size={18} color={Colors.purple} /><Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
-          {product && <ProductFavoriteButton productId={product.id} storeId={product.store_id} />}
+          <View style={styles.topActions}>
+            <TouchableOpacity
+              style={styles.chatBtn}
+              onPress={() => router.push("/(customer)/chat")}
+              activeOpacity={0.7}
+            >
+              <MessageCircle size={18} color={Colors.textSecondary} />
+            </TouchableOpacity>
+            {product && <ProductFavoriteButton productId={product.id} storeId={product.store_id} />}
+          </View>
         </View>
 
           {/* Gallery */}
@@ -631,7 +640,16 @@ export default function ProductDetailScreen() {
 const makeStyles = () => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   scroll: { paddingBottom: 40 },
-  topRow: { padding: Spacing.lg, paddingBottom: Spacing.sm },
+  topRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    padding: Spacing.lg, paddingBottom: Spacing.sm,
+  },
+  topActions: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  chatBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.bgSecondary, borderWidth: 1, borderColor: Colors.borderSubtle,
+    alignItems: "center", justifyContent: "center",
+  },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
   backText: { fontSize: FontSize.md, color: Colors.purple },
   heroImage: { width: SCREEN_WIDTH, height: 280 },

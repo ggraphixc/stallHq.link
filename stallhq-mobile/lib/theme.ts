@@ -296,3 +296,36 @@ export const gradientIconBg = {
   cyan: { get backgroundColor() { return Colors.cyanDim; } },
   amber: { get backgroundColor() { return Colors.amberDim; } },
 };
+
+// ─── Additive chat / elevation tokens (outside palettes) ───────────────
+
+export const shadowSm = {
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.18,
+  shadowRadius: 2,
+  elevation: 2,
+};
+
+export const shadowMd = {
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.22,
+  shadowRadius: 8,
+  elevation: 5,
+};
+
+export const shadowLg = {
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 10 },
+  shadowOpacity: 0.28,
+  shadowRadius: 18,
+  elevation: 10,
+};
+
+export const chatMineGradient = ["#a855f7", "#7c3aed"] as [string, string];
+
+export const accentSoft = {
+  get backgroundColor() { return Colors.purpleTint; },
+  get borderColor() { return Colors.borderGlow; },
+};

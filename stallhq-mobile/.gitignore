@@ -27,3 +27,5 @@ google-service-account.json
 # Misc
 .DS_Store
 npm-debug.log*
+build.log
+*.apk

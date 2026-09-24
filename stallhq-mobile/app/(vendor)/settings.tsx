@@ -124,15 +124,29 @@ export default function SettingsScreen() {
     try {
       const res = await fetch("https://hqlink.vercel.app/api/auth/change-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : {}),
+        },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
-      const data = await res.json();
-      if (!res.ok) { alert("Error", data.error || "Failed to change password"); return; }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          const { error } = await supabase.auth.updateUser({ password: newPassword });
+          if (error) { alert("Error", error.message); return; }
+          alert("Success", "Password changed successfully");
+          setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+          return;
+        }
+        alert("Error", data.error || "Failed to change password");
+        return;
+      }
       alert("Success", "Password changed successfully");
       setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
     } catch {
-      // Fallback: try Supabase update directly
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) alert("Error", error.message);
       else { alert("Success", "Password changed successfully"); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }

@@ -166,7 +166,7 @@ export default function AnalyticsScreen() {
       >
         <View style={styles.headerRow}>
           <Text style={styles.title}>Analytics</Text>
-          <NotificationBell />
+          <NotificationBell viewAllHref="/(vendor)/notifications" />
         </View>
 
         <View style={styles.periodRow}>

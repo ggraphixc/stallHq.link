@@ -18,7 +18,6 @@ import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, labelStyle } f
 import { GuidedTour, hasSeenTour } from "../../../components/GuidedTour";
 import { RevenueTracker } from "../../../components/RevenueTracker";
 import {
-  Link,
   Users,
   Package,
   LogOut,
@@ -35,9 +34,17 @@ import {
   TrendingUp,
   Store,
   CreditCard,
+  Globe,
+  Bell,
+  ShieldAlert,
+  Sparkles,
+  User,
+  Compass,
+  MessageSquare,
+  LayoutGrid,
+  X,
 } from "lucide-react-native";
 import { IconBox } from "../../../components/ui/IconBox";
-import { Sparkline } from "../../../components/ui/Sparkline";
 import {
   isTrial,
   getDaysRemaining,
@@ -46,64 +53,32 @@ import {
   getPlanUsagePercent,
 } from "../../../lib/subscription";
 
-// ── Stat Card with gradient icon + sparkline (matches web glass card) ───
+// ── Stat Card with gradient icon (compact, tappable) ───
 function StatCard({
   label,
   value,
   accent,
-  sparkline,
-  sparkColor,
   children,
-  valueColor,
-  valueSize,
-  numberOfLines,
+  onPress,
 }: {
   label: string;
   value: string | number;
   accent: "purple" | "green" | "cyan" | "amber";
-  sparkline?: number[];
-  sparkColor?: string;
   children: React.ReactNode;
-  valueColor?: string;
-  valueSize?: number;
-  numberOfLines?: number;
+  onPress?: () => void;
 }) {
   const styles = useThemeStyles(makeStyles);
   return (
-    <View style={styles.statCard}>
+    <TouchableOpacity style={styles.statCard} onPress={onPress} activeOpacity={0.75} disabled={!onPress}>
       <View style={styles.statRow}>
         <IconBox size="sm" accent={accent}>{children}</IconBox>
         <Text style={styles.statLabel} numberOfLines={1}>{label}</Text>
       </View>
-      <Text
-        style={[
-          styles.statValue,
-          valueColor ? { color: valueColor } : null,
-          valueSize ? { fontSize: valueSize, lineHeight: valueSize + 4 } : null,
-        ]}
-        numberOfLines={numberOfLines ?? 1}
-      >
+      <Text style={styles.statValue} numberOfLines={1}>
         {value}
       </Text>
-      {sparkline ? (
-        <View style={styles.sparkWrap}>
-          <Sparkline data={sparkline} color={sparkColor ?? accentColorHex(accent)} />
-        </View>
-      ) : (
-        <View style={styles.sparkPlaceholder} />
-      )}
-    </View>
+    </TouchableOpacity>
   );
-}
-
-function accentColorHex(accent: string): string {
-  switch (accent) {
-    case "purple": return Colors.purple;
-    case "green": return Colors.green;
-    case "cyan": return Colors.cyan;
-    case "amber": return Colors.amber;
-    default: return Colors.purple;
-  }
 }
 
 export default function VendorDashboard() {
@@ -120,6 +95,7 @@ export default function VendorDashboard() {
   } | null>(null);
   const [liveVisitors, setLiveVisitors] = useState<number | null>(null);
   const [showTour, setShowTour] = useState(false);
+  const [hubOpen, setHubOpen] = useState(false);
 
   // Check if guided tour should be shown
   useEffect(() => {
@@ -281,7 +257,7 @@ export default function VendorDashboard() {
           </View>
         </View>
         <View style={styles.headerActions}>
-          <NotificationBell />
+          <NotificationBell viewAllHref="/(vendor)/notifications" />
           <TouchableOpacity
             style={styles.iconBtn}
             onPress={() => router.push(`/(customer)/store/${store.slug}`)}
@@ -306,30 +282,38 @@ export default function VendorDashboard() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.purple} />
         }
       >
-        {/* ── Stats Grid (mirrors web) ── */}
+        {/* ── Stats Grid (compact + tappable) ── */}
         <View style={styles.statsGrid}>
-          <StatCard label="Products" value={totalProducts} accent="purple" sparkline={trend?.visits} sparkColor={Colors.purple}>
+          <StatCard
+            label="Products"
+            value={totalProducts}
+            accent="purple"
+            onPress={() => router.push("/(vendor)/(tabs)/products")}
+          >
             <Package size={14} color={Colors.purple} />
           </StatCard>
           <StatCard
-            label="Store URL"
-            value={`/${store.slug}`}
-            accent="cyan"
-            valueColor={Colors.cyan}
-            valueSize={15}
-            numberOfLines={1}
-            sparkline={trend?.clicks}
-            sparkColor={Colors.cyan}
+            label="Visitors"
+            value={liveVisitors ?? visitsTotal}
+            accent="amber"
+            onPress={() => router.push("/(vendor)/(tabs)/analytics")}
           >
-            <Link size={14} color={Colors.cyan} />
-          </StatCard>
-          <StatCard label="Visitors" value={liveVisitors ?? visitsTotal} accent="amber" sparkline={trend?.visits} sparkColor={Colors.amber}>
             <Users size={14} color={Colors.amber} />
           </StatCard>
-          <StatCard label="Clicks (7d)" value={clicksTotal7d} accent="cyan" sparkline={trend?.clicks} sparkColor={Colors.cyan}>
+          <StatCard
+            label="Clicks (7d)"
+            value={clicksTotal7d}
+            accent="cyan"
+            onPress={() => router.push("/(vendor)/(tabs)/analytics")}
+          >
             <MousePointerClick size={14} color={Colors.cyan} />
           </StatCard>
-          <StatCard label="Orders (7d)" value={ordersTotal7d} accent="green" sparkline={trend?.orders} sparkColor={Colors.green}>
+          <StatCard
+            label="Orders (7d)"
+            value={ordersTotal7d}
+            accent="green"
+            onPress={() => router.push("/(vendor)/(tabs)/orders")}
+          >
             <TrendingUp size={14} color={Colors.green} />
           </StatCard>
         </View>
@@ -408,6 +392,20 @@ export default function VendorDashboard() {
         <View style={styles.actionsRow}>
           <TouchableOpacity
             style={styles.actionBtn}
+            onPress={() => router.push("/(vendor)/(tabs)/messages")}
+          >
+            <IconBox size="sm" accent="purple"><MessageCircle size={14} color={Colors.purple} /></IconBox>
+            <Text style={styles.actionText}>Messages</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => router.push("/(customer)/chat/global")}
+          >
+            <IconBox size="sm" accent="cyan"><Globe size={14} color={Colors.cyan} /></IconBox>
+            <Text style={styles.actionText}>Community</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
             onPress={() => router.push(`/(customer)/store/${store.slug}`)}
           >
             <IconBox size="sm" accent="purple"><Store size={14} color={Colors.purple} /></IconBox>
@@ -422,40 +420,98 @@ export default function VendorDashboard() {
               }
             }}
           >
-            <IconBox size="sm" accent="green"><MessageCircle size={14} color={Colors.green} /></IconBox>
+            <IconBox size="sm" accent="green"><MessageSquare size={14} color={Colors.green} /></IconBox>
             <Text style={styles.actionText}>WhatsApp</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => router.push("/(vendor)/(tabs)/analytics")}
+            onPress={() => setHubOpen(true)}
           >
-            <IconBox size="sm" accent="amber"><BarChart3 size={14} color={Colors.amber} /></IconBox>
-            <Text style={styles.actionText}>Analytics</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => router.push("/(vendor)/billing")}
-          >
-            <IconBox size="sm" accent="cyan"><CreditCard size={14} color={Colors.cyan} /></IconBox>
-            <Text style={styles.actionText}>Billing</Text>
+            <IconBox size="sm" accent="amber"><LayoutGrid size={14} color={Colors.amber} /></IconBox>
+            <Text style={styles.actionText}>All Tools</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ── Discover other stores ── */}
-        <TouchableOpacity
-          style={styles.discoverCard}
-          onPress={() => router.push("/(vendor)/browse")}
-          activeOpacity={0.8}
-        >
-          <View style={styles.discoverIcon}>
-            <Store size={20} color={Colors.cyan} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.discoverTitle}>Browse Stores</Text>
-            <Text style={styles.discoverSub}>Discover other vendors on stallHq and shop their products</Text>
-          </View>
-          <ArrowRight size={16} color={Colors.textMuted} />
-        </TouchableOpacity>
+        {/* ── Feature Hub (collapsed by default) ── */}
+        {hubOpen && (
+          <>
+            <View style={styles.hubHeader}>
+              <Text style={styles.sectionTitle}>Feature Hub</Text>
+              <TouchableOpacity
+                style={styles.iconBtn}
+                onPress={() => setHubOpen(false)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <X size={16} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.actionsRow}>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => router.push("/(vendor)/(tabs)/analytics")}
+              >
+                <IconBox size="sm" accent="amber"><BarChart3 size={14} color={Colors.amber} /></IconBox>
+                <Text style={styles.actionText}>Analytics</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => router.push("/(vendor)/notifications")}
+              >
+                <IconBox size="sm" accent="purple"><Bell size={14} color={Colors.purple} /></IconBox>
+                <Text style={styles.actionText}>Notifications</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => router.push("/(vendor)/monitoring")}
+              >
+                <IconBox size="sm" accent="red"><ShieldAlert size={14} color={Colors.red} /></IconBox>
+                <Text style={styles.actionText}>Monitoring</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => router.push("/(vendor)/promo-cards")}
+              >
+                <IconBox size="sm" accent="cyan"><Sparkles size={14} color={Colors.cyan} /></IconBox>
+                <Text style={styles.actionText}>Promo Cards</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => router.push("/(vendor)/billing")}
+              >
+                <IconBox size="sm" accent="cyan"><CreditCard size={14} color={Colors.cyan} /></IconBox>
+                <Text style={styles.actionText}>Billing</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => router.push("/(vendor)/support")}
+              >
+                <IconBox size="sm" accent="amber"><MessageSquare size={14} color={Colors.amber} /></IconBox>
+                <Text style={styles.actionText}>Support</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => router.push("/(vendor)/profile")}
+              >
+                <IconBox size="sm" accent="purple"><User size={14} color={Colors.purple} /></IconBox>
+                <Text style={styles.actionText}>Profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => router.push("/(vendor)/settings")}
+              >
+                <IconBox size="sm" accent="blue"><Settings size={14} color={Colors.blue} /></IconBox>
+                <Text style={styles.actionText}>Settings</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => router.push("/(vendor)/browse")}
+              >
+                <IconBox size="sm" accent="cyan"><Compass size={14} color={Colors.cyan} /></IconBox>
+                <Text style={styles.actionText}>Browse</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
 
         {/* ── Products Section ── */}
         <View style={styles.section}>
@@ -555,7 +611,7 @@ const makeStyles = () => StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: Spacing.lg, height: 56,
     borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
-    backgroundColor: "rgba(6,6,11,0.85)",
+    backgroundColor: Colors.bg,
   },
   headerLeft: { flexDirection: "row", alignItems: "center", flex: 1, minWidth: 0 },
   headerLogo: { width: 36, height: 36, borderRadius: BorderRadius.md, marginRight: Spacing.md },
@@ -569,21 +625,19 @@ const makeStyles = () => StyleSheet.create({
   iconBtn: {
     width: 36, height: 36, borderRadius: BorderRadius.md,
     justifyContent: "center", alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.03)", borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
   },
 
   // Stats Grid
-  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm, marginBottom: Spacing.lg },
+  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.xs, marginBottom: Spacing.lg },
   statCard: {
     width: "48%", flexGrow: 1,
     backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
-    borderRadius: BorderRadius.lg, padding: Spacing.lg,
+    borderRadius: BorderRadius.lg, padding: Spacing.md,
   },
-  statRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.sm },
+  statRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.xs },
   statLabel: { ...labelStyle, marginBottom: 0, flex: 1, fontSize: 9.5 },
-  statValue: { fontSize: 24, fontWeight: "700", color: Colors.text, lineHeight: 28 },
-  sparkWrap: { marginTop: Spacing.sm, height: 26, justifyContent: "flex-end" },
-  sparkPlaceholder: { marginTop: Spacing.sm, height: 26 },
+  statValue: { fontSize: 19, fontWeight: "700", color: Colors.text, lineHeight: 23 },
 
   // Plan
   planCard: {
@@ -635,18 +689,11 @@ const makeStyles = () => StyleSheet.create({
   },
   actionText: { fontSize: 11, fontWeight: "600", color: Colors.textSecondary, textAlign: "center" },
 
-  // Discover stores card
-  discoverCard: {
-    flexDirection: "row", alignItems: "center", gap: Spacing.md,
-    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.borderSubtle,
-    borderRadius: BorderRadius.lg, padding: Spacing.lg, marginBottom: Spacing.xl,
+  // Feature Hub
+  hubHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    marginBottom: Spacing.md,
   },
-  discoverIcon: {
-    width: 40, height: 40, borderRadius: BorderRadius.md,
-    backgroundColor: Colors.cyanDim, justifyContent: "center", alignItems: "center",
-  },
-  discoverTitle: { fontSize: FontSize.md, fontWeight: "700", color: Colors.text },
-  discoverSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
 
   // Section
   section: { marginBottom: Spacing.xl },

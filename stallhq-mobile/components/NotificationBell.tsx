@@ -3,6 +3,7 @@ import {
   View, Text, Modal, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Image, Linking,
 } from "react-native";
 import { Bell, CheckCheck, X, ChevronRight, ImageOff } from "lucide-react-native";
+import { useRouter, type Href } from "expo-router";
 import { useAuth } from "../lib/auth";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../lib/theme";
 import { WEB_API_URL } from "../lib/config";
@@ -56,8 +57,9 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
-export function NotificationBell({ size = 36 }: { size?: number }) {
+export function NotificationBell({ size = 36, viewAllHref }: { size?: number; viewAllHref?: Href }) {
   const styles = useThemeStyles(makeStyles);
+  const router = useRouter();
   const { session } = useAuth();
   const [visible, setVisible] = useState(false);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
@@ -140,6 +142,17 @@ export function NotificationBell({ size = 36 }: { size?: number }) {
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Notifications</Text>
               <View style={styles.sheetHeaderRight}>
+                {viewAllHref && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setVisible(false);
+                      router.push(viewAllHref);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.markAll}>View all</Text>
+                  </TouchableOpacity>
+                )}
                 {unreadCount > 0 && (
                   <TouchableOpacity onPress={markAllRead} activeOpacity={0.7}>
                     <Text style={styles.markAll}>Mark all read</Text>

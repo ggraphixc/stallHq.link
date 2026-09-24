@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
 
 interface SparklineProps {
@@ -20,6 +20,8 @@ export function Sparkline({
   height = 26,
   strokeWidth = 1.5,
 }: SparklineProps) {
+  const fillId = useRef(`sp${Math.random().toString(36).slice(2, 9)}`).current;
+
   if (!data || data.length < 2) {
     return <Svg width={width} height={height} />;
   }
@@ -42,12 +44,12 @@ export function Sparkline({
   return (
     <Svg width={width} height={height}>
       <Defs>
-        <LinearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+        <LinearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0%" stopColor={color} stopOpacity={0.25} />
           <Stop offset="100%" stopColor={color} stopOpacity={0} />
         </LinearGradient>
       </Defs>
-      <Path d={area} fill="url(#sparkFill)" />
+      <Path d={area} fill={`url(#${fillId})`} />
       <Path
         d={line}
         fill="none"

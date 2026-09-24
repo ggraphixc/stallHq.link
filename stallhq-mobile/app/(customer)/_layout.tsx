@@ -32,6 +32,10 @@ export default function CustomerLayout() {
         options={{ animation: "slide_from_right" }}
       />
       <Stack.Screen
+        name="profile/[id]"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
         name="email-preferences"
         options={{ animation: "slide_from_right" }}
       />

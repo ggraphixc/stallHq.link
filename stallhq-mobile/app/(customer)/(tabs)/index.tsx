@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, Image,
-  TextInput, RefreshControl, Dimensions,
+  TextInput, RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -9,14 +9,13 @@ import { supabase, Store } from "../../../lib/supabase";
 import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius, ambientInput } from "../../../lib/theme";
 import { Search, Store as StoreIcon, ShoppingCart, MessageCircle } from "lucide-react-native";
 import { useAuth } from "../../../lib/auth";
+import { alert } from "../../../lib/alert";
 import { BrandLogo } from "../../../components/BrandLogo";
 import { StoreFavoriteButton } from "../../../components/StoreFavoriteButton";
 import { NotificationBell } from "../../../components/NotificationBell";
 import { TrendingProducts } from "../../../components/TrendingProducts";
 import { VoiceSearchButton } from "../../../components/VoiceSearchButton";
 import { useCart } from "../../../lib/cart";
-
-const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const CATEGORY_PRESETS = [
   { label: "All", value: "" },
@@ -115,37 +114,40 @@ export default function ExploreScreen() {
           />
           <VoiceSearchButton
             onResult={(text) => setSearch(text)}
-            onError={(err) => console.warn("[voice]", err)}
+            onError={(err) => alert("Voice search", err)}
           />
         </View>
       </View>
 
-      {/* Category Chips */}
-      <View style={styles.chipRow}>
-        {CATEGORY_PRESETS.map((cat) => {
-          const active = selectedCategory === cat.value;
-          return (
-            <TouchableOpacity
-              key={cat.value}
-              style={[styles.chip, active && styles.chipActive]}
-              onPress={() => setSelectedCategory(active ? "" : cat.value)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>{cat.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Trending Products (only when not searching or filtering) */}
-      {!search && !selectedCategory && <TrendingProducts limit={8} days={7} />}
-
-      {/* Store List */}
+      {/* Store List — category chips + trending scroll together with the stores */}
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.purple} />}
+        ListHeaderComponent={
+          <>
+            {/* Category Chips */}
+            <View style={styles.chipRow}>
+              {CATEGORY_PRESETS.map((cat) => {
+                const active = selectedCategory === cat.value;
+                return (
+                  <TouchableOpacity
+                    key={cat.value}
+                    style={[styles.chip, active && styles.chipActive]}
+                    onPress={() => setSelectedCategory(active ? "" : cat.value)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>{cat.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Trending Products (only when not searching or filtering) */}
+            {!search && !selectedCategory && <TrendingProducts limit={8} days={7} />}
+          </>
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
@@ -242,9 +244,9 @@ const makeStyles = () => StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: FontSize.sm, color: Colors.text, padding: 0 },
 
-  // Category chips
+  // Category chips (rendered inside the list's padded content container)
   chipRow: {
-    flexDirection: "row", paddingHorizontal: Spacing.lg, gap: Spacing.sm,
+    flexDirection: "row", gap: Spacing.sm,
     marginBottom: Spacing.md, flexWrap: "wrap",
   },
   chip: {

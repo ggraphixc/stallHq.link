@@ -17,7 +17,8 @@
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "package": "com.stallhq.app",
-      "versionCode": 8
+      "versionCode": 8,
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -53,6 +54,13 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow stallHq to access your photos so you can add images to your reviews."
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone for voice search.",
+          "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to recognize your speech for voice search."
         }
       ],
       "expo-asset"

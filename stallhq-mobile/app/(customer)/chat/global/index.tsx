@@ -1,19 +1,26 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, TextInput,
   Modal, KeyboardAvoidingView, Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useAuth } from "../../../../lib/auth";
-import { useThemeStyles, Colors, FontSize, Spacing, BorderRadius } from "../../../../lib/theme";
+import {
+  useThemeStyles, Colors, FontSize, Spacing, BorderRadius, shadowMd,
+} from "../../../../lib/theme";
 import { BrandLoader } from "../../../../components/BrandLoader";
 import { alert } from "../../../../components/ui/CustomAlert";
 import {
-  MessageCircle, Search, Plus, Users, Globe, Lock, X, Sparkles, Send,
+  MessageCircle, Search, Plus, Users, Globe, Lock, X, Sparkles, Send, BellOff,
 } from "lucide-react-native";
-import { fetchRooms, createRoom, joinRoom, type Room } from "../../../../lib/globalChat";
+import {
+  fetchRooms, createRoom, joinRoom, subscribeResilient, type Room,
+} from "../../../../lib/globalChat";
+import { SwipeableRoomRow } from "../../../../components/chat/SwipeableRoomRow";
+import { useRoomPrefs, setRoomPref } from "../../../../lib/chatRoomPrefs";
 
 const AVATAR_GRADIENTS: [string, string][] = [
   ["#a855f7", "#7c3aed"],
@@ -46,6 +53,7 @@ function formatListTime(iso: string | null | undefined): string {
 
 export default function GlobalChatScreen() {
   const styles = useThemeStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session } = useAuth();
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -56,6 +64,9 @@ export default function GlobalChatScreen() {
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [creating, setCreating] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const prefs = useRoomPrefs();
+  const connectedRef = useRef(false);
 
   const load = useCallback(async () => {
     const data = await fetchRooms();
@@ -63,10 +74,35 @@ export default function GlobalChatScreen() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
   useEffect(() => {
-    const t = setInterval(load, 8000);
-    return () => clearInterval(t);
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    const sub = subscribeResilient({
+      name: "global-rooms-list",
+      table: "room_messages",
+      events: ["INSERT"],
+      onRow: () => {
+        load();
+      },
+      onConnected: () => {
+        connectedRef.current = true;
+        load();
+      },
+      onDisconnected: () => {
+        connectedRef.current = false;
+      },
+    });
+    let ticks = 0;
+    const poll = setInterval(() => {
+      ticks += 1;
+      if (!connectedRef.current || ticks % 5 === 0) load();
+    }, 3000);
+    return () => {
+      sub.destroy();
+      clearInterval(poll);
+    };
   }, [load]);
 
   const onRefresh = async () => {
@@ -84,6 +120,31 @@ export default function GlobalChatScreen() {
         (r.description || "").toLowerCase().includes(q)
     );
   }, [rooms, search]);
+
+  const isActiveRoom = (r: Room) => {
+    const p = prefs[r.id];
+    return !p?.archived && !p?.hidden;
+  };
+  const isArchivedRoom = (r: Room) => {
+    const p = prefs[r.id];
+    return !p?.hidden && !!p?.archived;
+  };
+  const archivedCount = rooms.filter(isArchivedRoom).length;
+  const viewList = showArchived ? filtered.filter(isArchivedRoom) : filtered.filter(isActiveRoom);
+
+  const archiveRoom = (id: string) => setRoomPref(id, { archived: true });
+  const unarchiveRoom = (id: string) => setRoomPref(id, { archived: false });
+  const setRoomMuted = (id: string, muted: boolean) => setRoomPref(id, { muted });
+  const confirmHideRoom = (id: string) => {
+    alert(
+      "Hide this room from your list?",
+      "This only affects your device view — you'll still be a member and can find the room via search.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Hide", style: "destructive", onPress: () => setRoomPref(id, { hidden: true }) },
+      ]
+    );
+  };
 
   const openRoom = async (room: Room) => {
     if (session && !room.is_member && room.type === "public") {
@@ -138,69 +199,93 @@ export default function GlobalChatScreen() {
       room.last_message ||
       room.description ||
       (room.type === "public" ? "Open to everyone" : "Private room");
+    const pref = prefs[room.id] ?? {};
+    const muted = !!pref.muted;
 
     return (
-      <TouchableOpacity
-        style={[styles.roomRow, unread > 0 && styles.roomRowUnread]}
-        onPress={() => openRoom(room)}
-        activeOpacity={0.72}
-      >
-        <LinearGradient
-          colors={[c1, c2]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.roomAvatar}
+      <View style={styles.roomRowWrap}>
+        <SwipeableRoomRow
+          style={[styles.roomRow, unread > 0 && styles.roomRowUnread]}
+          onPress={() => openRoom(room)}
+          isArchived={!!pref.archived}
+          isMuted={muted}
+          onArchive={() => archiveRoom(room.id)}
+          onUnarchive={() => unarchiveRoom(room.id)}
+          onMute={() => setRoomMuted(room.id, true)}
+          onUnmute={() => setRoomMuted(room.id, false)}
+          onDelete={() => confirmHideRoom(room.id)}
+          deleteLabel="Hide"
         >
-          <Text style={styles.roomAvatarText}>{room.name[0]?.toUpperCase()}</Text>
-          {room.type !== "public" && (
-            <View style={styles.lockDot}>
-              <Lock size={9} color="#fff" />
+          <LinearGradient
+            colors={[c1, c2]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.roomAvatar}
+          >
+            <Text style={styles.roomAvatarText}>{room.name[0]?.toUpperCase()}</Text>
+            {room.type !== "public" && (
+              <View style={styles.lockDot}>
+                <Lock size={9} color="#fff" />
+              </View>
+            )}
+          </LinearGradient>
+
+          <View style={styles.roomBody}>
+            <View style={styles.roomTop}>
+              <Text style={[styles.roomName, unread > 0 && styles.roomNameUnread]} numberOfLines={1}>
+                {room.name}
+              </Text>
+              {muted && <BellOff size={12} color={Colors.textMuted} style={{ marginRight: 6 }} />}
+              <Text style={styles.roomTime}>{formatListTime(room.last_message_at)}</Text>
+            </View>
+            <Text style={styles.roomPreview} numberOfLines={1}>
+              {preview}
+            </Text>
+            <View style={styles.roomMetaRow}>
+              <View style={styles.metaChip}>
+                <Users size={10} color={Colors.textMuted} />
+                <Text style={styles.metaChipText}>{members}</Text>
+              </View>
+              {room.type === "public" && (
+                <View style={[styles.metaChip, styles.publicChip]}>
+                  <Globe size={10} color={Colors.green} />
+                  <Text style={[styles.metaChipText, { color: Colors.green }]}>Public</Text>
+                </View>
+              )}
+              {room.is_member && (
+                <View style={styles.metaChip}>
+                  <MessageCircle size={10} color={Colors.purple} />
+                  <Text style={[styles.metaChipText, { color: Colors.purple }]}>Joined</Text>
+                </View>
+              )}
+              {showArchived && pref.archived && (
+                <View style={styles.archivedChip}>
+                  <Text style={styles.archivedChipText}>Archived</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {unread > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unread > 99 ? "99+" : unread}</Text>
             </View>
           )}
-        </LinearGradient>
-
-        <View style={styles.roomBody}>
-          <View style={styles.roomTop}>
-            <Text style={[styles.roomName, unread > 0 && styles.roomNameUnread]} numberOfLines={1}>
-              {room.name}
-            </Text>
-            <Text style={styles.roomTime}>{formatListTime(room.last_message_at)}</Text>
-          </View>
-          <Text style={styles.roomPreview} numberOfLines={1}>
-            {preview}
-          </Text>
-          <View style={styles.roomMetaRow}>
-            <View style={styles.metaChip}>
-              <Users size={10} color={Colors.textMuted} />
-              <Text style={styles.metaChipText}>{members}</Text>
-            </View>
-            {room.type === "public" && (
-              <View style={[styles.metaChip, styles.publicChip]}>
-                <Globe size={10} color={Colors.green} />
-                <Text style={[styles.metaChipText, { color: Colors.green }]}>Public</Text>
-              </View>
-            )}
-            {room.is_member && (
-              <View style={styles.metaChip}>
-                <MessageCircle size={10} color={Colors.purple} />
-                <Text style={[styles.metaChipText, { color: Colors.purple }]}>Joined</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {unread > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{unread > 99 ? "99+" : unread}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+        </SwipeableRoomRow>
+      </View>
     );
   };
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
+        <BlurView
+          intensity={Platform.OS === "android" ? 40 : 55}
+          tint={Platform.OS === "android" ? "light" : "dark"}
+          blurMethod="dimezisBlurViewSdk31Plus"
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.headerVeil} />
         <View style={styles.headerLeft}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Text style={styles.backText}>‹</Text>
@@ -242,20 +327,26 @@ export default function GlobalChatScreen() {
         </TouchableOpacity>
       )}
 
-      {filtered.length === 0 ? (
+      {viewList.length === 0 ? (
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
             <MessageCircle size={32} color={Colors.purple} />
           </View>
           <Text style={styles.emptyTitle}>
-            {search ? "No rooms match" : "No rooms yet"}
+            {showArchived
+              ? "Nothing archived"
+              : search
+                ? "No rooms match"
+                : "No rooms yet"}
           </Text>
           <Text style={styles.emptySub}>
-            {search
-              ? "Try another search"
-              : "Be the first to start a public conversation"}
+            {showArchived
+              ? "Archived rooms appear here"
+              : search
+                ? "Try another search"
+                : "Be the first to start a public conversation"}
           </Text>
-          {!search && (
+          {!search && !showArchived && (
             <TouchableOpacity
               style={styles.emptyCta}
               onPress={() => setCreateOpen(true)}
@@ -267,7 +358,7 @@ export default function GlobalChatScreen() {
         </View>
       ) : (
         <FlatList
-          data={filtered}
+          data={viewList}
           keyExtractor={(r) => r.id}
           contentContainerStyle={styles.listContent}
           refreshControl={
@@ -279,9 +370,31 @@ export default function GlobalChatScreen() {
           }
           renderItem={renderItem}
           ListHeaderComponent={
-            <Text style={styles.sectionLabel}>
-              Open rooms · {filtered.length}
-            </Text>
+            <View>
+              <View style={styles.filterRow}>
+                <TouchableOpacity
+                  style={[styles.filterChip, !showArchived && styles.filterChipActive]}
+                  onPress={() => setShowArchived(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.filterChipText, !showArchived && styles.filterChipTextActive]}>
+                    Active
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.filterChip, showArchived && styles.filterChipActive]}
+                  onPress={() => setShowArchived(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.filterChipText, showArchived && styles.filterChipTextActive]}>
+                    Archived ({archivedCount})
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.sectionLabel}>
+                Open rooms · {viewList.length}
+              </Text>
+            </View>
           }
         />
       )}
@@ -348,9 +461,18 @@ const makeStyles = () => StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.bgCard,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderSubtle,
+    overflow: "hidden",
+    position: "relative",
+  },
+  headerVeil: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: Colors.glass,
   },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 4, flex: 1 },
   backBtn: {
@@ -380,8 +502,8 @@ const makeStyles = () => StyleSheet.create({
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.md,
     padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.purpleTint,
+    borderRadius: BorderRadius.xl,
+    backgroundColor: Colors.glass,
     borderWidth: 1,
     borderColor: Colors.borderGlow,
   },
@@ -418,21 +540,56 @@ const makeStyles = () => StyleSheet.create({
     color: Colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.08,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.lg + 4,
     paddingTop: Spacing.sm,
     paddingBottom: Spacing.xs,
   },
-  listContent: { paddingBottom: 100 },
+  listContent: { paddingBottom: 100, paddingTop: Spacing.sm },
+  filterRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg + 4,
+    paddingTop: Spacing.sm,
+  },
+  filterChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.bgSecondary,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+  },
+  filterChipActive: { backgroundColor: Colors.purpleDim, borderColor: Colors.borderGlow },
+  filterChipText: { fontSize: FontSize.xs, fontWeight: "700", color: Colors.textMuted },
+  filterChipTextActive: { color: Colors.purple },
+  archivedChip: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.amberDim,
+    borderWidth: 1,
+    borderColor: "rgba(245,158,11,0.25)",
+  },
+  archivedChipText: { fontSize: 10, fontWeight: "700", color: Colors.amber },
+  roomRowWrap: {
+    marginHorizontal: Spacing.lg,
+    marginVertical: 6,
+  },
   roomRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
-    backgroundColor: Colors.bg,
+    borderRadius: BorderRadius.xl,
+    backgroundColor: Colors.glass,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    ...shadowMd,
   },
-  roomRowUnread: { backgroundColor: Colors.purpleTint },
+  roomRowUnread: {
+    backgroundColor: Colors.purpleTint,
+    borderColor: Colors.borderGlow,
+  },
   roomAvatar: {
     width: 52,
     height: 52,

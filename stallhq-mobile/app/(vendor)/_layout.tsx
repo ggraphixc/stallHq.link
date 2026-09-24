@@ -64,6 +64,26 @@ export default function VendorLayout() {
         name="support/[id]"
         options={{ animation: "slide_from_right" }}
       />
+      <Stack.Screen
+        name="chat"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="chat/[id]"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="notifications"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="notification-preferences"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="profile"
+        options={{ animation: "slide_from_right" }}
+      />
     </Stack>
   );
 }

@@ -6,10 +6,13 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { Colors, FontSize, Spacing, BorderRadius, ambientCard } from "../../lib/theme";
 import { WEB_API_URL } from "../../lib/auth";
 import { supabase } from "../../lib/supabase";
+import { ArrowLeft } from "lucide-react-native";
 
 interface NotificationPrefs {
   order_updates: boolean;
@@ -43,6 +46,7 @@ const PREF_LABELS: Record<keyof NotificationPrefs, { label: string; description:
 };
 
 export default function VendorNotificationPreferencesScreen() {
+  const router = useRouter();
   const [prefs, setPrefs] = useState<NotificationPrefs>({
     order_updates: true,
     trial_reminders: true,
@@ -111,6 +115,10 @@ export default function VendorNotificationPreferencesScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <ArrowLeft size={18} color={Colors.purple} />
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
       <Text style={styles.title}>Notification Preferences</Text>
       <Text style={styles.subtitle}>Control what notifications you receive</Text>
 
@@ -145,6 +153,18 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.lg,
+  },
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: Spacing.md,
+    alignSelf: "flex-start",
+  },
+  backText: {
+    fontSize: FontSize.sm,
+    color: Colors.purple,
+    fontWeight: "600",
   },
   center: {
     flex: 1,
